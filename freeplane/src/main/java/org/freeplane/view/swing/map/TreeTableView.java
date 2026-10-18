@@ -11,6 +11,7 @@ import javax.swing.SwingUtilities;
 import org.freeplane.api.LengthUnit;
 import org.freeplane.api.Quantity;
 import org.freeplane.features.map.NodeModel;
+import org.freeplane.features.nodestyle.NodeStyleShape;
 import org.freeplane.features.treetable.TreeColumnWidthCalculator;
 import org.freeplane.features.treetable.TreeTableColumns;
 import org.freeplane.features.treetable.TreeTableGeometry;
@@ -19,13 +20,15 @@ import org.freeplane.features.treetable.TreeTableModel;
 
 class TreeTableView {
 	static final int COLUMN_GAP = 6;
-	static final int GRID_PADDING = 3;
+	static final int TEXT_PADDING = 4;
 
+	private final NodeView treeTableRootView;
 	private final NodeModel treeTableRoot;
 	private final TreeTableColumns columns;
 	private final TreeTableGeometry geometry;
 	private final TreeTableGrid grid;
 	private final int buttonSize;
+	private final int textPadding;
 	private final Rectangle tableBounds;
 	private final List<NodeView> rows;
 	private final List<Rectangle> rowBounds;
@@ -72,37 +75,59 @@ class TreeTableView {
 
 	private TreeTableView(final MapView mapView, final NodeView treeTableRoot, final TreeTableColumns columns,
 			final List<NodeView> rows) {
+		this.treeTableRootView = treeTableRoot;
 		this.treeTableRoot = treeTableRoot.getNode();
 		this.columns = columns;
 		this.rows = Collections.unmodifiableList(rows);
-		this.tableBounds = contentBoundsInMap(mapView, treeTableRoot);
+		this.tableBounds = mainViewBoundsInMap(mapView, treeTableRoot);
 		this.rowBounds = new ArrayList<Rectangle>(rows.size());
 
 		final TreeColumnWidthCalculator treeColumnWidth = new TreeColumnWidthCalculator();
 		treeColumnWidth.addRow(0, tableBounds.width);
 		for (final NodeView row : rows) {
-			final Rectangle bounds = contentBoundsInMap(mapView, row);
+			final Rectangle bounds = mainViewBoundsInMap(mapView, row);
 			rowBounds.add(bounds);
 			treeColumnWidth.addRow(Math.max(0, bounds.x - tableBounds.x), bounds.width);
 		}
+		this.textPadding = mapView.getZoomed(TEXT_PADDING);
 		this.geometry = new TreeTableGeometry(treeColumnWidth.getWidth(), zoomedColumnWidths(mapView, columns),
 			mapView.getZoomed(COLUMN_GAP));
-		this.grid = createGrid(mapView);
+		this.grid = createGrid();
 		this.buttonSize = mapView.getZoomed(TreeTableHeaderButton.SIZE);
 	}
 
-	private TreeTableGrid createGrid(final MapView mapView) {
-		final int lineCount = rowBounds.size() + 1;
-		final int[] lineTops = new int[lineCount];
-		final int[] lineBottoms = new int[lineCount];
-		lineTops[0] = tableBounds.y;
-		lineBottoms[0] = tableBounds.y + tableBounds.height;
-		for (int rowIndex = 0; rowIndex < rowBounds.size(); rowIndex++) {
-			final Rectangle row = rowBounds.get(rowIndex);
-			lineTops[rowIndex + 1] = row.y;
-			lineBottoms[rowIndex + 1] = row.y + row.height;
-		}
-		return new TreeTableGrid(tableBounds.x, geometry, lineTops, lineBottoms, mapView.getZoomed(GRID_PADDING));
+	private TreeTableGrid createGrid() {
+		final int[] lineBottoms = new int[rowBounds.size() + 1];
+		final int rootBorderWidth = borderWidthOf(treeTableRootView);
+		lineBottoms[0] = bottomBorderLineOf(treeTableRootView, tableBounds);
+		for (int rowIndex = 0; rowIndex < rowBounds.size(); rowIndex++)
+			lineBottoms[rowIndex + 1] = bottomBorderLineOf(rows.get(rowIndex), rowBounds.get(rowIndex));
+		final int left = TreeTableGrid.leftOfContent(tableBounds.x + contentStartOf(treeTableRootView.getMainView()),
+			geometry, textPadding);
+		return new TreeTableGrid(left, tableBounds.x, geometry,
+			TreeTableGrid.borderLineStart(tableBounds.y, rootBorderWidth), lineBottoms);
+	}
+
+	private static int contentStartOf(final MainView mainView) {
+		final ZoomableLabelUI ui = (ZoomableLabelUI) mainView.getUI();
+		final int textX = ui.getTextR(mainView).x;
+		final Rectangle iconR = ui.getIconR(mainView);
+		return iconR.width > 0 ? Math.min(textX, iconR.x) : textX;
+	}
+
+	private static int bottomBorderLineOf(final NodeView view, final Rectangle bounds) {
+		final int borderWidth = borderWidthOf(view);
+		return isUnderlined(view)
+				? TreeTableGrid.underlineY(bounds.y, bounds.height, borderWidth)
+				: TreeTableGrid.borderLineEnd(bounds.y, bounds.height, borderWidth);
+	}
+
+	private static boolean isUnderlined(final NodeView view) {
+		return view.getMainView().getShapeConfiguration().getShape() == NodeStyleShape.fork;
+	}
+
+	private static int borderWidthOf(final NodeView view) {
+		return view.getMainView().getPaintedBorderWidth();
 	}
 
 	private static int[] zoomedColumnWidths(final MapView mapView, final TreeTableColumns columns) {
@@ -114,10 +139,28 @@ class TreeTableView {
 		return widths;
 	}
 
-	private static Rectangle contentBoundsInMap(final MapView mapView, final NodeView view) {
-		final JComponent content = view.getContent();
+	private static Rectangle mainViewBoundsInMap(final MapView mapView, final NodeView view) {
+		final JComponent content = view.getMainView();
 		final Rectangle bounds = new Rectangle(0, 0, content.getWidth(), content.getHeight());
 		return SwingUtilities.convertRectangle(content, bounds, mapView);
+	}
+
+	int getTextPadding() {
+		return textPadding;
+	}
+
+	int getColumnX(final int columnIndex) {
+		return tableBounds.x + geometry.getColumnPosition(columnIndex);
+	}
+
+	int columnResizeEdgeAt(final int x, final int y, final int tolerance) {
+		if (y < grid.getTop() || y > grid.getBottom())
+			return -1;
+		return geometry.getColumnIndexWithResizeEdgeNear(x - tableBounds.x, tolerance);
+	}
+
+	NodeView getTreeTableRootView() {
+		return treeTableRootView;
 	}
 
 	NodeModel getTreeTableRoot() {

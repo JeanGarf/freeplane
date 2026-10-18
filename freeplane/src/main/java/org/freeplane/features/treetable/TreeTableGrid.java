@@ -5,28 +5,35 @@ public class TreeTableGrid {
 	private final int top;
 	private final int right;
 	private final int bottom;
-	private final int[] lineSeparatorYs;
+	private final int[] lineBottoms;
 	private final int[] columnSeparatorXs;
 
-	public TreeTableGrid(final int tableX, final TreeTableGeometry geometry, final int[] lineTops,
-			final int[] lineBottoms, final int padding) {
-		if (lineTops.length == 0 || lineTops.length != lineBottoms.length)
-			throw new IllegalArgumentException("tree table grid requires matching non empty line extents");
-		if (padding < 0)
-			throw new IllegalArgumentException("tree table grid padding must not be negative");
-		this.left = tableX - padding;
-		this.right = tableX + geometry.getTotalWidth() + padding;
-		this.top = lineTops[0] - padding;
-		this.bottom = lineBottoms[lineBottoms.length - 1] + padding;
-		this.lineSeparatorYs = calculateLineSeparators(lineTops, lineBottoms);
-		this.columnSeparatorXs = calculateColumnSeparators(tableX, geometry);
+	public static int borderLineStart(final int position, final int borderWidth) {
+		return position + borderWidth / 2;
 	}
 
-	private static int[] calculateLineSeparators(final int[] lineTops, final int[] lineBottoms) {
-		final int[] separators = new int[lineTops.length - 1];
-		for (int index = 0; index < separators.length; index++)
-			separators[index] = (lineBottoms[index] + lineTops[index + 1]) / 2;
-		return separators;
+	public static int underlineY(final int position, final int size, final int borderWidth) {
+		return position + size - 1 - borderWidth / 2;
+	}
+
+	public static int borderLineEnd(final int position, final int size, final int borderWidth) {
+		return position + size - borderWidth + borderWidth / 2;
+	}
+
+	public static int leftOfContent(final int contentX, final TreeTableGeometry geometry, final int textPadding) {
+		return contentX - geometry.getGap() / 2 - textPadding;
+	}
+
+	public TreeTableGrid(final int left, final int tableX, final TreeTableGeometry geometry, final int top,
+			final int[] lineBottoms) {
+		if (lineBottoms.length == 0)
+			throw new IllegalArgumentException("tree table grid requires at least the header line");
+		this.left = left;
+		this.right = tableX + geometry.getTotalWidth();
+		this.top = top;
+		this.bottom = lineBottoms[lineBottoms.length - 1];
+		this.lineBottoms = lineBottoms.clone();
+		this.columnSeparatorXs = calculateColumnSeparators(tableX, geometry);
 	}
 
 	private static int[] calculateColumnSeparators(final int tableX, final TreeTableGeometry geometry) {
@@ -53,19 +60,19 @@ public class TreeTableGrid {
 	}
 
 	public boolean hasHeaderSeparator() {
-		return lineSeparatorYs.length > 0;
+		return lineBottoms.length > 1;
 	}
 
 	public int getHeaderSeparatorY() {
-		return lineSeparatorYs[0];
+		return lineBottoms[0];
 	}
 
-	public int getRowSeparatorCount() {
-		return Math.max(0, lineSeparatorYs.length - 1);
+	public int getRowCount() {
+		return lineBottoms.length - 1;
 	}
 
-	public int getRowSeparatorY(final int index) {
-		return lineSeparatorYs[index + 1];
+	public int getRowBottomY(final int rowIndex) {
+		return lineBottoms[rowIndex + 1];
 	}
 
 	public int getColumnSeparatorCount() {
