@@ -13,6 +13,7 @@ import org.freeplane.features.styles.StyleFactory;
 
 public class TreeTableHeader {
 	public static final String STYLE_NAME = "TreeHeader";
+	private static final String UNNAMED_COLUMN_KEY_PREFIX = "#";
 
 	public static IStyle style() {
 		return StyleFactory.create(STYLE_NAME);
@@ -68,8 +69,17 @@ public class TreeTableHeader {
 			collectColumnNodes(child, columnNodes);
 	}
 
-	public static String keyOf(final NodeModel columnNode) {
-		return keyOfText(columnNode.getText());
+	public static String keyOf(final NodeModel node) {
+		return keyOf(node, node.getText());
+	}
+
+	public static String keyOf(final NodeModel node, final Object text) {
+		return isBelowHeaderRoot(node) ? columnKeyOf(node, text) : keyOfText(text);
+	}
+
+	private static String columnKeyOf(final NodeModel columnNode, final Object text) {
+		final String key = keyOfText(text);
+		return key.isEmpty() ? UNNAMED_COLUMN_KEY_PREFIX + columnNode.createID() : key;
 	}
 
 	public static String keyOfText(final Object text) {
@@ -136,6 +146,22 @@ public class TreeTableHeader {
 				return null;
 		}
 		return formerKey;
+	}
+
+	public static String keyReturnedTo(final NodeModel formerParent, final NodeModel removedNode) {
+		if (!isBelowHeaderRoot(formerParent) || formerParent.hasChildren())
+			return null;
+		final String parentKey = keyOf(formerParent);
+		final NodeModel removedColumn = removedNode.hasChildren() ? heirOf(removedNode) : removedNode;
+		final String removedKey = columnKeyOf(removedColumn, removedColumn.getText());
+		if (parentKey.isEmpty() || removedKey.isEmpty() || parentKey.equals(removedKey))
+			return null;
+		for (final NodeModel columnNode : columnNodesOf(headerRootAbove(formerParent))) {
+			final String key = keyOf(columnNode);
+			if (key.equals(removedKey) || columnNode != formerParent && key.equals(parentKey))
+				return null;
+		}
+		return removedKey;
 	}
 
 	public static NodeModel heirOf(final NodeModel formerColumnNode) {

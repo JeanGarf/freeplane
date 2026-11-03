@@ -8,10 +8,6 @@ import org.freeplane.api.LengthUnit;
 import org.freeplane.api.Quantity;
 import org.freeplane.core.undo.IActor;
 import org.freeplane.core.util.TextUtils;
-import org.freeplane.features.attribute.Attribute;
-import org.freeplane.features.attribute.AttributeController;
-import org.freeplane.features.attribute.NodeAttributeTableModel;
-import org.freeplane.features.attribute.mindmapmode.MAttributeController;
 import org.freeplane.features.map.MapController;
 import org.freeplane.features.map.MapModel;
 import org.freeplane.features.map.NodeModel;
@@ -25,7 +21,9 @@ import org.freeplane.features.styles.IStyle;
 import org.freeplane.features.styles.LogicalStyleController;
 import org.freeplane.features.styles.LogicalStyleModel;
 import org.freeplane.features.text.mindmapmode.MTextController;
+import org.freeplane.features.treetable.TreeTableCells;
 import org.freeplane.features.treetable.TreeTableColumnNames;
+import org.freeplane.features.treetable.TreeTableGridCompletion;
 import org.freeplane.features.treetable.TreeTableHeader;
 import org.freeplane.features.treetable.TreeTableModel;
 import org.freeplane.features.treetable.TreeTableNodes;
@@ -34,22 +32,19 @@ import org.freeplane.features.treetable.TreeTableSheetImport;
 import org.freeplane.main.mindmapmode.stylemode.EditStylesAction;
 
 public class TreeTableEditing {
-	private static final int ATTRIBUTE_NAME_COLUMN = 0;
-	private static final int ATTRIBUTE_VALUE_COLUMN = 1;
+	private static boolean completesCells;
 
-	public static void installColumnRenaming(final MapController mapController) {
+	public static void installListeners(final MapController mapController) {
 		mapController.addNodeChangeListener(new TreeTableColumnRenaming());
 		mapController.addMapChangeListener(new TreeTableColumnSplitting());
+		mapController.addMapLifeCycleListener(new TreeTableCellMigrationOnLoad());
 	}
 
-	public static void setCellValue(final NodeModel row, final String attributeKey, final String value) {
-		final MAttributeController attributeController = attributeController();
-		final NodeAttributeTableModel attributes = attributeController.createAttributeTableModel(row);
-		final int index = attributes.getAttributeIndex(attributeKey);
-		if (index < 0)
-			attributeController.performInsertRow(row, attributes, attributes.getRowCount(), attributeKey, value);
-		else
-			attributeController.performSetValueAt(row, attributes, value, index, ATTRIBUTE_VALUE_COLUMN);
+	public static void selectCellContent(final NodeModel row, final String columnKey) {
+		completeCells(row);
+		final NodeModel cell = TreeTableCells.cellOf(row, columnKey);
+		if (cell != null && cell.hasChildren())
+			mapController().select(cell.getChildAt(0));
 	}
 
 	public static void renameColumn(final NodeModel columnNode, final String newKey) {
@@ -63,7 +58,7 @@ public class TreeTableEditing {
 				|| isUsedByAnotherColumn(columnNode, newKey))
 			return;
 		for (final NodeModel row : TreeTableNodes.rowsOf(treeTableRoot))
-			renameAttribute(row, oldKey, newKey);
+			renameCell(row, oldKey, newKey);
 	}
 
 	static void inheritColumnValues(final NodeModel formerColumnNode) {
@@ -72,7 +67,45 @@ public class TreeTableEditing {
 			return;
 		final String heirKey = TreeTableHeader.keyOf(TreeTableHeader.heirOf(formerColumnNode));
 		for (final NodeModel row : TreeTableNodes.rowsOf(TreeTableNodes.treeTableRootOf(formerColumnNode)))
-			renameAttribute(row, inheritedKey, heirKey);
+			renameCell(row, inheritedKey, heirKey);
+	}
+
+	static void completeCells(final NodeModel changedNode) {
+		final NodeModel treeTableRoot = TreeTableNodes.enclosingTreeTableRoot(changedNode);
+		if (treeTableRoot == null || completesCells)
+			return;
+		completesCells = true;
+		try {
+			for (final NodeModel emptyCell : TreeTableGridCompletion.emptyCellsOutsideColumnsOf(treeTableRoot))
+				mapController().deleteNode(emptyCell);
+			for (final TreeTableGridCompletion.Gap gap : TreeTableGridCompletion.gapsOf(treeTableRoot))
+				fill(gap);
+		}
+		finally {
+			completesCells = false;
+		}
+	}
+
+	private static void fill(final TreeTableGridCompletion.Gap gap) {
+		if (gap.getEmptyCell() != null) {
+			mapController().addNewNode(gap.getEmptyCell(), 0, node -> node.setUserObject(""));
+			return;
+		}
+		final NodeModel row = gap.getRow();
+		mapController().addNewNode(row, TreeTableCells.leadingCellCount(row), node -> {
+			node.setUserObject(gap.getColumnKey());
+			TreeTableCells.markAsCell(node);
+			node.insert(new NodeModel("", node.getMap()));
+		});
+	}
+
+	static void returnColumnValues(final NodeModel formerParent, final NodeModel removedNode) {
+		final String returnedKey = TreeTableHeader.keyReturnedTo(formerParent, removedNode);
+		if (returnedKey == null)
+			return;
+		final String parentKey = TreeTableHeader.keyOf(formerParent);
+		for (final NodeModel row : TreeTableNodes.rowsOf(TreeTableNodes.treeTableRootOf(formerParent)))
+			renameCell(row, returnedKey, parentKey);
 	}
 
 	private static boolean isUsedByAnotherColumn(final NodeModel columnNode, final String key) {
@@ -112,7 +145,7 @@ public class TreeTableEditing {
 		if (TreeTableModel.columnsOf(treeTableRoot).containsAttributeKey(key))
 			return;
 		for (final NodeModel row : TreeTableNodes.rowsOf(treeTableRoot))
-			removeAttribute(row, key);
+			removeCell(row, key);
 	}
 
 	public static void moveColumnLeft(final NodeModel columnNode) {
@@ -185,20 +218,14 @@ public class TreeTableEditing {
 		insertItems(treeTableRoot, table.getRows());
 		treeTableRoot.setSide(side.isSibling() ? target.getSide() : side);
 		mapController().insertNode(treeTableRoot, target, InsertionRelation.bySide(side));
-		attributeController().performRegistrySubtreeAttributes(treeTableRoot);
 		LogicalStyleController.getController().refreshMapLaterUndoable(map);
 	}
 
 	private static void insertItems(final NodeModel parent, final List<TreeTableSheetImport.Item> items) {
 		for (final TreeTableSheetImport.Item item : items) {
 			final NodeModel node = mapController().newNode(item.getContent(), parent.getMap());
-			final Map<String, String> values = item.getValueContents();
-			if (!values.isEmpty()) {
-				final NodeAttributeTableModel attributes = new NodeAttributeTableModel();
-				node.addExtension(attributes);
-				for (final Map.Entry<String, String> value : values.entrySet())
-					attributes.silentlyAddRowNoUndo(node, new Attribute(value.getKey(), value.getValue()));
-			}
+			for (final Map.Entry<String, String> value : item.getValueContents().entrySet())
+				node.insert(TreeTableCells.newCell(parent.getMap(), value.getKey(), value.getValue()));
 			parent.insert(node);
 			insertItems(node, item.getChildren());
 		}
@@ -230,27 +257,20 @@ public class TreeTableEditing {
 		LogicalStyleController.getController().refreshMapLaterUndoable(map);
 	}
 
-	private static void renameAttribute(final NodeModel row, final String oldAttributeKey,
-			final String newAttributeKey) {
-		final NodeAttributeTableModel attributes = NodeAttributeTableModel.getModel(row);
-		final int index = attributes.getAttributeIndex(oldAttributeKey);
-		if (index >= 0 && attributes.getAttributeIndex(newAttributeKey) < 0)
-			attributeController().performSetValueAt(row, attributes, newAttributeKey, index, ATTRIBUTE_NAME_COLUMN);
+	private static void renameCell(final NodeModel row, final String oldKey, final String newKey) {
+		final NodeModel cell = TreeTableCells.cellOf(row, oldKey);
+		if (cell != null && TreeTableCells.cellOf(row, newKey) == null)
+			MTextController.getController().setNodeText(cell, newKey);
 	}
 
-	private static void removeAttribute(final NodeModel row, final String attributeKey) {
-		final NodeAttributeTableModel attributes = NodeAttributeTableModel.getModel(row);
-		final int index = attributes.getAttributeIndex(attributeKey);
-		if (index >= 0)
-			attributeController().performRemoveRow(row, attributes, index);
+	private static void removeCell(final NodeModel row, final String key) {
+		final NodeModel cell = TreeTableCells.cellOf(row, key);
+		if (cell != null)
+			mapController().deleteNode(cell);
 	}
 
 	private static MMapController mapController() {
 		return (MMapController) Controller.getCurrentModeController().getMapController();
-	}
-
-	private static MAttributeController attributeController() {
-		return (MAttributeController) AttributeController.getController(Controller.getCurrentModeController());
 	}
 
 	private TreeTableEditing() {
