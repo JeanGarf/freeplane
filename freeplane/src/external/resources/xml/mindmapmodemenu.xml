@@ -206,6 +206,7 @@
 					<Entry name="ChangeNodeLevelLeftsAction" accelerator="control LEFT" />
 					<Entry name="ChangeNodeLevelRightsAction" accelerator="control RIGHT" />
 					<Entry name="SortNodes" />
+					<Entry name="SortNodesByPreference" />
 				</Entry>
 				<Entry name="FreeNodeAction" />
 				<Entry name="ResetNodeLocationAction" accelerator="control R" />
@@ -825,6 +826,7 @@
 		<Entry name="node_popup_scripting" plugin="org.freeplane.plugin.script"
 			builder="userScripts" />
 		<Entry name="SortNodes" usedBy = "EDITOR" />
+		<Entry name="SortNodesByPreference" usedBy = "EDITOR" />
 		<Entry name="UndoAction" usedBy = "EDITOR" />
 		<Entry name="RedoAction" usedBy = "EDITOR" />
 	</Entry>

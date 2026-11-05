@@ -108,6 +108,7 @@ import org.freeplane.features.nodestyle.mindmapmode.MNodeStyleController;
 import org.freeplane.features.nodestyle.mindmapmode.RevisionPlugin;
 import org.freeplane.features.note.NoteController;
 import org.freeplane.features.note.mindmapmode.MNoteController;
+import org.freeplane.features.preferencesorting.mindmapmode.SortNodesByPreference;
 import org.freeplane.features.presentations.mindmapmode.PresentationController;
 import org.freeplane.features.spellchecker.mindmapmode.SpellCheckerController;
 import org.freeplane.features.styles.AutomaticLayoutController;
@@ -217,6 +218,7 @@ public class MModeControllerFactory {
 		modeController.addAction(new NewParentNode());
 		modeController.addAction(new SaveAll());
 		modeController.addAction(new SortNodes());
+		modeController.addAction(new SortNodesByPreference());
 		modeController.addAction(new SplitNode());
 		new ChangeNodeLevelController(modeController);
 		NodeHistory.install(modeController);
