@@ -10,6 +10,7 @@ import java.util.Map;
 public class PreferenceSorting {
 	public static final int TOTAL_SCORE = 10;
 	private static final int TIE_SCORE = TOTAL_SCORE / 2;
+	private static final double LOWEST_WEIGHT = 0.5;
 
 	private static class Replay {
 		final List<PreferencePair> questions;
@@ -76,29 +77,31 @@ public class PreferenceSorting {
 	}
 
 	public int[] percentages() {
-		final List<PreferencePair> questions = questions();
 		final double[][] laplacian = new double[itemCount][itemCount];
-		final double[] logRatioSums = new double[itemCount];
-		for (final PreferencePair pair : questions) {
+		final double[] scoreDifferenceSums = new double[itemCount];
+		for (final PreferencePair pair : questions()) {
 			final int firstScore = firstScores.get(pair);
-			final double logRatio = Math.log((firstScore + 1.0) / (TOTAL_SCORE - firstScore + 1.0));
+			final double scoreDifference = (2.0 * firstScore - TOTAL_SCORE) / TOTAL_SCORE;
 			laplacian[pair.first][pair.first]++;
 			laplacian[pair.second][pair.second]++;
 			laplacian[pair.first][pair.second]--;
 			laplacian[pair.second][pair.first]--;
-			logRatioSums[pair.first] += logRatio;
-			logRatioSums[pair.second] -= logRatio;
+			scoreDifferenceSums[pair.first] += scoreDifference;
+			scoreDifferenceSums[pair.second] -= scoreDifference;
 		}
-		final double[] logWeights = solveWithFirstFixed(laplacian, logRatioSums);
+		final double[] levels = solveWithFirstFixed(laplacian, scoreDifferenceSums);
+		double lowestLevel = Double.MAX_VALUE;
+		for (final double level : levels)
+			lowestLevel = Math.min(lowestLevel, level);
 		final double[] weights = new double[itemCount];
 		double total = 0;
 		for (int item = 0; item < itemCount; item++) {
-			weights[item] = Math.exp(logWeights[item]);
+			weights[item] = levels[item] - lowestLevel + LOWEST_WEIGHT;
 			total += weights[item];
 		}
 		for (int item = 0; item < itemCount; item++)
 			weights[item] = 100 * weights[item] / total;
-		return roundKeepingSum(weights);
+		return roundKeepingSumAndNonZero(weights);
 	}
 
 	private Replay replay() {
@@ -201,7 +204,7 @@ public class PreferenceSorting {
 		return solution;
 	}
 
-	private static int[] roundKeepingSum(final double[] percentages) {
+	private static int[] roundKeepingSumAndNonZero(final double[] percentages) {
 		final int[] rounded = new int[percentages.length];
 		int sum = 0;
 		for (int index = 0; index < percentages.length; index++) {
@@ -215,6 +218,21 @@ public class PreferenceSorting {
 			percentages[second] - rounded[second], percentages[first] - rounded[first]));
 		for (int index = 0; sum < 100; index++, sum++)
 			rounded[byRemainder.get(index)]++;
+		for (int index = 0; index < rounded.length; index++) {
+			if (rounded[index] == 0) {
+				rounded[index] = 1;
+				rounded[indexOfLargest(rounded)]--;
+			}
+		}
 		return rounded;
+	}
+
+	private static int indexOfLargest(final int[] values) {
+		int largest = 0;
+		for (int index = 1; index < values.length; index++) {
+			if (values[index] > values[largest])
+				largest = index;
+		}
+		return largest;
 	}
 }

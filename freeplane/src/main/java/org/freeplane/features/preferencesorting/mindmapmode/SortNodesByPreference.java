@@ -51,10 +51,13 @@ public class SortNodesByPreference extends AFreeplaneAction {
 			return;
 		final List<Integer> ranking = sorting.ranking();
 		final int[] percentages = sorting.percentages();
+		final boolean addsPreferenceAttribute = PreferenceResultDialog.show(parentComponent,
+			PreferenceOrder.report(names, ranking, percentages));
 		reorder(parent, PreferenceOrder.ranked(children, ranking));
-		for (int item = 0; item < children.size(); item++)
-			setPreferenceAttribute(children.get(item), percentages[item]);
-		PreferenceResultDialog.show(parentComponent, PreferenceOrder.report(names, ranking, percentages));
+		if (addsPreferenceAttribute) {
+			for (int item = 0; item < children.size(); item++)
+				setPreferenceAttribute(children.get(item), percentages[item]);
+		}
 	}
 
 	private static List<NodeModel> comparedChildrenOf(final NodeModel parent, final Filter filter) {

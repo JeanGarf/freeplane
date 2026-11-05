@@ -105,11 +105,11 @@ public class PreferenceSortingTest {
 	}
 
 	@Test
-	public void computesPercentagesFromScoreRatios() {
+	public void computesPercentagesFromScoreDifferences() {
 		final PreferenceSorting sorting = new PreferenceSorting(2);
 		sorting.answer(PreferencePair.of(0, 1), 0, 8);
 
-		assertThat(sorting.percentages()).containsExactly(75, 25);
+		assertThat(sorting.percentages()).containsExactly(69, 31);
 	}
 
 	@Test
@@ -117,7 +117,36 @@ public class PreferenceSortingTest {
 		final PreferenceSorting sorting = new PreferenceSorting(2);
 		prefer(sorting, 0, 1);
 
-		assertThat(sorting.percentages()).containsExactly(92, 8);
+		assertThat(sorting.percentages()).containsExactly(75, 25);
+	}
+
+	@Test
+	public void givesDecreasingNonZeroPercentagesToChainOfFullScores() {
+		final PreferenceSorting sorting = new PreferenceSorting(5);
+		while (!sorting.isComplete()) {
+			final PreferencePair pair = lastQuestion(sorting);
+			sorting.answer(pair, pair.first, 10);
+		}
+
+		assertThat(sorting.ranking()).containsExactly(0, 1, 2, 3, 4);
+		assertThat(sorting.percentages()).containsExactly(37, 26, 19, 13, 5);
+	}
+
+	@Test
+	public void keepsEveryPercentageAboveZeroForLongChains() {
+		final PreferenceSorting sorting = new PreferenceSorting(30);
+		while (!sorting.isComplete()) {
+			final PreferencePair pair = lastQuestion(sorting);
+			sorting.answer(pair, pair.first, 10);
+		}
+
+		final int[] percentages = sorting.percentages();
+		int sum = 0;
+		for (final int percentage : percentages) {
+			assertThat(percentage).isPositive();
+			sum += percentage;
+		}
+		assertThat(sum).isEqualTo(100);
 	}
 
 	@Test

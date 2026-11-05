@@ -89,11 +89,12 @@ class PreferenceSortingDialog {
 			final int shownItem = row;
 			constraints.gridy = row + 1;
 			constraints.gridx = 0;
-			panel.add(nameLabels[row], constraints);
+			panel.add(withFixedSize(nameLabels[row]), constraints);
 			constraints.gridx = 1;
-			panel.add(scoreSpinners[row], constraints);
+			panel.add(withFixedSize(scoreSpinners[row]), constraints);
 			constraints.gridx = 2;
 			final JButton fullScoreButton = new JButton(TextUtils.format("PreferenceSorting.fullScore", TOTAL, TOTAL));
+			withFixedSize(fullScoreButton);
 			fullScoreButton.addActionListener(e -> {
 				scoreSpinners[shownItem].setValue(TOTAL);
 				goToNextQuestion();
@@ -118,6 +119,14 @@ class PreferenceSortingDialog {
 		return panel;
 	}
 
+	private static <T extends Component> T withFixedSize(final T component) {
+		final Dimension size = component.getPreferredSize();
+		component.setMinimumSize(size);
+		component.setPreferredSize(size);
+		component.setMaximumSize(size);
+		return component;
+	}
+
 	static JButton button(final String textKey) {
 		final JButton button = new JButton();
 		LabelAndMnemonicSetter.setLabelAndMnemonic(button, TextUtils.getText(textKey));
@@ -134,7 +143,8 @@ class PreferenceSortingDialog {
 			BorderFactory.createLineBorder(UIManager.getColor("Separator.foreground") == null ? Color.GRAY
 					: UIManager.getColor("Separator.foreground")),
 			BorderFactory.createEmptyBorder(4, 8, 4, 8)));
-		label.setPreferredSize(new Dimension(NAME_WIDTH, label.getPreferredSize().height + 12));
+		label.setText("Xg");
+		label.setPreferredSize(new Dimension(NAME_WIDTH, label.getPreferredSize().height + 4));
 		return label;
 	}
 

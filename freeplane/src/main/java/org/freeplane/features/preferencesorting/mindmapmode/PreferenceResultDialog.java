@@ -9,6 +9,7 @@ import java.awt.datatransfer.StringSelection;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -16,13 +17,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
+import org.freeplane.core.ui.LabelAndMnemonicSetter;
 import org.freeplane.core.ui.components.UITools;
 import org.freeplane.core.util.TextUtils;
 
 class PreferenceResultDialog {
 	private static final int MAXIMUM_VISIBLE_LINES = 20;
 
-	static void show(final Component parent, final String report) {
+	static boolean show(final Component parent, final String report) {
 		final Window owner = parent == null ? null : SwingUtilities.getWindowAncestor(parent);
 		final JDialog dialog = new JDialog(owner, TextUtils.getText("PreferenceSorting.title"),
 			JDialog.DEFAULT_MODALITY_TYPE);
@@ -34,7 +36,12 @@ class PreferenceResultDialog {
 		reportArea.setEditable(false);
 		reportArea.setRows(Math.min(MAXIMUM_VISIBLE_LINES, reportArea.getLineCount()));
 		reportArea.setColumns(30);
-		content.add(new JScrollPane(reportArea), BorderLayout.CENTER);
+		final JCheckBox attributeCheckBox = new JCheckBox();
+		LabelAndMnemonicSetter.setLabelAndMnemonic(attributeCheckBox, TextUtils.getText("PreferenceSorting.addAttribute"));
+		final JPanel reportPanel = new JPanel(new BorderLayout(0, 8));
+		reportPanel.add(new JScrollPane(reportArea), BorderLayout.CENTER);
+		reportPanel.add(attributeCheckBox, BorderLayout.SOUTH);
+		content.add(reportPanel, BorderLayout.CENTER);
 		final JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
 		final JButton copyButton = PreferenceSortingDialog.button("PreferenceSorting.copy");
 		copyButton.addActionListener(e -> Toolkit.getDefaultToolkit().getSystemClipboard()
@@ -50,6 +57,7 @@ class PreferenceResultDialog {
 		dialog.pack();
 		dialog.setLocationRelativeTo(owner);
 		dialog.setVisible(true);
+		return attributeCheckBox.isSelected();
 	}
 
 	private PreferenceResultDialog() {
