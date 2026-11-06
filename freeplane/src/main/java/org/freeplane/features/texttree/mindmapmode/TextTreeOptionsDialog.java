@@ -6,8 +6,13 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Window;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.io.File;
+import java.util.EnumMap;
+import java.util.Map;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
@@ -38,6 +43,7 @@ class TextTreeOptionsDialog {
 	}
 
 	private static final String KEY_PREFIX = "TextTree.";
+	private static final Map<Mode, Point> lastLocations = new EnumMap<>(Mode.class);
 
 	private final Mode mode;
 	private final TextTreeOptions options;
@@ -73,7 +79,21 @@ class TextTreeOptionsDialog {
 		UITools.addEscapeActionToDialog(dialog);
 		dialog.pack();
 		dialog.setResizable(false);
-		dialog.setLocationRelativeTo(owner);
+		placeDialog(owner);
+	}
+
+	private void placeDialog(final Window owner) {
+		final Point lastLocation = lastLocations.get(mode);
+		if (lastLocation == null)
+			dialog.setLocationRelativeTo(owner);
+		else
+			dialog.setLocation(lastLocation);
+		dialog.addComponentListener(new ComponentAdapter() {
+			@Override
+			public void componentMoved(final ComponentEvent e) {
+				lastLocations.put(mode, dialog.getLocation());
+			}
+		});
 	}
 
 	private JPanel content() {
