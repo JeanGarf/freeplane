@@ -102,6 +102,7 @@
 			<Entry name="ExportAction" />
 						<Entry name="ExportBranchesAction" />
 						<Entry name="ExportBranchAction"  accelerator="alt shift A" />
+			<Entry name="ExportTextTreeAction" usedBy = "EDITOR" />
 			<Entry name="import" usedBy = "EDITOR" >
 				<Entry name="ImportBranchAction" />
 				<Entry name="ImportLinkedBranchAction" />
@@ -110,6 +111,7 @@
 				<Entry name="ImportExplorerFavoritesAction" />
 				<Entry name="ImportFolderStructureAction" />
 				<Entry name="ImportXmlFile" />
+				<Entry name="ImportTextTreeAction" />
 				<Entry name="ImportMindmanagerFiles" />
 			</Entry>
 			<Entry builder="separator" />
