@@ -120,6 +120,8 @@ import org.freeplane.features.styles.mindmapmode.styleeditorpanel.StyleEditorPan
 import org.freeplane.features.text.mindmapmode.MTextController;
 import org.freeplane.features.text.mindmapmode.SortNodes;
 import org.freeplane.features.text.mindmapmode.SplitNode;
+import org.freeplane.features.texttree.mindmapmode.ExportTextTreeAction;
+import org.freeplane.features.texttree.mindmapmode.ImportTextTreeAction;
 import org.freeplane.features.time.CreationModificationDatePresenter;
 import org.freeplane.features.ui.FrameController;
 import org.freeplane.features.ui.ToggleToolbarAction;
@@ -213,6 +215,8 @@ public class MModeControllerFactory {
 		new ChangeNodeLevelController(modeController);
 		NodeHistory.install(modeController);
 		modeController.addAction(new ImportXmlFile());
+		modeController.addAction(new ImportTextTreeAction());
+		modeController.addAction(new ExportTextTreeAction());
 		modeController.addAction(new ImportMindmanagerFiles());
 	}
 

@@ -14,6 +14,7 @@ public class TextTreeOptions {
 	public boolean includesRoot = true;
 	public boolean includesFolded = true;
 	public boolean includesFiltered = true;
+	public String importFile = "";
 
 	public String effectiveSeparator() {
 		return separator == null || separator.isEmpty() ? DEFAULT_SEPARATOR : separator;
