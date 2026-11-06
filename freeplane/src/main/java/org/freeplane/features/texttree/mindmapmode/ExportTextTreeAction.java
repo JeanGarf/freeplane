@@ -72,12 +72,7 @@ public class ExportTextTreeAction extends AFreeplaneAction {
 			UITools.errorMessage(TextUtils.format("TextTree.export.failed", file.getPath(), ex.getMessage()));
 			return;
 		}
-		try {
-			controller.getViewController().openDocument(file.toURI().toURL());
-		}
-		catch (final Exception ex) {
-			LogUtils.warn(ex);
-		}
+		TextFileOpener.open(file);
 	}
 
 	private static List<TextTreeNode> extract(final NodeModel start, final TextTreeOptions options,
