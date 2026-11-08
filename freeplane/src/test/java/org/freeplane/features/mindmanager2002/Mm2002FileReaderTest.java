@@ -53,6 +53,21 @@ public class Mm2002FileReaderTest {
 	}
 
 	@Test
+	public void ordersMainTopicsFromTopToBottomAsDisplayedByMindManager() throws Exception {
+		TopicSpec bottom = new TopicSpec("Bottom", 1);
+		bottom.y = -8000;
+		TopicSpec top = new TopicSpec("Top", 2);
+		top.y = -6000;
+		TopicSpec middleLeft = new TopicSpec("Middle left", 3);
+		middleLeft.y = -7000;
+		middleLeft.left = true;
+
+		Mm2002Map map = read(bottom, top, middleLeft);
+
+		assertThat(map.mainTopics).extracting(topic -> topic.text).containsExactly("Top", "Middle left", "Bottom");
+	}
+
+	@Test
 	public void readsAnsiTextWithLineBreaks() throws Exception {
 		Mm2002Map map = read(new TopicSpec("Procédure\r\nsuite", 1));
 

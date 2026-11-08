@@ -1,6 +1,7 @@
 package org.freeplane.features.mindmanager2002;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,10 @@ class Mm2002Map {
 
 	Mm2002Map(String title) {
 		this.title = title;
+	}
+
+	void sortMainTopicsFromTopToBottom() {
+		mainTopics.sort(Comparator.comparingInt((Topic topic) -> topic.y).reversed());
 	}
 
 	Map<Integer, List<String>> fillColors() {

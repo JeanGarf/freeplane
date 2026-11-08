@@ -78,6 +78,7 @@ class Mm2002FileReader {
 		catch (IOException e) {
 			fileReader.problem(ImportProblem.Kind.REST_IGNORED, null, e, null, EnumSet.noneOf(ReadStage.class));
 		}
+		map.sortMainTopicsFromTopToBottom();
 		return map;
 	}
 
@@ -168,7 +169,9 @@ class Mm2002FileReader {
 		stage = ReadStage.TEXT;
 		reader.expect(TOPIC_MARKER);
 		topic.text = reader.string();
-		reader.skip(8 + 4);
+		topic.x = reader.i32();
+		topic.y = reader.i32();
+		reader.skip(4);
 		int flags = reader.i32();
 		reader.skip(13);
 		reader.string();

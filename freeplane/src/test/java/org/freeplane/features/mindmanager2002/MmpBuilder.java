@@ -12,6 +12,7 @@ class MmpBuilder {
 	static class TopicSpec {
 		final String text;
 		long id;
+		int y;
 		boolean left;
 		int style;
 		int lineColor = 0xffcc00;
@@ -114,7 +115,8 @@ class MmpBuilder {
 			topicClassWritten = true;
 		u8(0x33);
 		string(topic.text);
-		zeros(8);
+		u32(0);
+		u32(topic.y);
 		color(0xffffff);
 		int flags = 1 | (topic.priority != 0 ? 2 : 0) | (topic.note != null ? 4 : 0);
 		u32(flags);

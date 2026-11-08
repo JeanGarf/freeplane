@@ -9,6 +9,8 @@ class Topic {
 	long id;
 	String text = "";
 	boolean left;
+	int x;
+	int y;
 	boolean bold;
 	boolean italic;
 	boolean filled;
