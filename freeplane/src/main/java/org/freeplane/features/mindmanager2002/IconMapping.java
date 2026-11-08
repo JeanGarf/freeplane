@@ -42,7 +42,7 @@ class IconMapping {
 			{ "place", "gohome" },
 			{ "look_at_parent_branch", "back" },
 			{ "both_important", "emoji-2195" },
-			{ "task_completed", "button_ok" },
+			{ "task_completed", "checked" },
 			{ "task_not_completed", "unchecked" },
 	};
 	static final int MAX_PRIORITY = 9;

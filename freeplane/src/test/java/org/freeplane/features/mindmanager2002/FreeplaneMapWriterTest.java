@@ -121,6 +121,30 @@ public class FreeplaneMapWriterTest {
 	}
 
 	@Test
+	public void writesCloud() throws Exception {
+		Topic topic = topic("clouded", 1);
+		topic.cloudColor = 0xfff5cd;
+
+		assertThat(write(topic)).contains("<cloud COLOR=\"#fff5cd\"/>");
+	}
+
+	@Test
+	public void reportsUnreadableSymbolWithItsBranch() throws Exception {
+		Topic parent = topic("parent", 1);
+		Topic child = topic("child", 2);
+		child.symbols.add(new byte[] { 0, 0, 0, 0 });
+		parent.children.add(child);
+		Mm2002Map map = new Mm2002Map("Root");
+		map.mainTopics.add(parent);
+
+		new FreeplaneMapWriter((name, image) -> name, table, style -> StyleAppearance.NONE).write(map);
+
+		assertThat(map.problems).hasSize(1);
+		assertThat(map.problems.get(0).kind).isEqualTo(ImportProblem.Kind.IMAGE_IGNORED);
+		assertThat(map.problems.get(0).branch).isEqualTo("parent > child");
+	}
+
+	@Test
 	public void convertsHyperlinks() {
 		assertThat(FreeplaneMapWriter.link("https://fr.wikipedia.org/wiki/Lune"))
 				.isEqualTo("https://fr.wikipedia.org/wiki/Lune");

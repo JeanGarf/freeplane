@@ -186,6 +186,63 @@ public class Mm2002FileReaderTest {
 	}
 
 	@Test
+	public void readsCloudColor() throws Exception {
+		TopicSpec topic = new TopicSpec("Clouded", 1);
+		topic.cloudColor = 0xfff5cd;
+		TopicSpec next = new TopicSpec("Next", 2);
+
+		Mm2002Map map = read(topic, next);
+
+		assertThat(map.mainTopics.get(0).cloudColor).isEqualTo(0xfff5cd);
+		assertThat(map.mainTopics.get(1).cloudColor).isEqualTo(Topic.NO_COLOR);
+		assertThat(map.problems).isEmpty();
+	}
+
+	@Test
+	public void ignoresHighBitsOfPriority() throws Exception {
+		TopicSpec withPriority = new TopicSpec("Priority", 1);
+		withPriority.priority = 3;
+		withPriority.priorityHighBits = 0x640000;
+		TopicSpec withoutPriority = new TopicSpec("No priority", 2);
+		withoutPriority.priorityHighBits = 0x640000;
+
+		Mm2002Map map = read(withPriority, withoutPriority);
+
+		assertThat(map.mainTopics.get(0).priority).isEqualTo(3);
+		assertThat(map.mainTopics.get(1).priority).isZero();
+	}
+
+	@Test
+	public void rebuildsUnreadableTopicAndKeepsItsChildrenAndFollowingTopics() throws Exception {
+		TopicSpec broken = new TopicSpec("Broken", 1);
+		broken.unknownObject = true;
+		broken.child(new TopicSpec("Child 1", 2)).child(new TopicSpec("Child 2", 3));
+		TopicSpec next = new TopicSpec("Next", 4).child(new TopicSpec("Next child", 5));
+
+		Mm2002Map map = read(new TopicSpec("Parent", 6).child(broken), next);
+
+		Topic rebuilt = map.mainTopics.get(0).children.get(0);
+		assertThat(rebuilt.text).isEqualTo("Broken");
+		assertThat(rebuilt.children).extracting(topic -> topic.text).containsExactly("Child 1", "Child 2");
+		assertThat(map.mainTopics.get(1).children).extracting(topic -> topic.text).containsExactly("Next child");
+		assertThat(map.problems).hasSize(1);
+		assertThat(map.problems.get(0).kind).isEqualTo(ImportProblem.Kind.PARTIAL_TOPIC);
+		assertThat(map.problems.get(0).branch).isEqualTo("Parent > Broken");
+	}
+
+	@Test
+	public void keepsReadTopicsWhenTheRestCannotBeRead() throws Exception {
+		byte[] data = MmpBuilder.build("Title", ICON_NAMES, NO_LEGEND,
+				Arrays.asList(new TopicSpec("First", 1), new TopicSpec("Second", 2)));
+		byte[] truncated = Arrays.copyOf(data, new String(data, Charset.forName("windows-1252")).indexOf("Second"));
+
+		Mm2002Map map = Mm2002FileReader.read(truncated);
+
+		assertThat(map.mainTopics).extracting(topic -> topic.text).containsExactly("First");
+		assertThat(map.problems).extracting(problem -> problem.kind).containsExactly(ImportProblem.Kind.REST_IGNORED);
+	}
+
+	@Test
 	public void rejectsOtherFiles() {
 		assertThatThrownBy(() -> Mm2002FileReader.read("<xml/>".getBytes())).isInstanceOf(IOException.class);
 	}

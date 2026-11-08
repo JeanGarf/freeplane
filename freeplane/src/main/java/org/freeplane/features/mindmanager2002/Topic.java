@@ -14,6 +14,7 @@ class Topic {
 	boolean filled;
 	int lineColor = NO_COLOR;
 	int fillColor = NO_COLOR;
+	int cloudColor = NO_COLOR;
 	String fontName;
 	int fontSize;
 	int priority;

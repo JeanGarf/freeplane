@@ -1,11 +1,19 @@
 package org.freeplane.features.mindmanager2002;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.StringReader;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
 import org.freeplane.api.swing.JFileChooser;
 import org.freeplane.core.resources.ResourceController;
@@ -22,6 +30,7 @@ import org.freeplane.features.url.UrlManager;
 public class ImportMindmanager2002Files extends AFreeplaneAction {
 	private static final long serialVersionUID = 1L;
 	private static final String FILE_EXTENSION = "mmp";
+	private static final int MAX_VISIBLE_PROBLEMS = 15;
 
 	public ImportMindmanager2002Files() {
 		super("ImportMindmanager2002Files");
@@ -64,11 +73,33 @@ public class ImportMindmanager2002Files extends AFreeplaneAction {
 			table.save(tableFile);
 			final String xml = MindManager2002Converter.toFreeplaneXml(map, outputFile, table, styles::appearance);
 			XmlImporter.newMap(new StringReader(xml), outputFile);
+			if (!map.problems.isEmpty())
+				showProblems(map.problems);
 		}
 		catch (final Exception e) {
 			LogUtils.warn(e);
 			UITools.errorMessage(TextUtils.format("mindmanager2002.import_error", e.getMessage()));
 		}
+	}
+
+	private void showProblems(List<ImportProblem> problems) {
+		final StringBuilder lines = new StringBuilder();
+		for (final ImportProblem problem : problems) {
+			LogUtils.warn("MindManager 2002 import: " + problem);
+			lines.append("\u2022 ").append(problem.branch).append(" : ")
+					.append(TextUtils.getText("mindmanager2002.problem." + problem.kind.name().toLowerCase(Locale.ROOT)))
+					.append('\n');
+		}
+		final JTextArea text = new JTextArea(lines.toString().trim(), Math.min(problems.size(), MAX_VISIBLE_PROBLEMS), 60);
+		text.setEditable(false);
+		text.setLineWrap(true);
+		text.setWrapStyleWord(true);
+		final JPanel message = new JPanel(new BorderLayout(0, 8));
+		message.add(new JLabel(TextUtils.getText("mindmanager2002.problems_message")), BorderLayout.NORTH);
+		message.add(new JScrollPane(text), BorderLayout.CENTER);
+		final Component parent = Controller.getCurrentController().getViewController().getCurrentRootComponent();
+		JOptionPane.showMessageDialog(parent, message, TextUtils.getText("mindmanager2002.problems_title"),
+				JOptionPane.WARNING_MESSAGE);
 	}
 
 	private boolean chooseUnknownColorStyles(Mm2002Map map, ConversionTable table, TemplateStyles styles,

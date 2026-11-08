@@ -4,7 +4,10 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.List;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +29,8 @@ class FreeplaneMapWriter {
 	private final StringBuilder xml = new StringBuilder();
 	private final Set<Long> topicIds = new HashSet<>();
 	private final Map<Long, Integer> imageCounters = new HashMap<>();
+	private final Deque<String> branch = new ArrayDeque<>();
+	private List<ImportProblem> problems;
 
 	FreeplaneMapWriter(ImageStore imageStore, ConversionTable table,
 			Function<String, StyleAppearance> styleAppearance) {
@@ -35,6 +40,7 @@ class FreeplaneMapWriter {
 	}
 
 	String write(Mm2002Map map) throws IOException {
+		problems = map.problems;
 		collectIds(map.mainTopics);
 		xml.append("<map version=\"").append(FreeplaneVersion.XML_VERSION).append("\">\n");
 		xml.append("<node TEXT=\"").append(attribute(map.title)).append("\" ID=\"").append(ROOT_ID).append("\" FOLDED=\"false\">\n");
@@ -68,13 +74,17 @@ class FreeplaneMapWriter {
 		xml.append(">\n");
 		if (topic.lineColor != Topic.NO_COLOR && !appearance.edgeColor)
 			xml.append("<edge COLOR=\"").append(color(topic.lineColor)).append("\"/>\n");
+		if (topic.cloudColor != Topic.NO_COLOR)
+			xml.append("<cloud COLOR=\"").append(color(topic.cloudColor)).append("\"/>\n");
 		writeFont(topic, appearance);
 		writeIcons(topic);
 		writeSymbols(topic);
 		writeRelationships(topic);
 		writeNote(topic);
+		branch.addLast(topic.text.replaceAll("\\s+", " ").trim());
 		for (Topic child : topic.children)
 			writeTopic(child, false);
+		branch.removeLast();
 		xml.append("</node>\n");
 	}
 
@@ -106,6 +116,13 @@ class FreeplaneMapWriter {
 			xml.append("<icon BUILTIN=\"").append(icon).append("\"/>\n");
 	}
 
+	private String branchOf(Topic topic) {
+		StringBuilder path = new StringBuilder();
+		for (String ancestor : branch)
+			path.append(ancestor).append(" > ");
+		return path.append(topic.text.replaceAll("\\s+", " ").trim()).toString();
+	}
+
 	private void writeSymbols(Topic topic) throws IOException {
 		for (byte[] symbol : topic.symbols) {
 			BufferedImage image;
@@ -114,6 +131,7 @@ class FreeplaneMapWriter {
 			}
 			catch (IOException e) {
 				LogUtils.warn("MindManager 2002 image skipped: " + e.getMessage());
+				problems.add(new ImportProblem(ImportProblem.Kind.IMAGE_IGNORED, branchOf(topic), e.getMessage()));
 				continue;
 			}
 			String uri = storeImage(topic, image);

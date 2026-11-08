@@ -25,6 +25,9 @@ class MmpBuilder {
 		byte[] note;
 		boolean compressNote;
 		byte[] symbol;
+		int cloudColor = -1;
+		int priorityHighBits;
+		boolean unknownObject;
 		final List<byte[]> relationships = new ArrayList<>();
 		final List<TopicSpec> children = new ArrayList<>();
 
@@ -113,10 +116,14 @@ class MmpBuilder {
 		u32(flags);
 		zeros(13);
 		string(topic.note != null ? "&" : "");
-		u32(topic.priority != 0 ? topic.priority : 1);
-		u32(topic.symbol != null ? 1 : 0);
+		u32((topic.priority != 0 ? topic.priority : 1) | topic.priorityHighBits);
+		u32(topic.symbol != null || topic.unknownObject ? 1 : 0);
 		if (topic.symbol != null)
 			symbol(topic.symbol);
+		else if (topic.unknownObject) {
+			classTag("WeirdC", false, 0);
+			bytes(0x32, 0x07, 0x00, 0x01, 0x02, 0x03);
+		}
 		u8(0x32);
 		u16(topic.style);
 		color(topic.lineColor);
@@ -143,7 +150,16 @@ class MmpBuilder {
 			out.write(relationship, 0, relationship.length);
 		u32(topic.iconMask != 0 ? 1 : 0);
 		u32(topic.iconMask);
-		zeros(31);
+		zeros(29);
+		if (topic.cloudColor >= 0) {
+			classTag("BoundaryC", false, 0);
+			bytes(0x32, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x32, 0x01);
+			u32(4);
+			color(topic.cloudColor);
+			u8(0xff);
+		}
+		else
+			u16(0);
 		link("");
 		zeros(22);
 		u32(topic.secondIconMask);

@@ -3,7 +3,10 @@ package org.freeplane.features.mindmanager2002;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -12,6 +15,9 @@ class Mm2002FileReader {
 	static final String MAIN_TOPIC_CLASS = "TopicC";
 	static final String TOPIC_CLASS = "ItemC";
 	static final String SYMBOL_CLASS = "FreeSymbolC";
+	static final String BOUNDARY_CLASS = "BoundaryC";
+	private static final int NULL_OBJECT = 0;
+	private static final int PRIORITY_MASK = 0xff;
 	private static final int NEW_CLASS_TAG = 0xffff;
 	private static final int CLASS_TAG = 0x8000;
 	private static final int VERSION_MARKER = 0x32;
@@ -32,10 +38,13 @@ class Mm2002FileReader {
 
 	private final ArchiveReader reader;
 	private final Map<Integer, String> classes = new HashMap<>();
+	private final Deque<String> branch = new ArrayDeque<>();
+	private final List<ImportProblem> problems;
 	private int nextIndex = 1;
 
-	private Mm2002FileReader(ArchiveReader reader) {
+	private Mm2002FileReader(ArchiveReader reader, List<ImportProblem> problems) {
 		this.reader = reader;
+		this.problems = problems;
 	}
 
 	static Mm2002Map read(byte[] data) throws IOException {
@@ -50,9 +59,14 @@ class Mm2002FileReader {
 		ArchiveReader reader = new ArchiveReader(data, mainTopicTag - MAIN_TOPIC_COUNT_OFFSET);
 		reader.expect(0xff);
 		int count = reader.u16();
-		Mm2002FileReader fileReader = new Mm2002FileReader(reader);
-		for (int i = 0; i < count; i++)
-			map.mainTopics.add(fileReader.topic());
+		Mm2002FileReader fileReader = new Mm2002FileReader(reader, map.problems);
+		try {
+			for (int i = 0; i < count; i++)
+				map.mainTopics.add(fileReader.topic());
+		}
+		catch (IOException e) {
+			fileReader.problem(ImportProblem.Kind.REST_IGNORED, null, e);
+		}
 		return map;
 	}
 
@@ -65,17 +79,57 @@ class Mm2002FileReader {
 	}
 
 	private Topic topic() throws IOException {
-		String className = objectClass();
+		String className = topicClass();
+		Topic topic = new Topic();
+		int contentStart = reader.position();
+		try {
+			readContent(topic);
+		}
+		catch (IOException e) {
+			int contentEnd = reader.indexOf(TOPIC_END, contentStart);
+			if (contentEnd < 0)
+				throw e;
+			problem(ImportProblem.Kind.PARTIAL_TOPIC, topic, e);
+			reader.seek(contentEnd + TOPIC_END.length);
+		}
+		reader.expect(0xff);
+		int childCount = reader.u16();
+		branch.addLast(topic.text);
+		try {
+			for (int i = 0; i < childCount; i++)
+				topic.children.add(topic());
+		}
+		finally {
+			branch.removeLast();
+		}
+		reader.skip(TOPIC_TRAILER_SIZE);
+		if (MAIN_TOPIC_CLASS.equals(className)) {
+			byte[] trailer = reader.bytes(MAIN_TOPIC_TRAILER_SIZE);
+			topic.left = trailer[MAIN_TOPIC_SIDE_OFFSET] == 1;
+		}
+		return topic;
+	}
+
+	private String topicClass() throws IOException {
+		int tag = reader.u16();
+		if (isUnknownClassReference(tag) && reader.peek() == TOPIC_MARKER) {
+			nextIndex++;
+			return TOPIC_CLASS;
+		}
+		String className = objectClass(tag);
 		if (!MAIN_TOPIC_CLASS.equals(className) && !TOPIC_CLASS.equals(className))
 			throw new IOException("Unsupported MindManager 2002 object " + className + " at offset " + reader.position());
-		Topic topic = new Topic();
+		return className;
+	}
+
+	private void readContent(Topic topic) throws IOException {
 		reader.expect(TOPIC_MARKER);
 		topic.text = reader.string();
 		reader.skip(8 + 4);
 		int flags = reader.i32();
 		reader.skip(13);
 		reader.string();
-		int priority = reader.i32();
+		int priority = reader.i32() & PRIORITY_MASK;
 		if ((flags & FLAG_PRIORITY) != 0)
 			topic.priority = priority;
 		int objectCount = reader.i32();
@@ -92,23 +146,38 @@ class Mm2002FileReader {
 			topic.relationships.add(relationship());
 		reader.skip(4);
 		addIcons(topic, reader.i32(), 0);
-		reader.skip(31);
+		reader.skip(29);
+		int boundaryTag = reader.u16();
+		if (boundaryTag != NULL_OBJECT)
+			boundary(topic, boundaryTag);
 		link();
 		reader.skip(22);
 		addIcons(topic, reader.i32(), ICONS_PER_MASK);
 		topic.hyperlink = link();
 		reader.skip(4);
 		reader.expect(toInts(TOPIC_END));
+	}
+
+	private void boundary(Topic topic, int tag) throws IOException {
+		String className = objectClass(tag);
+		if (!BOUNDARY_CLASS.equals(className))
+			throw new IOException("Unsupported MindManager 2002 object " + className + " at offset " + reader.position());
+		reader.skip(3 + 4);
+		reader.expect(VERSION_MARKER, 0x01);
+		int size = reader.length();
+		int end = reader.position() + size;
+		if (size >= 4)
+			topic.cloudColor = reader.color();
+		reader.seek(end);
 		reader.expect(0xff);
-		int childCount = reader.u16();
-		for (int i = 0; i < childCount; i++)
-			topic.children.add(topic());
-		reader.skip(TOPIC_TRAILER_SIZE);
-		if (MAIN_TOPIC_CLASS.equals(className)) {
-			byte[] trailer = reader.bytes(MAIN_TOPIC_TRAILER_SIZE);
-			topic.left = trailer[MAIN_TOPIC_SIDE_OFFSET] == 1;
-		}
-		return topic;
+	}
+
+	private void problem(ImportProblem.Kind kind, Topic topic, IOException cause) {
+		StringBuilder path = new StringBuilder();
+		for (String ancestor : branch)
+			path.append(ancestor.replaceAll("\\s+", " ").trim()).append(" > ");
+		path.append(topic == null || topic.text.isEmpty() ? "?" : topic.text.replaceAll("\\s+", " ").trim());
+		problems.add(new ImportProblem(kind, path.toString(), cause.getMessage()));
 	}
 
 	private void readStyle(Topic topic) throws IOException {
@@ -224,7 +293,14 @@ class Mm2002FileReader {
 	}
 
 	private String objectClass() throws IOException {
-		int tag = reader.u16();
+		return objectClass(reader.u16());
+	}
+
+	private boolean isUnknownClassReference(int tag) {
+		return tag != NEW_CLASS_TAG && (tag & CLASS_TAG) != 0 && !classes.containsKey(tag & ~CLASS_TAG);
+	}
+
+	private String objectClass(int tag) throws IOException {
 		String className;
 		if (tag == NEW_CLASS_TAG) {
 			reader.skip(2);

@@ -34,6 +34,11 @@ class ArchiveReader {
 		return data[position++] & 0xff;
 	}
 
+	int peek() throws IOException {
+		ensureAvailable(1);
+		return data[position] & 0xff;
+	}
+
 	int u16() throws IOException {
 		ensureAvailable(2);
 		int value = (data[position] & 0xff) | (data[position + 1] & 0xff) << 8;

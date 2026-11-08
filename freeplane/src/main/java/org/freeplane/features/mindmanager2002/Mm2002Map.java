@@ -9,6 +9,7 @@ class Mm2002Map {
 	final String title;
 	final List<Topic> mainTopics = new ArrayList<>();
 	final Map<Integer, String> legend = new LinkedHashMap<>();
+	final List<ImportProblem> problems = new ArrayList<>();
 
 	Mm2002Map(String title) {
 		this.title = title;
