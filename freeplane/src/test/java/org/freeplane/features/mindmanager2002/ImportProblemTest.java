@@ -3,6 +3,7 @@ package org.freeplane.features.mindmanager2002;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.text.MessageFormat;
+import java.util.EnumSet;
 
 import org.junit.Test;
 
@@ -20,11 +21,11 @@ public class ImportProblemTest {
 	};
 
 	@Test
-	public void describesStoppedStageAndLostElementsWithoutInternalProperties() {
+	public void describesStoppedStageAndLostElements() {
 		ImportProblem problem = new ImportProblem(ImportProblem.Kind.PARTIAL_TOPIC, "a > b", "detail",
-				ReadStage.CLOUD);
+				ReadStage.CLOUD, EnumSet.of(ReadStage.CLOUD, ReadStage.IMAGE));
 
-		assertThat(problem.describe(KEYS)).isEqualTo("partial_topic at cloud, lost cloud, image, hyperlink");
+		assertThat(problem.describe(KEYS)).isEqualTo("partial_topic at cloud, lost cloud, image");
 	}
 
 	@Test
@@ -32,12 +33,5 @@ public class ImportProblemTest {
 		ImportProblem problem = new ImportProblem(ImportProblem.Kind.IMAGE_IGNORED, "a", "detail");
 
 		assertThat(problem.describe(KEYS)).isEqualTo("image_ignored");
-	}
-
-	@Test
-	public void stoppingAtSymbolLosesEverythingButText() {
-		assertThat(ReadStage.ATTACHED_OBJECTS.lostElements()).containsExactly(ReadStage.ATTACHED_OBJECTS,
-				ReadStage.STYLE, ReadStage.NOTE, ReadStage.RELATIONSHIPS, ReadStage.ICONS, ReadStage.CLOUD,
-				ReadStage.IMAGE, ReadStage.HYPERLINK);
 	}
 }

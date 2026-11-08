@@ -28,6 +28,7 @@ class MmpBuilder {
 		int cloudColor = -1;
 		int priorityHighBits;
 		boolean unknownObject;
+		boolean unknownImage;
 		String[] properties = {};
 		byte[] image;
 		final List<byte[]> relationships = new ArrayList<>();
@@ -172,7 +173,11 @@ class MmpBuilder {
 		}
 		bytes(0x00, 0x32, 0xff);
 		zeros(16);
-		if (topic.image != null) {
+		if (topic.unknownImage) {
+			classTag("WeirdImageC", false, 0);
+			bytes(0x32, 0x09, 0x08, 0x07);
+		}
+		else if (topic.image != null) {
 			classTag("EnhMetafileC", false, 0);
 			u8(0x32);
 			u32(topic.image.length);

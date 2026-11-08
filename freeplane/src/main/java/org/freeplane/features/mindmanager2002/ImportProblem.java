@@ -1,6 +1,8 @@
 package org.freeplane.features.mindmanager2002;
 
+import java.util.Collections;
 import java.util.Locale;
+import java.util.Set;
 
 class ImportProblem {
 	interface Texts {
@@ -19,29 +21,31 @@ class ImportProblem {
 	final String branch;
 	final String detail;
 	final ReadStage stage;
+	final Set<ReadStage> lost;
 
 	ImportProblem(Kind kind, String branch, String detail) {
-		this(kind, branch, detail, null);
+		this(kind, branch, detail, null, Collections.<ReadStage>emptySet());
 	}
 
-	ImportProblem(Kind kind, String branch, String detail, ReadStage stage) {
+	ImportProblem(Kind kind, String branch, String detail, ReadStage stage, Set<ReadStage> lost) {
 		this.kind = kind;
 		this.branch = branch;
 		this.detail = detail;
 		this.stage = stage;
+		this.lost = lost;
 	}
 
 	String describe(Texts texts) {
 		String kindKey = KEY_PREFIX + "problem." + kind.name().toLowerCase(Locale.ROOT);
 		if (stage == null)
 			return texts.text(kindKey);
-		StringBuilder lost = new StringBuilder();
-		for (ReadStage lostStage : stage.lostElements()) {
-			if (lost.length() > 0)
-				lost.append(", ");
-			lost.append(stageName(texts, lostStage));
+		StringBuilder lostNames = new StringBuilder();
+		for (ReadStage lostStage : lost) {
+			if (lostNames.length() > 0)
+				lostNames.append(", ");
+			lostNames.append(stageName(texts, lostStage));
 		}
-		return texts.format(kindKey, stageName(texts, stage), lost.toString());
+		return texts.format(kindKey, stageName(texts, stage), lostNames.toString());
 	}
 
 	private static String stageName(Texts texts, ReadStage stage) {
@@ -50,6 +54,6 @@ class ImportProblem {
 
 	@Override
 	public String toString() {
-		return kind + (stage != null ? " at " + stage : "") + " " + branch + ": " + detail;
+		return kind + (stage != null ? " at " + stage + " lost " + lost : "") + " " + branch + ": " + detail;
 	}
 }

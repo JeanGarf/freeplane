@@ -5,9 +5,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -18,6 +20,9 @@ class Mm2002FileReader {
 	static final String BOUNDARY_CLASS = "BoundaryC";
 	static final String METAFILE_CLASS = "EnhMetafileC";
 	private static final int MAX_PROPERTIES = 10000;
+	private static final int MAX_RELATIONSHIPS = 1000;
+	private static final int NOTE_HEADER_OFFSET = 9;
+	private static final int MAX_RECOVERED_LINK_LENGTH = 4096;
 	private static final int NULL_OBJECT = 0;
 	private static final int PRIORITY_MASK = 0xff;
 	private static final int NEW_CLASS_TAG = 0xffff;
@@ -68,7 +73,7 @@ class Mm2002FileReader {
 				map.mainTopics.add(fileReader.topic());
 		}
 		catch (IOException e) {
-			fileReader.problem(ImportProblem.Kind.REST_IGNORED, null, e, null);
+			fileReader.problem(ImportProblem.Kind.REST_IGNORED, null, e, null, EnumSet.noneOf(ReadStage.class));
 		}
 		return map;
 	}
@@ -85,16 +90,11 @@ class Mm2002FileReader {
 		String className = topicClass();
 		Topic topic = new Topic();
 		int contentStart = reader.position();
-		try {
-			readContent(topic);
-		}
-		catch (IOException e) {
-			int contentEnd = reader.indexOf(TOPIC_END, contentStart);
-			if (contentEnd < 0)
-				throw e;
-			problem(ImportProblem.Kind.PARTIAL_TOPIC, topic, e, stage);
-			reader.seek(contentEnd + TOPIC_END.length);
-		}
+		int contentEnd = reader.indexOf(TOPIC_END, contentStart);
+		if (contentEnd < 0)
+			readForward(topic, EnumSet.noneOf(ReadStage.class));
+		else
+			readContent(topic, contentStart, contentEnd);
 		reader.expect(0xff);
 		int childCount = reader.u16();
 		branch.addLast(topic.text);
@@ -125,7 +125,43 @@ class Mm2002FileReader {
 		return className;
 	}
 
-	private void readContent(Topic topic) throws IOException {
+	private void readContent(Topic topic, int contentStart, int contentEnd) throws IOException {
+		EnumSet<ReadStage> read = EnumSet.noneOf(ReadStage.class);
+		IOException failure = null;
+		ReadStage failedStage = null;
+		try {
+			try {
+				readUpToNote(topic, read);
+			}
+			catch (IOException e) {
+				failure = e;
+				failedStage = stage;
+				if (!seekToNote(topic, contentStart, contentEnd))
+					throw e;
+			}
+			readFromNote(topic, read);
+		}
+		catch (IOException e) {
+			if (failure == null) {
+				failure = e;
+				failedStage = stage;
+			}
+			recoverFromEnd(topic, read, contentEnd);
+		}
+		if (failure != null) {
+			EnumSet<ReadStage> lost = EnumSet.complementOf(read);
+			lost.remove(ReadStage.PROPERTIES);
+			problem(ImportProblem.Kind.PARTIAL_TOPIC, topic, failure, failedStage, lost);
+		}
+		reader.seek(contentEnd + TOPIC_END.length);
+	}
+
+	private void readForward(Topic topic, EnumSet<ReadStage> read) throws IOException {
+		readUpToNote(topic, read);
+		readFromNote(topic, read);
+	}
+
+	private void readUpToNote(Topic topic, EnumSet<ReadStage> read) throws IOException {
 		stage = ReadStage.TEXT;
 		reader.expect(TOPIC_MARKER);
 		topic.text = reader.string();
@@ -136,44 +172,108 @@ class Mm2002FileReader {
 		int priority = reader.i32() & PRIORITY_MASK;
 		if ((flags & FLAG_PRIORITY) != 0)
 			topic.priority = priority;
+		read.add(ReadStage.TEXT);
 		stage = ReadStage.ATTACHED_OBJECTS;
 		int objectCount = reader.i32();
 		for (int i = 0; i < objectCount; i++)
 			attachedObject(topic);
+		read.add(ReadStage.ATTACHED_OBJECTS);
 		stage = ReadStage.STYLE;
 		readStyle(topic);
 		reader.expect(VERSION_MARKER, 0xff);
 		reader.skip(3);
 		topic.id = reader.u32();
+		read.add(ReadStage.STYLE);
+	}
+
+	private void readFromNote(Topic topic, EnumSet<ReadStage> read) throws IOException {
 		stage = ReadStage.NOTE;
 		topic.note = Note.decode(blob());
 		reader.expect(0x00, VERSION_MARKER, 0xff);
+		read.add(ReadStage.NOTE);
 		stage = ReadStage.RELATIONSHIPS;
 		int relationshipCount = reader.i32();
 		for (int i = 0; i < relationshipCount; i++)
 			topic.relationships.add(relationship());
+		read.add(ReadStage.RELATIONSHIPS);
 		stage = ReadStage.ICONS;
 		reader.skip(4);
 		addIcons(topic, reader.i32(), 0);
+		read.add(ReadStage.ICONS);
 		reader.skip(29);
 		stage = ReadStage.CLOUD;
 		int boundaryTag = reader.u16();
 		if (boundaryTag != NULL_OBJECT)
 			boundary(topic, boundaryTag);
+		read.add(ReadStage.CLOUD);
 		stage = ReadStage.PROPERTIES;
 		properties();
+		read.add(ReadStage.PROPERTIES);
 		stage = ReadStage.IMAGE;
 		reader.skip(16);
 		int imageTag = reader.u16();
 		if (imageTag != NULL_OBJECT)
 			topicImage(topic, imageTag);
 		reader.skip(4);
-		stage = ReadStage.ICONS;
-		addIcons(topic, reader.i32(), ICONS_PER_MASK);
+		read.add(ReadStage.IMAGE);
 		stage = ReadStage.HYPERLINK;
+		addIcons(topic, reader.i32(), ICONS_PER_MASK);
 		topic.hyperlink = link();
 		reader.skip(4);
 		reader.expect(toInts(TOPIC_END));
+		read.add(ReadStage.HYPERLINK);
+	}
+
+	private boolean seekToNote(Topic topic, int from, int to) {
+		for (int position = from; position + NOTE_HEADER_OFFSET < to; position++) {
+			if (reader.byteAt(position) != VERSION_MARKER || reader.byteAt(position + 1) != 0xff
+					|| reader.byteAt(position + NOTE_HEADER_OFFSET) != VERSION_MARKER)
+				continue;
+			try {
+				reader.seek(position + 5);
+				long id = reader.u32();
+				int noteStart = reader.position();
+				blob();
+				reader.expect(0x00, VERSION_MARKER, 0xff);
+				int relationshipCount = reader.i32();
+				if (relationshipCount < 0 || relationshipCount > MAX_RELATIONSHIPS)
+					continue;
+				topic.id = id;
+				reader.seek(noteStart);
+				return true;
+			}
+			catch (IOException e) {
+				continue;
+			}
+		}
+		return false;
+	}
+
+	private void recoverFromEnd(Topic topic, EnumSet<ReadStage> read, int contentEnd) {
+		if (read.contains(ReadStage.HYPERLINK))
+			return;
+		int linkEnd = contentEnd - 4;
+		if (linkEnd < 2 || reader.byteAt(linkEnd - 2) != VERSION_MARKER || reader.byteAt(linkEnd - 1) != 0xff)
+			return;
+		int textEnd = linkEnd - 2 - 4;
+		for (int start = textEnd - 2; start >= 4 && start >= textEnd - MAX_RECOVERED_LINK_LENGTH; start--) {
+			if (reader.byteAt(start) != VERSION_MARKER)
+				continue;
+			try {
+				reader.seek(start + 1);
+				String hyperlink = reader.string();
+				if (reader.position() != textEnd || hyperlink.chars().anyMatch(character -> character < ' '))
+					continue;
+				topic.hyperlink = hyperlink;
+				reader.seek(start - 4);
+				addIcons(topic, reader.i32(), ICONS_PER_MASK);
+				read.add(ReadStage.HYPERLINK);
+				return;
+			}
+			catch (IOException e) {
+				continue;
+			}
+		}
 	}
 
 	private void properties() throws IOException {
@@ -214,12 +314,13 @@ class Mm2002FileReader {
 		reader.expect(0xff);
 	}
 
-	private void problem(ImportProblem.Kind kind, Topic topic, IOException cause, ReadStage failedStage) {
+	private void problem(ImportProblem.Kind kind, Topic topic, IOException cause, ReadStage failedStage,
+			Set<ReadStage> lost) {
 		StringBuilder path = new StringBuilder();
 		for (String ancestor : branch)
 			path.append(ancestor.replaceAll("\\s+", " ").trim()).append(" > ");
 		path.append(topic == null || topic.text.isEmpty() ? "?" : topic.text.replaceAll("\\s+", " ").trim());
-		problems.add(new ImportProblem(kind, path.toString(), cause.getMessage(), failedStage));
+		problems.add(new ImportProblem(kind, path.toString(), cause.getMessage(), failedStage, lost));
 	}
 
 	private void readStyle(Topic topic) throws IOException {
@@ -371,7 +472,7 @@ class Mm2002FileReader {
 
 	private static void addIcons(Topic topic, int mask, int firstIndex) {
 		for (int bit = 0; bit < ICONS_PER_MASK; bit++) {
-			if ((mask & 1 << bit) != 0)
+			if ((mask & 1 << bit) != 0 && !topic.iconIndexes.contains(firstIndex + bit))
 				topic.iconIndexes.add(firstIndex + bit);
 		}
 	}

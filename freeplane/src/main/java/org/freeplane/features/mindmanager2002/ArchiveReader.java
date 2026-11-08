@@ -34,6 +34,10 @@ class ArchiveReader {
 		return data[position++] & 0xff;
 	}
 
+	int byteAt(int index) {
+		return index >= 0 && index < data.length ? data[index] & 0xff : -1;
+	}
+
 	int peek() throws IOException {
 		ensureAvailable(1);
 		return data[position] & 0xff;

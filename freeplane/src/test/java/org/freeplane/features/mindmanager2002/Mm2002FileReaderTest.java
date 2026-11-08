@@ -249,13 +249,50 @@ public class Mm2002FileReaderTest {
 	}
 
 	@Test
-	public void recordsWhereReadingStopped() throws Exception {
+	public void resumesAtNoteAfterUnknownSymbol() throws Exception {
 		TopicSpec broken = new TopicSpec("Broken", 1);
 		broken.unknownObject = true;
+		broken.style = 0x08;
+		broken.fillColor = 0x99ccff;
+		broken.note = "kept note\u0015\r\n".getBytes(Charset.forName("windows-1252"));
+		broken.compressNote = true;
+		broken.iconMask = 1 << 5;
+		broken.secondIconMask = 1 << 9;
+		broken.cloudColor = 0xfff5cd;
+		broken.hyperlink = "https://example.org";
+		broken.relationships.add(MmpBuilder.relationship(10, 1, 2, "", 0xff0000, true));
 
-		Mm2002Map map = read(broken);
+		Mm2002Map map = read(broken, new TopicSpec("Target", 2));
 
-		assertThat(map.problems.get(0).stage).isEqualTo(ReadStage.ATTACHED_OBJECTS);
+		Topic read = map.mainTopics.get(0);
+		assertThat(read.id).isEqualTo(1);
+		assertThat(read.hasFill()).isFalse();
+		assertThat(read.note.paragraphs).containsExactly("kept note");
+		assertThat(read.relationships).hasSize(1);
+		assertThat(read.iconIndexes).containsExactly(5, 41);
+		assertThat(read.cloudColor).isEqualTo(0xfff5cd);
+		assertThat(read.hyperlink).isEqualTo("https://example.org");
+		ImportProblem problem = map.problems.get(0);
+		assertThat(problem.stage).isEqualTo(ReadStage.ATTACHED_OBJECTS);
+		assertThat(problem.lost).containsExactly(ReadStage.ATTACHED_OBJECTS, ReadStage.STYLE);
+	}
+
+	@Test
+	public void recoversHyperlinkAndLastIconsFromTheEndAfterUnknownImage() throws Exception {
+		TopicSpec broken = new TopicSpec("Broken", 1);
+		broken.unknownImage = true;
+		broken.iconMask = 1 << 5;
+		broken.secondIconMask = 1 << 9;
+		broken.hyperlink = "Fichier avec espaces.mmp";
+
+		Mm2002Map map = read(broken, new TopicSpec("Next", 2));
+
+		Topic read = map.mainTopics.get(0);
+		assertThat(read.iconIndexes).containsExactly(5, 41);
+		assertThat(read.hyperlink).isEqualTo("Fichier avec espaces.mmp");
+		assertThat(map.mainTopics.get(1).text).isEqualTo("Next");
+		assertThat(map.problems.get(0).stage).isEqualTo(ReadStage.IMAGE);
+		assertThat(map.problems.get(0).lost).containsExactly(ReadStage.IMAGE);
 	}
 
 	@Test
