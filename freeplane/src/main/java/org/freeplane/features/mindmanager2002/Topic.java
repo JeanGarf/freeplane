@@ -23,4 +23,8 @@ class Topic {
 	final List<byte[]> symbols = new ArrayList<>();
 	final List<Relationship> relationships = new ArrayList<>();
 	final List<Topic> children = new ArrayList<>();
+
+	boolean hasFill() {
+		return filled && fillColor != NO_COLOR;
+	}
 }

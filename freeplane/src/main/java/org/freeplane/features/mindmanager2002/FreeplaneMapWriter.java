@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.freeplane.core.util.FreeplaneVersion;
 import org.freeplane.core.util.LogUtils;
@@ -20,12 +21,17 @@ class FreeplaneMapWriter {
 	private static final String ROOT_ID = "ID_ROOT";
 
 	private final ImageStore imageStore;
+	private final ConversionTable table;
+	private final Function<String, StyleAppearance> styleAppearance;
 	private final StringBuilder xml = new StringBuilder();
 	private final Set<Long> topicIds = new HashSet<>();
 	private final Map<Long, Integer> imageCounters = new HashMap<>();
 
-	FreeplaneMapWriter(ImageStore imageStore) {
+	FreeplaneMapWriter(ImageStore imageStore, ConversionTable table,
+			Function<String, StyleAppearance> styleAppearance) {
 		this.imageStore = imageStore;
+		this.table = table;
+		this.styleAppearance = styleAppearance;
 	}
 
 	String write(Mm2002Map map) throws IOException {
@@ -50,14 +56,19 @@ class FreeplaneMapWriter {
 				.append('"');
 		if (mainTopic)
 			xml.append(" POSITION=\"").append(topic.left ? "left" : "right").append('"');
-		if (topic.filled && topic.fillColor != Topic.NO_COLOR)
+		String style = topic.hasFill() ? table.style(topic.fillColor) : null;
+		StyleAppearance appearance = style == null ? StyleAppearance.NONE : styleAppearance.apply(style);
+		if (style != null)
+			xml.append(style.startsWith(ConversionTable.LOCALIZED_STYLE_PREFIX) ? " LOCALIZED_STYLE_REF=\"" : " STYLE_REF=\"")
+					.append(attribute(style)).append('"');
+		else if (topic.hasFill())
 			xml.append(" STYLE=\"bubble\" BACKGROUND_COLOR=\"").append(color(topic.fillColor)).append('"');
 		if (!topic.hyperlink.isEmpty())
 			xml.append(" LINK=\"").append(attribute(link(topic.hyperlink))).append('"');
 		xml.append(">\n");
-		if (topic.lineColor != Topic.NO_COLOR)
+		if (topic.lineColor != Topic.NO_COLOR && !appearance.edgeColor)
 			xml.append("<edge COLOR=\"").append(color(topic.lineColor)).append("\"/>\n");
-		writeFont(topic);
+		writeFont(topic, appearance);
 		writeIcons(topic);
 		writeSymbols(topic);
 		writeRelationships(topic);
@@ -67,25 +78,27 @@ class FreeplaneMapWriter {
 		xml.append("</node>\n");
 	}
 
-	private void writeFont(Topic topic) {
-		if (topic.fontName == null && !topic.bold && !topic.italic)
+	private void writeFont(Topic topic, StyleAppearance appearance) {
+		boolean bold = topic.bold && !appearance.bold;
+		boolean italic = topic.italic && !appearance.italic;
+		if (topic.fontName == null && !bold && !italic)
 			return;
 		xml.append("<font");
 		if (topic.fontName != null && !topic.fontName.isEmpty())
 			xml.append(" NAME=\"").append(attribute(topic.fontName)).append('"');
 		if (topic.fontSize > 0)
 			xml.append(" SIZE=\"").append(topic.fontSize).append('"');
-		if (topic.bold)
+		if (bold)
 			xml.append(" BOLD=\"true\"");
-		if (topic.italic)
+		if (italic)
 			xml.append(" ITALIC=\"true\"");
 		xml.append("/>\n");
 	}
 
 	private void writeIcons(Topic topic) {
-		writeIcon(IconMapping.priorityIcon(topic.priority));
+		writeIcon(table.priorityIcon(topic.priority));
 		for (int index : topic.iconIndexes)
-			writeIcon(IconMapping.icon(index));
+			writeIcon(table.icon(index));
 	}
 
 	private void writeIcon(String icon) {

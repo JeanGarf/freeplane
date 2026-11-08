@@ -44,6 +44,7 @@ class Mm2002FileReader {
 			throw new IOException("Not a MindManager 2002 file");
 		Mm2002Map map = new Mm2002Map(header.string());
 		int mainTopicTag = header.indexOf(newClassTag(MAIN_TOPIC_CLASS), 0);
+		map.legend.putAll(LegendReader.read(data, mainTopicTag < 0 ? data.length : mainTopicTag));
 		if (mainTopicTag < 0)
 			return map;
 		ArchiveReader reader = new ArchiveReader(data, mainTopicTag - MAIN_TOPIC_COUNT_OFFSET);
