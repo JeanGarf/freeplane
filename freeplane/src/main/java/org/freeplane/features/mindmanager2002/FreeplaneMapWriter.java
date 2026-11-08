@@ -37,7 +37,7 @@ class FreeplaneMapWriter {
 	String write(Mm2002Map map) throws IOException {
 		collectIds(map.mainTopics);
 		xml.append("<map version=\"").append(FreeplaneVersion.XML_VERSION).append("\">\n");
-		xml.append("<node TEXT=\"").append(attribute(map.title)).append("\" ID=\"").append(ROOT_ID).append("\">\n");
+		xml.append("<node TEXT=\"").append(attribute(map.title)).append("\" ID=\"").append(ROOT_ID).append("\" FOLDED=\"false\">\n");
 		for (Topic topic : map.mainTopics)
 			writeTopic(topic, true);
 		xml.append("</node>\n</map>\n");

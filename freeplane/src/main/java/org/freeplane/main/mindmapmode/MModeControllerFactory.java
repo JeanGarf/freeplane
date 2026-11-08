@@ -75,6 +75,7 @@ import org.freeplane.features.encrypt.mindmapmode.MEncryptionController;
 import org.freeplane.features.explorer.mindmapmode.MMapExplorerController;
 import org.freeplane.features.export.mindmapmode.ExportController;
 import org.freeplane.features.export.mindmapmode.ImportMindmanagerFiles;
+import org.freeplane.features.mindmanager2002.ImportMindmanager2002Files;
 import org.freeplane.features.export.mindmapmode.ImportXmlFile;
 import org.freeplane.features.filter.FilterController;
 import org.freeplane.features.filter.hidden.HiddenNodeContoller;
@@ -214,6 +215,7 @@ public class MModeControllerFactory {
 		NodeHistory.install(modeController);
 		modeController.addAction(new ImportXmlFile());
 		modeController.addAction(new ImportMindmanagerFiles());
+		modeController.addAction(new ImportMindmanager2002Files());
 	}
 
 	private JComponent createAttributesPanel() {

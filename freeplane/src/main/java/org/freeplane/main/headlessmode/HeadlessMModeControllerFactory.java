@@ -32,6 +32,7 @@ import org.freeplane.features.encrypt.mindmapmode.MEncryptionController;
 import org.freeplane.features.explorer.mindmapmode.MMapExplorerController;
 import org.freeplane.features.export.mindmapmode.ExportController;
 import org.freeplane.features.export.mindmapmode.ImportMindmanagerFiles;
+import org.freeplane.features.mindmanager2002.ImportMindmanager2002Files;
 import org.freeplane.features.icon.hierarchicalicons.HierarchicalIcons;
 import org.freeplane.features.icon.mindmapmode.MIconController;
 import org.freeplane.features.layout.LayoutController;
@@ -102,6 +103,7 @@ public class HeadlessMModeControllerFactory {
 		new ChangeNodeLevelController(modeController);
 		NodeHistory.install(modeController);
 		modeController.addAction(new ImportMindmanagerFiles());
+		modeController.addAction(new ImportMindmanager2002Files());
 	}
 
 	private MModeController createModeControllerImpl() {
