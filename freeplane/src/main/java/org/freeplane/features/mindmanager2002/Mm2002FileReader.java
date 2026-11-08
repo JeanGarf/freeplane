@@ -19,6 +19,9 @@ class Mm2002FileReader {
 	static final String SYMBOL_CLASS = "FreeSymbolC";
 	static final String BOUNDARY_CLASS = "BoundaryC";
 	static final String METAFILE_CLASS = "EnhMetafileC";
+	private static final int RAW_IMAGE = 1;
+	private static final int COMPRESSED_METAFILE = 2;
+	private static final int RAW_IMAGE_TRAILER_SIZE = 8;
 	private static final int MAX_PROPERTIES = 10000;
 	private static final int MAX_RELATIONSHIPS = 1000;
 	private static final int NOTE_HEADER_OFFSET = 9;
@@ -294,9 +297,16 @@ class Mm2002FileReader {
 		if (!METAFILE_CLASS.equals(className))
 			throw new IOException("Unsupported MindManager 2002 object " + className + " at offset " + reader.position());
 		reader.expect(VERSION_MARKER);
-		long uncompressedSize = reader.u32();
-		reader.skip(1);
-		topic.symbols.add(chunks(uncompressedSize));
+		long size = reader.u32();
+		int type = reader.u8();
+		if (type == RAW_IMAGE) {
+			topic.symbols.add(reader.bytes((int) Math.min(size, Integer.MAX_VALUE)));
+			reader.skip(RAW_IMAGE_TRAILER_SIZE);
+		}
+		else if (type == COMPRESSED_METAFILE)
+			topic.symbols.add(chunks(size));
+		else
+			throw new IOException("Unsupported MindManager 2002 image type " + type + " at offset " + reader.position());
 		reader.expect(0x00, VERSION_MARKER, 0xff);
 	}
 

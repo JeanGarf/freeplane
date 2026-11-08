@@ -249,6 +249,19 @@ public class Mm2002FileReaderTest {
 	}
 
 	@Test
+	public void readsUncompressedTopicImage() throws Exception {
+		TopicSpec topic = new TopicSpec("Png", 1);
+		topic.rawImage = new byte[] { (byte) 0x89, 'P', 'N', 'G', 1, 2 };
+		topic.hyperlink = "https://example.org";
+
+		Mm2002Map map = read(topic, new TopicSpec("Next", 2));
+
+		assertThat(map.mainTopics.get(0).symbols.get(0)).containsExactly(0x89, 'P', 'N', 'G', 1, 2);
+		assertThat(map.mainTopics.get(0).hyperlink).isEqualTo("https://example.org");
+		assertThat(map.problems).isEmpty();
+	}
+
+	@Test
 	public void resumesAtNoteAfterUnknownSymbol() throws Exception {
 		TopicSpec broken = new TopicSpec("Broken", 1);
 		broken.unknownObject = true;

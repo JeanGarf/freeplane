@@ -31,6 +31,7 @@ class MmpBuilder {
 		boolean unknownImage;
 		String[] properties = {};
 		byte[] image;
+		byte[] rawImage;
 		final List<byte[]> relationships = new ArrayList<>();
 		final List<TopicSpec> children = new ArrayList<>();
 
@@ -176,6 +177,15 @@ class MmpBuilder {
 		if (topic.unknownImage) {
 			classTag("WeirdImageC", false, 0);
 			bytes(0x32, 0x09, 0x08, 0x07);
+		}
+		else if (topic.rawImage != null) {
+			classTag("EnhMetafileC", false, 0);
+			u8(0x32);
+			u32(topic.rawImage.length);
+			u8(1);
+			bytes(topic.rawImage);
+			zeros(8);
+			bytes(0x00, 0x32, 0xff);
 		}
 		else if (topic.image != null) {
 			classTag("EnhMetafileC", false, 0);

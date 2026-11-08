@@ -129,7 +129,7 @@ class FreeplaneMapWriter {
 		for (byte[] symbol : topic.symbols) {
 			BufferedImage image;
 			try {
-				image = EmfRenderer.render(symbol);
+				image = ImageDecoder.decode(symbol);
 			}
 			catch (IOException e) {
 				LogUtils.warn("MindManager 2002 image skipped: " + e.getMessage());
