@@ -33,6 +33,9 @@ class MmpBuilder {
 		int priorityHighBits;
 		boolean unknownObject;
 		boolean unknownImage;
+		String freeText;
+		int freeTextColor;
+		String alias = "";
 		String[] properties = {};
 		byte[] image;
 		byte[] rawImage;
@@ -128,9 +131,25 @@ class MmpBuilder {
 		zeros(5);
 		string(topic.note != null ? "&" : "");
 		u32((topic.priority != 0 ? topic.priority : 1) | topic.priorityHighBits);
-		u32(topic.symbol != null || topic.unknownObject ? 1 : 0);
+		u32(topic.symbol != null || topic.unknownObject || topic.freeText != null ? 1 : 0);
 		if (topic.symbol != null)
 			symbol(topic.symbol);
+		else if (topic.freeText != null) {
+			classTag("FreeTextC", false, 0);
+			zeros(3 + 4 * 4 + 2 + 2 * 4 + 2 + 4 + 16);
+			link("");
+			bytes(0x00, 0x32, 0xff, 0x32);
+			string(topic.freeText);
+			u8(0x32);
+			u16(0x02);
+			color(topic.freeTextColor);
+			color(0);
+			u16(3);
+			u8(0);
+			bytes(0x32, 0xff);
+			zeros(11);
+			bytes(0x32, 0xff);
+		}
 		else if (topic.unknownObject) {
 			classTag("WeirdC", false, 0);
 			bytes(0x32, 0x07, 0x00, 0x01, 0x02, 0x03);
@@ -205,7 +224,9 @@ class MmpBuilder {
 		}
 		else
 			u16(0);
-		zeros(4);
+		zeros(2);
+		string(topic.alias);
+		u8(0);
 		u32(topic.secondIconMask);
 		link(topic.hyperlink);
 		u32(-1);

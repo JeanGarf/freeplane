@@ -143,6 +143,31 @@ public class FreeplaneMapWriterTest {
 	}
 
 	@Test
+	public void writesFreeTextAsFloatingChildAfterChildren() throws Exception {
+		Topic topic = topic("Carte réseau", 1);
+		topic.children.add(topic("child", 2));
+		FreeText freeText = new FreeText();
+		freeText.text = "Rebooter";
+		freeText.color = 0xff0000;
+		freeText.bold = true;
+		topic.freeTexts.add(freeText);
+
+		String xml = write(topic);
+
+		assertThat(xml).contains("<node TEXT=\"child\" ID=\"ID_2\">\n</node>\n<node TEXT=\"Rebooter\""
+				+ " LOCALIZED_STYLE_REF=\"styles.floating\" COLOR=\"#ff0000\">\n<font BOLD=\"true\"/>\n</node>");
+	}
+
+	@Test
+	public void writesAliasAsValidIdentifier() throws Exception {
+		Topic topic = topic("anchor", 1);
+		topic.alias = "Carte Réseau 2";
+
+		assertThat(write(topic)).contains(" ALIAS=\"Carte_Réseau_2\"");
+		assertThat(FreeplaneMapWriter.alias("2nd")).isEqualTo("_2nd");
+	}
+
+	@Test
 	public void writesCloud() throws Exception {
 		Topic topic = topic("clouded", 1);
 		topic.cloudColor = 0xfff5cd;

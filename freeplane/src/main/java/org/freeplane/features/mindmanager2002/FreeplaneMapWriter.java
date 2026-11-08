@@ -24,6 +24,7 @@ class FreeplaneMapWriter {
 
 	private static final String ROOT_ID = "ID_ROOT";
 	private static final String ROOT_STYLE = "AutomaticLayout.level.root";
+	private static final String FLOATING_STYLE = "styles.floating";
 	static final double MAP_UNIT_IN_PIXELS = 0.27;
 
 	private final ImageStore imageStore;
@@ -77,6 +78,9 @@ class FreeplaneMapWriter {
 			xml.append(" STYLE=\"bubble\" BACKGROUND_COLOR=\"").append(color(topic.fillColor)).append('"');
 		if (!topic.hyperlink.isEmpty())
 			xml.append(" LINK=\"").append(attribute(link(topic.hyperlink))).append('"');
+		String alias = alias(topic.alias);
+		if (!alias.isEmpty())
+			xml.append(" ALIAS=\"").append(alias).append('"');
 		xml.append(">\n");
 		if (topic.lineColor != Topic.NO_COLOR && !appearance.edgeColor)
 			xml.append("<edge COLOR=\"").append(color(topic.lineColor)).append("\"/>\n");
@@ -91,19 +95,23 @@ class FreeplaneMapWriter {
 		for (Topic child : topic.children)
 			writeTopic(child, false);
 		branch.removeLast();
+		for (FreeText freeText : topic.freeTexts)
+			writeFreeText(freeText);
 		xml.append("</node>\n");
 	}
 
 	private void writeFont(Topic topic, StyleAppearance appearance) {
-		boolean bold = topic.bold && !appearance.bold;
-		boolean italic = topic.italic && !appearance.italic;
-		if (topic.fontName == null && !bold && !italic)
+		writeFont(topic.fontName, topic.fontSize, topic.bold && !appearance.bold, topic.italic && !appearance.italic);
+	}
+
+	private void writeFont(String fontName, int fontSize, boolean bold, boolean italic) {
+		if (fontName == null && !bold && !italic)
 			return;
 		xml.append("<font");
-		if (topic.fontName != null && !topic.fontName.isEmpty())
-			xml.append(" NAME=\"").append(attribute(topic.fontName)).append('"');
-		if (topic.fontSize > 0)
-			xml.append(" SIZE=\"").append(topic.fontSize).append('"');
+		if (fontName != null && !fontName.isEmpty())
+			xml.append(" NAME=\"").append(attribute(fontName)).append('"');
+		if (fontSize > 0)
+			xml.append(" SIZE=\"").append(fontSize).append('"');
 		if (bold)
 			xml.append(" BOLD=\"true\"");
 		if (italic)
@@ -189,6 +197,21 @@ class FreeplaneMapWriter {
 	private String storeImage(Topic topic, BufferedImage image) throws IOException {
 		int number = imageCounters.merge(topic.id, 1, Integer::sum);
 		return imageStore.store("image_" + topic.id + "_" + number + ".png", image);
+	}
+
+	private void writeFreeText(FreeText freeText) {
+		xml.append("<node TEXT=\"").append(attribute(freeText.text)).append("\" LOCALIZED_STYLE_REF=\"")
+				.append(FLOATING_STYLE).append('"');
+		if (freeText.color != Topic.NO_COLOR)
+			xml.append(" COLOR=\"").append(color(freeText.color)).append('"');
+		xml.append(">\n");
+		writeFont(freeText.fontName, freeText.fontSize, freeText.bold, freeText.italic);
+		xml.append("</node>\n");
+	}
+
+	static String alias(String name) {
+		String alias = name.trim().replaceAll("[^\\p{L}\\p{N}_]+", "_");
+		return !alias.isEmpty() && Character.isDigit(alias.charAt(0)) ? "_" + alias : alias;
 	}
 
 	static String zoom(Picture picture, BufferedImage image) {

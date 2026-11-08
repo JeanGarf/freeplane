@@ -27,6 +27,8 @@ class Topic {
 	String hyperlink = "";
 	Note note = Note.EMPTY;
 	final List<Picture> pictures = new ArrayList<>();
+	final List<FreeText> freeTexts = new ArrayList<>();
+	String alias = "";
 	final List<Relationship> relationships = new ArrayList<>();
 	final List<Topic> children = new ArrayList<>();
 

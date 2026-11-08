@@ -18,6 +18,9 @@ class Mm2002FileReader {
 	static final String TOPIC_CLASS = "ItemC";
 	static final String SYMBOL_CLASS = "FreeSymbolC";
 	static final String BOUNDARY_CLASS = "BoundaryC";
+	static final String TEXT_CLASS = "FreeTextC";
+	private static final int MAX_FREE_TEXT_TRAILER_SIZE = 32;
+	private static final byte[] OBJECT_END = { 0x32, (byte) 0xff };
 	static final String METAFILE_CLASS = "EnhMetafileC";
 	private static final int RAW_IMAGE = 1;
 	private static final int COMPRESSED_METAFILE = 2;
@@ -224,9 +227,11 @@ class Mm2002FileReader {
 		int imageTag = reader.u16();
 		if (imageTag != NULL_OBJECT)
 			topicImage(topic, imageTag);
-		reader.skip(4);
+		reader.skip(2);
 		read.add(ReadStage.IMAGE);
 		stage = ReadStage.HYPERLINK;
+		topic.alias = reader.string();
+		reader.skip(1);
 		addIcons(topic, reader.i32(), ICONS_PER_MASK);
 		topic.hyperlink = link();
 		reader.skip(4);
@@ -360,7 +365,7 @@ class Mm2002FileReader {
 
 	private void attachedObject(Topic topic) throws IOException {
 		String className = objectClass();
-		if (!SYMBOL_CLASS.equals(className))
+		if (!SYMBOL_CLASS.equals(className) && !TEXT_CLASS.equals(className))
 			throw new IOException("Unsupported MindManager 2002 object " + className + " at offset " + reader.position());
 		reader.skip(3 + 4 * 4 + 2);
 		int width = Math.abs(reader.i32());
@@ -368,11 +373,39 @@ class Mm2002FileReader {
 		reader.skip(2 + 4 + 16);
 		properties();
 		reader.expect(0x00, VERSION_MARKER, 0xff, VERSION_MARKER);
+		if (TEXT_CLASS.equals(className)) {
+			topic.freeTexts.add(freeText());
+			return;
+		}
 		reader.expect(VERSION_MARKER);
 		int size = reader.length();
 		reader.skip(4 + 1);
 		topic.pictures.add(new Picture(reader.bytes(size), width, height));
 		reader.skip(16);
+	}
+
+	private FreeText freeText() throws IOException {
+		FreeText freeText = new FreeText();
+		freeText.text = reader.string();
+		reader.expect(VERSION_MARKER);
+		int style = reader.u16();
+		freeText.bold = (style & STYLE_BOLD) != 0;
+		freeText.italic = (style & STYLE_ITALIC) != 0;
+		freeText.color = reader.color();
+		reader.skip(4);
+		int fontReference = reader.u16();
+		if (fontReference == 0) {
+			freeText.fontSize = reader.i32();
+			freeText.fontName = reader.string();
+			reader.skip(2);
+		}
+		reader.skip(1);
+		reader.expect(VERSION_MARKER, 0xff);
+		int trailerEnd = reader.indexOf(OBJECT_END, reader.position());
+		if (trailerEnd < 0 || trailerEnd - reader.position() > MAX_FREE_TEXT_TRAILER_SIZE)
+			throw new IOException("Unexpected MindManager 2002 free text end at offset " + reader.position());
+		reader.seek(trailerEnd + OBJECT_END.length);
+		return freeText;
 	}
 
 	private Relationship relationship() throws IOException {

@@ -295,6 +295,29 @@ public class Mm2002FileReaderTest {
 	}
 
 	@Test
+	public void readsAttachedFreeTextAndAlias() throws Exception {
+		TopicSpec topic = new TopicSpec("Carte réseau", 1);
+		topic.freeText = "Rebooter le\r\nPocketPC";
+		topic.freeTextColor = 0xff0000;
+		topic.alias = "CarteReseau";
+		topic.hyperlink = "https://example.org";
+		topic.style = 0x08;
+		topic.fillColor = 0x99ccff;
+
+		Mm2002Map map = read(topic, new TopicSpec("Next", 2));
+
+		Topic read = map.mainTopics.get(0);
+		FreeText freeText = read.freeTexts.get(0);
+		assertThat(freeText.text).isEqualTo("Rebooter le\r\nPocketPC");
+		assertThat(freeText.color).isEqualTo(0xff0000);
+		assertThat(freeText.italic).isTrue();
+		assertThat(read.alias).isEqualTo("CarteReseau");
+		assertThat(read.hyperlink).isEqualTo("https://example.org");
+		assertThat(read.hasFill()).isTrue();
+		assertThat(map.problems).isEmpty();
+	}
+
+	@Test
 	public void readsUncompressedTopicImage() throws Exception {
 		TopicSpec topic = new TopicSpec("Png", 1);
 		topic.rawImage = new byte[] { (byte) 0x89, 'P', 'N', 'G', 1, 2 };
