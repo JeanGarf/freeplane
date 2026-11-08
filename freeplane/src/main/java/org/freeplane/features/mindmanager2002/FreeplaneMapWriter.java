@@ -22,6 +22,7 @@ class FreeplaneMapWriter {
 	}
 
 	private static final String ROOT_ID = "ID_ROOT";
+	private static final String ROOT_STYLE = "AutomaticLayout.level.root";
 
 	private final ImageStore imageStore;
 	private final ConversionTable table;
@@ -43,7 +44,8 @@ class FreeplaneMapWriter {
 		problems = map.problems;
 		collectIds(map.mainTopics);
 		xml.append("<map version=\"").append(FreeplaneVersion.XML_VERSION).append("\">\n");
-		xml.append("<node TEXT=\"").append(attribute(map.title)).append("\" ID=\"").append(ROOT_ID).append("\" FOLDED=\"false\">\n");
+		xml.append("<node TEXT=\"").append(attribute(map.title)).append("\" ID=\"").append(ROOT_ID).append("\" FOLDED=\"false\" LOCALIZED_STYLE_REF=\"")
+				.append(ROOT_STYLE).append("\">\n");
 		for (Topic topic : map.mainTopics)
 			writeTopic(topic, true);
 		xml.append("</node>\n</map>\n");

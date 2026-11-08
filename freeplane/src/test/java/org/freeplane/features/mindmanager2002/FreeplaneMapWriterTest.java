@@ -45,7 +45,8 @@ public class FreeplaneMapWriterTest {
 
 		String xml = write(left, topic("right", 3));
 
-		assertThat(xml).contains("<node TEXT=\"Root &amp; co\" ID=\"ID_ROOT\" FOLDED=\"false\">");
+		assertThat(xml).contains("<node TEXT=\"Root &amp; co\" ID=\"ID_ROOT\" FOLDED=\"false\""
+				+ " LOCALIZED_STYLE_REF=\"AutomaticLayout.level.root\">");
 		assertThat(xml).contains("<node TEXT=\"a &lt; b&#xa;&quot;c&quot;\" ID=\"ID_1\" POSITION=\"left\">");
 		assertThat(xml).contains("<node TEXT=\"child\" ID=\"ID_2\">");
 		assertThat(xml).contains("<node TEXT=\"right\" ID=\"ID_3\" POSITION=\"right\">");
