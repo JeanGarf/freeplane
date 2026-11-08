@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.function.Consumer;
 
 import javax.swing.JOptionPane;
 
@@ -45,23 +46,31 @@ public class XmlImporter	{
 
 	public void importXml(final InputStream in, final File outputFile) throws IOException, FileNotFoundException,
 	XMLParseException, XMLException, MalformedURLException {
+		if(! confirmNewMap(outputFile))
+			return;
+		newMap(new XsltPipeReaderFactory(xsltResource).getReader(in), outputFile);
+	}
+
+	public static boolean confirmNewMap(final File outputFile) throws MalformedURLException {
 		final URL mapUrl = Compat.fileToUrl(outputFile);
 		if(outputFile.exists()){
 			if(Controller.getCurrentController().getMapViewManager().tryToChangeToMapView(mapUrl))
-				return;
+				return false;
 			final int overwriteMap = JOptionPane.showConfirmDialog(Controller.getCurrentController()
 					.getMapViewManager().getMapViewComponent(), TextUtils.getText("map_already_exists"), "Freeplane",
 					JOptionPane.YES_NO_OPTION);
-			if (overwriteMap != JOptionPane.YES_OPTION) {
-				return ;
-			}
+			return overwriteMap == JOptionPane.YES_OPTION;
 		}
-		newMap(in, outputFile);
+		return true;
 	}
 
-	private void newMap(final InputStream in, final File outputFile)
+	public static void newMap(final Reader reader, final File outputFile)
 			throws IOException, XMLException, MalformedURLException {
-		final Reader reader = new XsltPipeReaderFactory(xsltResource).getReader(in);
+		newMap(reader, outputFile, map -> {});
+	}
+
+	public static void newMap(final Reader reader, final File outputFile, final Consumer<MapModel> beforeDisplay)
+			throws IOException, XMLException, MalformedURLException {
 		final ModeController modeController = Controller.getCurrentModeController();
 		final MapController mapController = modeController.getMapController();
 		final MapModel map = new MMapModel(mapController.duplicator());
@@ -70,6 +79,7 @@ public class XmlImporter	{
 		map.setURL(mapUrl);
 		map.setSaved(false);
 		mapController.fireMapCreated(map);
+		beforeDisplay.accept(map);
 		mapController.createMapView(map);
 	}
 

@@ -113,6 +113,7 @@
 				<Entry name="ImportXmlFile" />
 				<Entry name="ImportTextTreeAction" />
 				<Entry name="ImportMindmanagerFiles" />
+				<Entry name="ImportMindmanager2002Files" />
 			</Entry>
 			<Entry builder="separator" />
 						<Entry name="print">
