@@ -26,6 +26,8 @@ class FreeplaneMapWriter {
 	private static final String ROOT_STYLE = "AutomaticLayout.level.root";
 	private static final String FLOATING_STYLE = "styles.floating";
 	static final double MAP_UNIT_IN_PIXELS = 0.27;
+	private static final double LINE_HEIGHT_PIXELS = 16;
+	private static final double TOPIC_PADDING_PIXELS = 4;
 
 	private final ImageStore imageStore;
 	private final ConversionTable table;
@@ -50,7 +52,7 @@ class FreeplaneMapWriter {
 		xml.append("<node TEXT=\"").append(attribute(map.title)).append("\" ID=\"").append(ROOT_ID).append("\" FOLDED=\"false\" LOCALIZED_STYLE_REF=\"")
 				.append(ROOT_STYLE).append("\">\n");
 		for (Topic topic : map.mainTopics)
-			writeTopic(topic, true);
+			writeTopic(topic, true, topic.left);
 		xml.append("</node>\n</map>\n");
 		return xml.toString();
 	}
@@ -62,7 +64,8 @@ class FreeplaneMapWriter {
 		}
 	}
 
-	private void writeTopic(Topic topic, boolean mainTopic) throws IOException {
+	private void writeTopic(Topic topic, boolean mainTopic, boolean left) throws IOException {
+		boolean side = mainTopic ? topic.left : left;
 		xml.append("<node TEXT=\"").append(attribute(topic.text)).append("\" ID=\"").append(nodeId(topic.id))
 				.append('"');
 		if (mainTopic)
@@ -91,12 +94,12 @@ class FreeplaneMapWriter {
 		writeSymbols(topic);
 		writeRelationships(topic);
 		writeNote(topic);
+		for (FreeText freeText : topic.freeTexts)
+			writeFreeText(topic, freeText, side);
 		branch.addLast(topic.text.replaceAll("\\s+", " ").trim());
 		for (Topic child : topic.children)
-			writeTopic(child, false);
+			writeTopic(child, false, side);
 		branch.removeLast();
-		for (FreeText freeText : topic.freeTexts)
-			writeFreeText(freeText);
 		xml.append("</node>\n");
 	}
 
@@ -199,14 +202,31 @@ class FreeplaneMapWriter {
 		return imageStore.store("image_" + topic.id + "_" + number + ".png", image);
 	}
 
-	private void writeFreeText(FreeText freeText) {
+	private void writeFreeText(Topic owner, FreeText freeText, boolean left) {
 		xml.append("<node TEXT=\"").append(attribute(freeText.text)).append("\" LOCALIZED_STYLE_REF=\"")
 				.append(FLOATING_STYLE).append('"');
+		double horizontalGap = left ? (owner.x - freeText.x - freeText.width) * MAP_UNIT_IN_PIXELS
+				: (freeText.x - owner.x) * MAP_UNIT_IN_PIXELS;
+		double verticalShift = (owner.y - freeText.y) * MAP_UNIT_IN_PIXELS + estimatedContentHeight(owner);
+		xml.append(" HGAP_QUANTITY=\"").append(pixels(horizontalGap)).append('"');
+		xml.append(" VSHIFT_QUANTITY=\"").append(pixels(verticalShift)).append('"');
 		if (freeText.color != Topic.NO_COLOR)
 			xml.append(" COLOR=\"").append(color(freeText.color)).append('"');
 		xml.append(">\n");
 		writeFont(freeText.fontName, freeText.fontSize, freeText.bold, freeText.italic);
-		xml.append("</node>\n");
+		xml.append("<hook NAME=\"FreeNode\"/>\n</node>\n");
+	}
+
+	static double estimatedContentHeight(Topic topic) {
+		int lines = topic.text.split("\r\n|\n|\r", -1).length;
+		double height = lines * LINE_HEIGHT_PIXELS + TOPIC_PADDING_PIXELS;
+		if (!topic.pictures.isEmpty())
+			height += topic.pictures.get(0).displayHeight * MAP_UNIT_IN_PIXELS;
+		return height;
+	}
+
+	static String pixels(double pixels) {
+		return String.format(Locale.ROOT, "%.1f px", pixels);
 	}
 
 	static String alias(String name) {

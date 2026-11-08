@@ -143,19 +143,41 @@ public class FreeplaneMapWriterTest {
 	}
 
 	@Test
-	public void writesFreeTextAsFloatingChildAfterChildren() throws Exception {
+	public void writesFreeTextAsFreePositionedFirstChild() throws Exception {
 		Topic topic = topic("Carte réseau", 1);
 		topic.children.add(topic("child", 2));
 		FreeText freeText = new FreeText();
 		freeText.text = "Rebooter";
 		freeText.color = 0xff0000;
+		topic.x = 1000;
+		topic.y = -500;
+		freeText.x = 800;
+		freeText.y = -600;
 		freeText.bold = true;
 		topic.freeTexts.add(freeText);
 
 		String xml = write(topic);
 
-		assertThat(xml).contains("<node TEXT=\"child\" ID=\"ID_2\">\n</node>\n<node TEXT=\"Rebooter\""
-				+ " LOCALIZED_STYLE_REF=\"styles.floating\" COLOR=\"#ff0000\">\n<font BOLD=\"true\"/>\n</node>");
+		assertThat(xml).contains("<node TEXT=\"Rebooter\""
+				+ " LOCALIZED_STYLE_REF=\"styles.floating\" HGAP_QUANTITY=\"-54.0 px\" VSHIFT_QUANTITY=\"47.0 px\""
+				+ " COLOR=\"#ff0000\">\n<font BOLD=\"true\"/>\n<hook NAME=\"FreeNode\"/>\n</node>\n"
+				+ "<node TEXT=\"child\" ID=\"ID_2\">");
+	}
+
+	@Test
+	public void placesFreeTextOfLeftTopicFromItsRightEdge() throws Exception {
+		Topic topic = topic("left", 1);
+		topic.left = true;
+		topic.x = 1000;
+		topic.y = -500;
+		FreeText freeText = new FreeText();
+		freeText.text = "free";
+		freeText.x = 500;
+		freeText.y = -500;
+		freeText.width = 300;
+		topic.freeTexts.add(freeText);
+
+		assertThat(write(topic)).contains("HGAP_QUANTITY=\"54.0 px\" VSHIFT_QUANTITY=\"20.0 px\"");
 	}
 
 	@Test

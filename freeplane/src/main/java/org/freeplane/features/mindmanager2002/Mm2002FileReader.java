@@ -367,14 +367,21 @@ class Mm2002FileReader {
 		String className = objectClass();
 		if (!SYMBOL_CLASS.equals(className) && !TEXT_CLASS.equals(className))
 			throw new IOException("Unsupported MindManager 2002 object " + className + " at offset " + reader.position());
-		reader.skip(3 + 4 * 4 + 2);
+		reader.skip(3);
+		int x = reader.i32();
+		int y = reader.i32();
+		reader.skip(2 * 4 + 2);
 		int width = Math.abs(reader.i32());
 		int height = Math.abs(reader.i32());
 		reader.skip(2 + 4 + 16);
 		properties();
 		reader.expect(0x00, VERSION_MARKER, 0xff, VERSION_MARKER);
 		if (TEXT_CLASS.equals(className)) {
-			topic.freeTexts.add(freeText());
+			FreeText freeText = freeText();
+			freeText.x = x;
+			freeText.y = y;
+			freeText.width = width;
+			topic.freeTexts.add(freeText);
 			return;
 		}
 		reader.expect(VERSION_MARKER);
