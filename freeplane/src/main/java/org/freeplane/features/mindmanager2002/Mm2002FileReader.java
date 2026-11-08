@@ -16,6 +16,8 @@ class Mm2002FileReader {
 	static final String TOPIC_CLASS = "ItemC";
 	static final String SYMBOL_CLASS = "FreeSymbolC";
 	static final String BOUNDARY_CLASS = "BoundaryC";
+	static final String METAFILE_CLASS = "EnhMetafileC";
+	private static final int MAX_PROPERTIES = 10000;
 	private static final int NULL_OBJECT = 0;
 	private static final int PRIORITY_MASK = 0xff;
 	private static final int NEW_CLASS_TAG = 0xffff;
@@ -39,6 +41,7 @@ class Mm2002FileReader {
 	private final ArchiveReader reader;
 	private final Map<Integer, String> classes = new HashMap<>();
 	private final Deque<String> branch = new ArrayDeque<>();
+	private ReadStage stage;
 	private final List<ImportProblem> problems;
 	private int nextIndex = 1;
 
@@ -65,7 +68,7 @@ class Mm2002FileReader {
 				map.mainTopics.add(fileReader.topic());
 		}
 		catch (IOException e) {
-			fileReader.problem(ImportProblem.Kind.REST_IGNORED, null, e);
+			fileReader.problem(ImportProblem.Kind.REST_IGNORED, null, e, null);
 		}
 		return map;
 	}
@@ -89,7 +92,7 @@ class Mm2002FileReader {
 			int contentEnd = reader.indexOf(TOPIC_END, contentStart);
 			if (contentEnd < 0)
 				throw e;
-			problem(ImportProblem.Kind.PARTIAL_TOPIC, topic, e);
+			problem(ImportProblem.Kind.PARTIAL_TOPIC, topic, e, stage);
 			reader.seek(contentEnd + TOPIC_END.length);
 		}
 		reader.expect(0xff);
@@ -123,6 +126,7 @@ class Mm2002FileReader {
 	}
 
 	private void readContent(Topic topic) throws IOException {
+		stage = ReadStage.TEXT;
 		reader.expect(TOPIC_MARKER);
 		topic.text = reader.string();
 		reader.skip(8 + 4);
@@ -132,30 +136,68 @@ class Mm2002FileReader {
 		int priority = reader.i32() & PRIORITY_MASK;
 		if ((flags & FLAG_PRIORITY) != 0)
 			topic.priority = priority;
+		stage = ReadStage.ATTACHED_OBJECTS;
 		int objectCount = reader.i32();
 		for (int i = 0; i < objectCount; i++)
 			attachedObject(topic);
+		stage = ReadStage.STYLE;
 		readStyle(topic);
 		reader.expect(VERSION_MARKER, 0xff);
 		reader.skip(3);
 		topic.id = reader.u32();
+		stage = ReadStage.NOTE;
 		topic.note = Note.decode(blob());
 		reader.expect(0x00, VERSION_MARKER, 0xff);
+		stage = ReadStage.RELATIONSHIPS;
 		int relationshipCount = reader.i32();
 		for (int i = 0; i < relationshipCount; i++)
 			topic.relationships.add(relationship());
+		stage = ReadStage.ICONS;
 		reader.skip(4);
 		addIcons(topic, reader.i32(), 0);
 		reader.skip(29);
+		stage = ReadStage.CLOUD;
 		int boundaryTag = reader.u16();
 		if (boundaryTag != NULL_OBJECT)
 			boundary(topic, boundaryTag);
-		link();
-		reader.skip(22);
+		stage = ReadStage.PROPERTIES;
+		properties();
+		stage = ReadStage.IMAGE;
+		reader.skip(16);
+		int imageTag = reader.u16();
+		if (imageTag != NULL_OBJECT)
+			topicImage(topic, imageTag);
+		reader.skip(4);
+		stage = ReadStage.ICONS;
 		addIcons(topic, reader.i32(), ICONS_PER_MASK);
+		stage = ReadStage.HYPERLINK;
 		topic.hyperlink = link();
 		reader.skip(4);
 		reader.expect(toInts(TOPIC_END));
+	}
+
+	private void properties() throws IOException {
+		reader.expect(VERSION_MARKER);
+		int count = reader.i32();
+		if (count < 0 || count > MAX_PROPERTIES)
+			throw new IOException("Invalid MindManager 2002 property count at offset " + reader.position());
+		for (int i = 0; i < count; i++) {
+			reader.skip(4);
+			reader.skip(reader.length());
+		}
+		reader.skip(1);
+		reader.expect(VERSION_MARKER, 0xff);
+	}
+
+	private void topicImage(Topic topic, int tag) throws IOException {
+		String className = objectClass(tag);
+		if (!METAFILE_CLASS.equals(className))
+			throw new IOException("Unsupported MindManager 2002 object " + className + " at offset " + reader.position());
+		reader.expect(VERSION_MARKER);
+		long uncompressedSize = reader.u32();
+		reader.skip(1);
+		topic.symbols.add(chunks(uncompressedSize));
+		reader.expect(0x00, VERSION_MARKER, 0xff);
 	}
 
 	private void boundary(Topic topic, int tag) throws IOException {
@@ -172,12 +214,12 @@ class Mm2002FileReader {
 		reader.expect(0xff);
 	}
 
-	private void problem(ImportProblem.Kind kind, Topic topic, IOException cause) {
+	private void problem(ImportProblem.Kind kind, Topic topic, IOException cause, ReadStage failedStage) {
 		StringBuilder path = new StringBuilder();
 		for (String ancestor : branch)
 			path.append(ancestor.replaceAll("\\s+", " ").trim()).append(" > ");
 		path.append(topic == null || topic.text.isEmpty() ? "?" : topic.text.replaceAll("\\s+", " ").trim());
-		problems.add(new ImportProblem(kind, path.toString(), cause.getMessage()));
+		problems.add(new ImportProblem(kind, path.toString(), cause.getMessage(), failedStage));
 	}
 
 	private void readStyle(Topic topic) throws IOException {
@@ -253,8 +295,16 @@ class Mm2002FileReader {
 		reader.expect(VERSION_MARKER);
 		long uncompressedSize = reader.u32();
 		int compressedSize = reader.length();
+		return chunks(uncompressedSize, compressedSize);
+	}
+
+	private byte[] chunks(long uncompressedSize) throws IOException {
+		return chunks(uncompressedSize, reader.length());
+	}
+
+	private byte[] chunks(long uncompressedSize, int compressedSize) throws IOException {
 		if (uncompressedSize > MAX_NOTE_SIZE)
-			throw new IOException("Invalid MindManager 2002 note size at offset " + reader.position());
+			throw new IOException("Invalid MindManager 2002 data size at offset " + reader.position());
 		if (compressedSize == 0)
 			return reader.bytes((int) uncompressedSize);
 		int chunkCount = reader.length();

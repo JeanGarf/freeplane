@@ -28,6 +28,8 @@ class MmpBuilder {
 		int cloudColor = -1;
 		int priorityHighBits;
 		boolean unknownObject;
+		String[] properties = {};
+		byte[] image;
 		final List<byte[]> relationships = new ArrayList<>();
 		final List<TopicSpec> children = new ArrayList<>();
 
@@ -160,8 +162,28 @@ class MmpBuilder {
 		}
 		else
 			u16(0);
-		link("");
-		zeros(22);
+		u8(0x32);
+		u32(topic.properties.length);
+		for (int i = 0; i < topic.properties.length; i++) {
+			byte[] value = topic.properties[i].getBytes(java.nio.charset.StandardCharsets.UTF_16LE);
+			u32(0x4500 + i);
+			u32(value.length);
+			bytes(value);
+		}
+		bytes(0x00, 0x32, 0xff);
+		zeros(16);
+		if (topic.image != null) {
+			classTag("EnhMetafileC", false, 0);
+			u8(0x32);
+			u32(topic.image.length);
+			u8(2);
+			u32(0);
+			bytes(topic.image);
+			bytes(0x00, 0x32, 0xff);
+		}
+		else
+			u16(0);
+		zeros(4);
 		u32(topic.secondIconMask);
 		link(topic.hyperlink);
 		u32(-1);

@@ -6,7 +6,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.StringReader;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import javax.swing.JLabel;
@@ -31,6 +30,17 @@ public class ImportMindmanager2002Files extends AFreeplaneAction {
 	private static final long serialVersionUID = 1L;
 	private static final String FILE_EXTENSION = "mmp";
 	private static final int MAX_VISIBLE_PROBLEMS = 15;
+	private static final ImportProblem.Texts FREEPLANE_TEXTS = new ImportProblem.Texts() {
+		@Override
+		public String text(String key) {
+			return TextUtils.getText(key);
+		}
+
+		@Override
+		public String format(String key, Object... arguments) {
+			return TextUtils.format(key, arguments);
+		}
+	};
 
 	public ImportMindmanager2002Files() {
 		super("ImportMindmanager2002Files");
@@ -86,8 +96,7 @@ public class ImportMindmanager2002Files extends AFreeplaneAction {
 		final StringBuilder lines = new StringBuilder();
 		for (final ImportProblem problem : problems) {
 			LogUtils.warn("MindManager 2002 import: " + problem);
-			lines.append("\u2022 ").append(problem.branch).append(" : ")
-					.append(TextUtils.getText("mindmanager2002.problem." + problem.kind.name().toLowerCase(Locale.ROOT)))
+			lines.append("\u2022 ").append(problem.branch).append(" : ").append(problem.describe(FREEPLANE_TEXTS))
 					.append('\n');
 		}
 		final JTextArea text = new JTextArea(lines.toString().trim(), Math.min(problems.size(), MAX_VISIBLE_PROBLEMS), 60);

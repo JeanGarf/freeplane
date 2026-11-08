@@ -231,6 +231,34 @@ public class Mm2002FileReaderTest {
 	}
 
 	@Test
+	public void skipsPropertiesAndReadsTopicImage() throws Exception {
+		TopicSpec topic = new TopicSpec("With image", 1);
+		topic.properties = new String[] { "12", "Faux" };
+		topic.image = new byte[] { 7, 8, 9 };
+		topic.hyperlink = "https://example.org";
+		topic.secondIconMask = 1 << 9;
+
+		Mm2002Map map = read(topic, new TopicSpec("Next", 2));
+
+		Topic read = map.mainTopics.get(0);
+		assertThat(read.symbols.get(0)).containsExactly(7, 8, 9);
+		assertThat(read.hyperlink).isEqualTo("https://example.org");
+		assertThat(read.iconIndexes).containsExactly(41);
+		assertThat(map.mainTopics.get(1).text).isEqualTo("Next");
+		assertThat(map.problems).isEmpty();
+	}
+
+	@Test
+	public void recordsWhereReadingStopped() throws Exception {
+		TopicSpec broken = new TopicSpec("Broken", 1);
+		broken.unknownObject = true;
+
+		Mm2002Map map = read(broken);
+
+		assertThat(map.problems.get(0).stage).isEqualTo(ReadStage.ATTACHED_OBJECTS);
+	}
+
+	@Test
 	public void keepsReadTopicsWhenTheRestCannotBeRead() throws Exception {
 		byte[] data = MmpBuilder.build("Title", ICON_NAMES, NO_LEGEND,
 				Arrays.asList(new TopicSpec("First", 1), new TopicSpec("Second", 2)));
