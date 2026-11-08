@@ -1,6 +1,7 @@
 package org.freeplane.features.mindmanager2002;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,11 +20,15 @@ import org.freeplane.features.styles.IStyle;
 import org.freeplane.features.styles.MapStyleModel;
 import org.freeplane.features.styles.StyleTranslatedObject;
 import org.freeplane.features.url.UrlManager;
+import org.freeplane.features.url.mindmapmode.MFileManager;
+import org.freeplane.features.url.mindmapmode.TemplateManager;
 
 class TemplateStyles {
 	final List<String> keys = new ArrayList<>();
 	private final Map<String, String> names = new HashMap<>();
 	private final Map<String, StyleAppearance> appearances = new HashMap<>();
+	private MapModel templateMap;
+	private File templateFile;
 
 	static TemplateStyles load() {
 		TemplateStyles styles = new TemplateStyles();
@@ -35,6 +40,8 @@ class TemplateStyles {
 			MapModel templateMap = new MapModel(
 					Controller.getCurrentModeController().getMapController().duplicator());
 			loader.load(url, templateMap);
+			styles.templateMap = templateMap;
+			styles.templateFile = template;
 			MapStyleModel styleModel = MapStyleModel.getExtension(templateMap);
 			NodeModel userStyles = styleModel.getStyleNodeGroup(styleModel.getStyleMap(),
 					MapStyleModel.STYLES_USER_DEFINED);
@@ -57,6 +64,38 @@ class TemplateStyles {
 		names.put(key, style.toString());
 		appearances.put(key, new StyleAppearance(Boolean.TRUE.equals(NodeStyleModel.isBold(styleNode)),
 				Boolean.TRUE.equals(NodeStyleModel.isItalic(styleNode)), edge != null && edge.getColor() != null));
+	}
+
+	boolean contains(String key) {
+		return names.containsKey(key);
+	}
+
+	void addToTemplate(Map<String, Integer> newStyles) throws IOException {
+		if (templateMap == null || templateFile == null)
+			throw new IOException("No default template");
+		if (!UserStyleCreator.addMissingStyles(templateMap, newStyles))
+			return;
+		File target = writableTemplateFile();
+		File directory = target.getParentFile();
+		if (directory != null && !directory.isDirectory() && !directory.mkdirs())
+			throw new IOException("Cannot create " + directory);
+		MFileManager.getController(Controller.getCurrentModeController()).writeToFile(templateMap, target);
+	}
+
+	private File writableTemplateFile() {
+		File standardTemplates = TemplateManager.INSTANCE.defaultStandardTemplateDir();
+		boolean bundled = standardTemplates.getAbsoluteFile().equals(templateFile.getAbsoluteFile().getParentFile());
+		if (!bundled && templateFile.canWrite())
+			return templateFile;
+		return new File(TemplateManager.INSTANCE.defaultUserTemplateDir(), templateFile.getName());
+	}
+
+	String key(String name) {
+		for (String key : keys) {
+			if (name(key).equals(name))
+				return key;
+		}
+		return null;
 	}
 
 	String name(String key) {

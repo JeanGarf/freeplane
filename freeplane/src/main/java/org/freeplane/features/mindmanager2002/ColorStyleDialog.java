@@ -11,8 +11,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import javax.swing.Icon;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -23,11 +25,21 @@ import javax.swing.JScrollPane;
 import org.freeplane.core.util.TextUtils;
 
 class ColorStyleDialog {
+	static class Result {
+		final Map<Integer, String> styles;
+		final boolean addNewStylesToTemplate;
+
+		Result(Map<Integer, String> styles, boolean addNewStylesToTemplate) {
+			this.styles = styles;
+			this.addNewStylesToTemplate = addNewStylesToTemplate;
+		}
+	}
+
 	private static final int SWATCH_SIZE = 16;
 	private static final int MAX_EXAMPLES = 3;
 	private static final int MAX_VISIBLE_HEIGHT = 400;
 
-	static Map<Integer, String> chooseStyles(Component parent, Map<Integer, List<String>> colors,
+	static Result chooseStyles(Component parent, Map<Integer, List<String>> colors,
 			Map<Integer, String> legend, TemplateStyles styles, String tableLocation) {
 		JPanel rows = new JPanel(new GridBagLayout());
 		GridBagConstraints constraints = new GridBagConstraints();
@@ -46,6 +58,7 @@ class ColorStyleDialog {
 			rows.add(new JLabel(description(color.getKey(), color.getValue(), legend)), constraints);
 			constraints.gridx = 2;
 			JComboBox<String> selector = new JComboBox<>(choices.toArray(new String[0]));
+			selector.setEditable(true);
 			String suggestion = StyleSuggestion.suggest(legend.get(color.getKey()), styles.names());
 			if (suggestion != null)
 				selector.setSelectedItem(suggestion);
@@ -65,16 +78,26 @@ class ColorStyleDialog {
 		messageConstraints.insets = new Insets(0, 0, 8, 0);
 		message.add(new JLabel(TextUtils.format("mindmanager2002.styles_message", tableLocation)), messageConstraints);
 		message.add(scrollPane, messageConstraints);
+		JCheckBox addToTemplate = new JCheckBox(TextUtils.getText("mindmanager2002.add_styles_to_template"), true);
+		message.add(addToTemplate, messageConstraints);
 		int answer = JOptionPane.showConfirmDialog(parent, message, TextUtils.getText("mindmanager2002.styles_title"),
 				JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 		if (answer != JOptionPane.OK_OPTION)
 			return null;
 		Map<Integer, String> chosen = new LinkedHashMap<>();
 		for (Map.Entry<Integer, JComboBox<String>> selector : selectors.entrySet()) {
-			int index = selector.getValue().getSelectedIndex();
-			chosen.put(selector.getKey(), index <= 0 ? null : styles.keys.get(index - 1));
+			Object selected = selector.getValue().getEditor().getItem();
+			chosen.put(selector.getKey(), styleKey(selected == null ? "" : selected.toString(), choices.get(0), styles::key));
 		}
-		return chosen;
+		return new Result(chosen, addToTemplate.isSelected());
+	}
+
+	static String styleKey(String selected, String keepColor, Function<String, String> keyOfExistingStyle) {
+		String name = selected.trim();
+		if (name.isEmpty() || name.equals(keepColor))
+			return null;
+		String key = keyOfExistingStyle.apply(name);
+		return key != null ? key : name;
 	}
 
 	private static String description(int rgb, List<String> texts, Map<Integer, String> legend) {

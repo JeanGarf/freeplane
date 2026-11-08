@@ -5,6 +5,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.StringReader;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -78,11 +79,16 @@ public class ImportMindmanager2002Files extends AFreeplaneAction {
 					ConversionTable.FILE_NAME);
 			final ConversionTable table = ConversionTable.load(tableFile);
 			final TemplateStyles styles = TemplateStyles.load();
-			if (!chooseUnknownColorStyles(map, table, styles, tableFile))
+			final ColorStyleDialog.Result choices = chooseUnknownColorStyles(map, table, styles, tableFile);
+			if (choices == null)
 				return;
 			table.save(tableFile);
+			final Map<String, Integer> missingStyles = NewStyles.missing(map.fillColors(), table, styles::contains);
+			if (choices.addNewStylesToTemplate && !missingStyles.isEmpty())
+				addToTemplate(styles, missingStyles);
 			final String xml = MindManager2002Converter.toFreeplaneXml(map, outputFile, table, styles::appearance);
-			XmlImporter.newMap(new StringReader(xml), outputFile);
+			XmlImporter.newMap(new StringReader(xml), outputFile,
+					newMap -> UserStyleCreator.addMissingStyles(newMap, missingStyles));
 			if (!map.problems.isEmpty())
 				showProblems(map.problems);
 		}
@@ -111,18 +117,28 @@ public class ImportMindmanager2002Files extends AFreeplaneAction {
 				JOptionPane.WARNING_MESSAGE);
 	}
 
-	private boolean chooseUnknownColorStyles(Mm2002Map map, ConversionTable table, TemplateStyles styles,
-			File tableFile) {
+	private void addToTemplate(TemplateStyles styles, Map<String, Integer> missingStyles) {
+		try {
+			styles.addToTemplate(missingStyles);
+		}
+		catch (final Exception e) {
+			LogUtils.warn(e);
+			UITools.errorMessage(TextUtils.format("mindmanager2002.template_error", e.getMessage()));
+		}
+	}
+
+	private ColorStyleDialog.Result chooseUnknownColorStyles(Mm2002Map map, ConversionTable table,
+			TemplateStyles styles, File tableFile) {
 		final Map<Integer, List<String>> unknownColors = map.fillColors();
 		unknownColors.keySet().removeIf(table::knowsColor);
 		if (unknownColors.isEmpty())
-			return true;
+			return new ColorStyleDialog.Result(Collections.<Integer, String>emptyMap(), true);
 		final Component parent = Controller.getCurrentController().getViewController().getCurrentRootComponent();
-		final Map<Integer, String> chosen = ColorStyleDialog.chooseStyles(parent, unknownColors, map.legend, styles,
-				tableFile.getPath());
+		final ColorStyleDialog.Result chosen = ColorStyleDialog.chooseStyles(parent, unknownColors, map.legend,
+				styles, tableFile.getPath());
 		if (chosen == null)
-			return false;
-		chosen.forEach(table::setStyle);
-		return true;
+			return null;
+		chosen.styles.forEach(table::setStyle);
+		return chosen;
 	}
 }

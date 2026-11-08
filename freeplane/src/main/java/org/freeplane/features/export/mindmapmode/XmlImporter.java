@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.function.Consumer;
 
 import javax.swing.JOptionPane;
 
@@ -65,6 +66,11 @@ public class XmlImporter	{
 
 	public static void newMap(final Reader reader, final File outputFile)
 			throws IOException, XMLException, MalformedURLException {
+		newMap(reader, outputFile, map -> {});
+	}
+
+	public static void newMap(final Reader reader, final File outputFile, final Consumer<MapModel> beforeDisplay)
+			throws IOException, XMLException, MalformedURLException {
 		final ModeController modeController = Controller.getCurrentModeController();
 		final MapController mapController = modeController.getMapController();
 		final MapModel map = new MMapModel(mapController.duplicator());
@@ -73,6 +79,7 @@ public class XmlImporter	{
 		map.setURL(mapUrl);
 		map.setSaved(false);
 		mapController.fireMapCreated(map);
+		beforeDisplay.accept(map);
 		mapController.createMapView(map);
 	}
 
