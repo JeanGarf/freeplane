@@ -170,9 +170,9 @@ public class Mm2002FileReaderTest {
 
 		Mm2002Map map = read(withSymbol, next);
 
-		assertThat(map.mainTopics.get(0).symbols.get(0)).containsExactly(1, 2, 3, 4, 5);
+		assertThat(map.mainTopics.get(0).pictures.get(0).data).containsExactly(1, 2, 3, 4, 5);
 		assertThat(map.mainTopics.get(1).text).isEqualTo("Next");
-		assertThat(map.mainTopics.get(1).symbols.get(0)).containsExactly(9);
+		assertThat(map.mainTopics.get(1).pictures.get(0).data).containsExactly(9);
 	}
 
 	@Test
@@ -256,11 +256,42 @@ public class Mm2002FileReaderTest {
 		Mm2002Map map = read(topic, new TopicSpec("Next", 2));
 
 		Topic read = map.mainTopics.get(0);
-		assertThat(read.symbols.get(0)).containsExactly(7, 8, 9);
+		assertThat(read.pictures.get(0).data).containsExactly(7, 8, 9);
 		assertThat(read.hyperlink).isEqualTo("https://example.org");
 		assertThat(read.iconIndexes).containsExactly(41);
 		assertThat(map.mainTopics.get(1).text).isEqualTo("Next");
 		assertThat(map.problems).isEmpty();
+	}
+
+	@Test
+	public void topicWithHiddenChildrenIsFolded() throws Exception {
+		TopicSpec hiddenChild = new TopicSpec("Hidden", 2);
+		hiddenChild.hidden = true;
+		TopicSpec hiddenGrandChild = new TopicSpec("Hidden grand child", 3);
+		hiddenGrandChild.hidden = true;
+		hiddenChild.child(hiddenGrandChild);
+		TopicSpec folded = new TopicSpec("Folded", 1).child(hiddenChild);
+		TopicSpec unfolded = new TopicSpec("Unfolded", 4).child(new TopicSpec("Visible", 5));
+
+		Mm2002Map map = read(folded, unfolded);
+
+		assertThat(map.mainTopics.get(0).isFolded()).isTrue();
+		assertThat(map.mainTopics.get(0).children.get(0).isFolded()).isFalse();
+		assertThat(map.mainTopics.get(1).isFolded()).isFalse();
+		assertThat(map.mainTopics.get(1).children.get(0).isFolded()).isFalse();
+	}
+
+	@Test
+	public void readsTopicImageDisplaySize() throws Exception {
+		TopicSpec topic = new TopicSpec("Png", 1);
+		topic.rawImage = new byte[] { 1 };
+		topic.imageWidth = 125;
+		topic.imageHeight = 150;
+
+		Picture picture = read(topic).mainTopics.get(0).pictures.get(0);
+
+		assertThat(picture.displayWidth).isEqualTo(125);
+		assertThat(picture.displayHeight).isEqualTo(150);
 	}
 
 	@Test
@@ -271,7 +302,7 @@ public class Mm2002FileReaderTest {
 
 		Mm2002Map map = read(topic, new TopicSpec("Next", 2));
 
-		assertThat(map.mainTopics.get(0).symbols.get(0)).containsExactly(0x89, 'P', 'N', 'G', 1, 2);
+		assertThat(map.mainTopics.get(0).pictures.get(0).data).containsExactly(0x89, 'P', 'N', 'G', 1, 2);
 		assertThat(map.mainTopics.get(0).hyperlink).isEqualTo("https://example.org");
 		assertThat(map.problems).isEmpty();
 	}

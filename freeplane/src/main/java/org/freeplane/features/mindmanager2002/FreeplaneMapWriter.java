@@ -8,6 +8,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +24,7 @@ class FreeplaneMapWriter {
 
 	private static final String ROOT_ID = "ID_ROOT";
 	private static final String ROOT_STYLE = "AutomaticLayout.level.root";
+	static final double MAP_UNIT_IN_PIXELS = 0.27;
 
 	private final ImageStore imageStore;
 	private final ConversionTable table;
@@ -64,6 +66,8 @@ class FreeplaneMapWriter {
 				.append('"');
 		if (mainTopic)
 			xml.append(" POSITION=\"").append(topic.left ? "left" : "right").append('"');
+		if (topic.isFolded())
+			xml.append(" FOLDED=\"true\"");
 		String style = topic.hasFill() ? table.style(topic.fillColor) : null;
 		StyleAppearance appearance = style == null ? StyleAppearance.NONE : styleAppearance.apply(style);
 		if (style != null)
@@ -126,10 +130,10 @@ class FreeplaneMapWriter {
 	}
 
 	private void writeSymbols(Topic topic) throws IOException {
-		for (byte[] symbol : topic.symbols) {
+		for (Picture picture : topic.pictures) {
 			BufferedImage image;
 			try {
-				image = ImageDecoder.decode(symbol);
+				image = ImageDecoder.decode(picture.data);
 			}
 			catch (IOException e) {
 				LogUtils.warn("MindManager 2002 image skipped: " + e.getMessage());
@@ -137,7 +141,8 @@ class FreeplaneMapWriter {
 				continue;
 			}
 			String uri = storeImage(topic, image);
-			xml.append("<hook URI=\"").append(attribute(uri)).append("\" SIZE=\"1.0\" NAME=\"ExternalObject\"/>\n");
+			xml.append("<hook URI=\"").append(attribute(uri)).append("\" SIZE=\"").append(zoom(picture, image))
+					.append("\" NAME=\"ExternalObject\"/>\n");
 			return;
 		}
 	}
@@ -184,6 +189,13 @@ class FreeplaneMapWriter {
 	private String storeImage(Topic topic, BufferedImage image) throws IOException {
 		int number = imageCounters.merge(topic.id, 1, Integer::sum);
 		return imageStore.store("image_" + topic.id + "_" + number + ".png", image);
+	}
+
+	static String zoom(Picture picture, BufferedImage image) {
+		if (picture.displayWidth <= 0 || image.getWidth() <= 0)
+			return "1.0";
+		double zoom = picture.displayWidth * MAP_UNIT_IN_PIXELS / image.getWidth();
+		return String.format(Locale.ROOT, "%.3f", zoom);
 	}
 
 	static String link(String hyperlink) {

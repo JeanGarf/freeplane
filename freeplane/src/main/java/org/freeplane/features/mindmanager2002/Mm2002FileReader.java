@@ -33,6 +33,7 @@ class Mm2002FileReader {
 	private static final int VERSION_MARKER = 0x32;
 	private static final int TOPIC_MARKER = 0x33;
 	private static final int FLAG_PRIORITY = 0x02;
+	private static final int FLAG_HIDDEN = 0x80;
 	private static final int STYLE_BOLD = 0x01;
 	private static final int STYLE_ITALIC = 0x02;
 	private static final int STYLE_FILLED = 0x08;
@@ -173,7 +174,10 @@ class Mm2002FileReader {
 		topic.y = reader.i32();
 		reader.skip(4);
 		int flags = reader.i32();
-		reader.skip(13);
+		topic.hidden = (flags & FLAG_HIDDEN) != 0;
+		topic.imageWidth = reader.i32();
+		topic.imageHeight = reader.i32();
+		reader.skip(5);
 		reader.string();
 		int priority = reader.i32() & PRIORITY_MASK;
 		if ((flags & FLAG_PRIORITY) != 0)
@@ -303,11 +307,12 @@ class Mm2002FileReader {
 		long size = reader.u32();
 		int type = reader.u8();
 		if (type == RAW_IMAGE) {
-			topic.symbols.add(reader.bytes((int) Math.min(size, Integer.MAX_VALUE)));
+			topic.pictures.add(new Picture(reader.bytes((int) Math.min(size, Integer.MAX_VALUE)), topic.imageWidth,
+					topic.imageHeight));
 			reader.skip(RAW_IMAGE_TRAILER_SIZE);
 		}
 		else if (type == COMPRESSED_METAFILE)
-			topic.symbols.add(chunks(size));
+			topic.pictures.add(new Picture(chunks(size), topic.imageWidth, topic.imageHeight));
 		else
 			throw new IOException("Unsupported MindManager 2002 image type " + type + " at offset " + reader.position());
 		reader.expect(0x00, VERSION_MARKER, 0xff);
@@ -357,13 +362,16 @@ class Mm2002FileReader {
 		String className = objectClass();
 		if (!SYMBOL_CLASS.equals(className))
 			throw new IOException("Unsupported MindManager 2002 object " + className + " at offset " + reader.position());
-		reader.skip(3 + 4 * 4 + 2 + 2 * 4 + 2 + 4 + 16);
-		link();
+		reader.skip(3 + 4 * 4 + 2);
+		int width = Math.abs(reader.i32());
+		int height = Math.abs(reader.i32());
+		reader.skip(2 + 4 + 16);
+		properties();
 		reader.expect(0x00, VERSION_MARKER, 0xff, VERSION_MARKER);
 		reader.expect(VERSION_MARKER);
 		int size = reader.length();
 		reader.skip(4 + 1);
-		topic.symbols.add(reader.bytes(size));
+		topic.pictures.add(new Picture(reader.bytes(size), width, height));
 		reader.skip(16);
 	}
 

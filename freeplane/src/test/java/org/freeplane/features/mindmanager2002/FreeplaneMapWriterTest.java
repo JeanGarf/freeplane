@@ -122,6 +122,27 @@ public class FreeplaneMapWriterTest {
 	}
 
 	@Test
+	public void foldsTopicWhoseChildrenAreHidden() throws Exception {
+		Topic folded = topic("folded", 1);
+		Topic hidden = topic("hidden", 2);
+		hidden.hidden = true;
+		folded.children.add(hidden);
+
+		String xml = write(folded, topic("leaf", 3));
+
+		assertThat(xml).contains("ID=\"ID_1\" POSITION=\"right\" FOLDED=\"true\">");
+		assertThat(xml).contains("ID=\"ID_3\" POSITION=\"right\">");
+	}
+
+	@Test
+	public void scalesImageToItsMindManagerDisplayWidth() {
+		BufferedImage image = new BufferedImage(200, 100, BufferedImage.TYPE_INT_RGB);
+
+		assertThat(FreeplaneMapWriter.zoom(new Picture(new byte[0], 400, 200), image)).isEqualTo("0.540");
+		assertThat(FreeplaneMapWriter.zoom(new Picture(new byte[0], 0, 0), image)).isEqualTo("1.0");
+	}
+
+	@Test
 	public void writesCloud() throws Exception {
 		Topic topic = topic("clouded", 1);
 		topic.cloudColor = 0xfff5cd;
@@ -133,7 +154,7 @@ public class FreeplaneMapWriterTest {
 	public void reportsUnreadableSymbolWithItsBranch() throws Exception {
 		Topic parent = topic("parent", 1);
 		Topic child = topic("child", 2);
-		child.symbols.add(new byte[] { 0, 0, 0, 0 });
+		child.pictures.add(new Picture(new byte[] { 0, 0, 0, 0 }, 0, 0));
 		parent.children.add(child);
 		Mm2002Map map = new Mm2002Map("Root");
 		map.mainTopics.add(parent);

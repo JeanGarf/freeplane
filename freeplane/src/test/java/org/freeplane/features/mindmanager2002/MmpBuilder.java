@@ -14,6 +14,9 @@ class MmpBuilder {
 		long id;
 		int y;
 		boolean left;
+		boolean hidden;
+		int imageWidth;
+		int imageHeight;
 		int style;
 		int lineColor = 0xffcc00;
 		int fillColor = 0xffff00;
@@ -118,9 +121,11 @@ class MmpBuilder {
 		u32(0);
 		u32(topic.y);
 		color(0xffffff);
-		int flags = 1 | (topic.priority != 0 ? 2 : 0) | (topic.note != null ? 4 : 0);
+		int flags = 1 | (topic.priority != 0 ? 2 : 0) | (topic.note != null ? 4 : 0) | (topic.hidden ? 0x80 : 0);
 		u32(flags);
-		zeros(13);
+		u32(topic.imageWidth);
+		u32(topic.imageHeight);
+		zeros(5);
 		string(topic.note != null ? "&" : "");
 		u32((topic.priority != 0 ? topic.priority : 1) | topic.priorityHighBits);
 		u32(topic.symbol != null || topic.unknownObject ? 1 : 0);

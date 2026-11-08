@@ -9,6 +9,9 @@ class Topic {
 	long id;
 	String text = "";
 	boolean left;
+	boolean hidden;
+	int imageWidth;
+	int imageHeight;
 	int x;
 	int y;
 	boolean bold;
@@ -23,9 +26,13 @@ class Topic {
 	final List<Integer> iconIndexes = new ArrayList<>();
 	String hyperlink = "";
 	Note note = Note.EMPTY;
-	final List<byte[]> symbols = new ArrayList<>();
+	final List<Picture> pictures = new ArrayList<>();
 	final List<Relationship> relationships = new ArrayList<>();
 	final List<Topic> children = new ArrayList<>();
+
+	boolean isFolded() {
+		return !hidden && !children.isEmpty() && children.get(0).hidden;
+	}
 
 	boolean hasFill() {
 		return filled && fillColor != NO_COLOR;
