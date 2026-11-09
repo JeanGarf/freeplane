@@ -110,8 +110,10 @@
 				<Entry name="ImportExplorerFavoritesAction" />
 				<Entry name="ImportFolderStructureAction" />
 				<Entry name="ImportXmlFile" />
-				<Entry name="ImportMindmanagerFiles" />
-				<Entry name="ImportMindmanager2002Files" />
+				<Entry name="import_mindmanager">
+					<Entry name="ImportMindmanagerFiles" />
+					<Entry name="ImportMindmanager2002Files" />
+				</Entry>
 			</Entry>
 			<Entry builder="separator" />
 						<Entry name="print">
