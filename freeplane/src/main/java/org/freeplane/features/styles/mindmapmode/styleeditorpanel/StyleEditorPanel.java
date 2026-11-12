@@ -165,15 +165,17 @@ public class StyleEditorPanel extends JPanel {
                 new DetailContentTypeControlGroup(),
                 new NoteContentTypeControlGroup(),
 
+				new GroupSeparator("OptionPanel.separator.EdgeControls"),
+				new EdgeWidthControlGroup(),
+				new EdgeDashControlGroup(),
+				new EdgeStyleControlGroup(),
+				new EdgeColorControlGroup(),
+				new NextLineControlGroup(),
+
                 new GroupSeparator("OptionPanel.separator.NodeShape"),
 				new NodeShapeControlGroup(),
 				new MinNodeWidthControlGroup(),
 				new MaxNodeWidthControlGroup(),
-
-				new GroupSeparator("OptionPanel.separator.NodeLayout"),
-				new ChildNodesLayoutControlGroup(),
-                new ChildHorizontalGapControlGroup(),
-                new ChildVerticalGapControlGroup(),
 
 				new GroupSeparator("OptionPanel.separator.NodeBorder"),
 				new BorderWidthAndBorderWidthMatchesEdgeControlGroup(),
@@ -181,12 +183,11 @@ public class StyleEditorPanel extends JPanel {
 				new BorderColorAndColorMatchesEdgeControlGroup(),
 				new NextLineControlGroup(),
 
-				new GroupSeparator("OptionPanel.separator.EdgeControls"),
-				new EdgeWidthControlGroup(),
-				new EdgeDashControlGroup(),
-				new EdgeStyleControlGroup(),
-				new EdgeColorControlGroup(),
-				new NextLineControlGroup(),
+				new GroupSeparator("OptionPanel.separator.NodeLayout"),
+				new ChildNodesLayoutControlGroup(),
+                new ChildHorizontalGapControlGroup(),
+                new ChildVerticalGapControlGroup(),
+
 				new GroupSeparator("OptionPanel.separator.CloudControls"),
 				new CloudColorShapeControlGroup()
 		};	}
