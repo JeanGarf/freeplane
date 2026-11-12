@@ -29,6 +29,7 @@ import java.awt.event.WindowEvent;
 
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import org.freeplane.core.resources.WindowConfigurationStorage;
 import org.freeplane.core.ui.AFreeplaneAction;
@@ -37,8 +38,10 @@ import org.freeplane.core.undo.IUndoHandler;
 import org.freeplane.core.util.LogUtils;
 import org.freeplane.core.util.TextUtils;
 import org.freeplane.features.map.MapModel;
+import org.freeplane.features.map.NodeModel;
 import org.freeplane.features.mode.Controller;
 import org.freeplane.features.mode.ModeController;
+import org.freeplane.features.styles.IStyle;
 import org.freeplane.features.styles.LogicalStyleController;
 import org.freeplane.features.styles.MapStyleModel;
 import org.freeplane.features.ui.IMapViewManager;
@@ -55,9 +58,20 @@ public class EditStylesAction extends AFreeplaneAction {
 	protected JDialog dialog;
 	private Component currentMapView;
 	private MapModel currentMap;
+	private IStyle styleToSelect;
 
 	public EditStylesAction() {
 		super("EditStylesAction");
+	}
+
+	public void edit(final IStyle style) {
+		styleToSelect = style;
+		try {
+			actionPerformed(null);
+		}
+		finally {
+			styleToSelect = null;
+		}
 	}
 
 	@Override
@@ -81,11 +95,20 @@ public class EditStylesAction extends AFreeplaneAction {
 		init();
 		SModeController modeController = getModeController();
 		modeController.getMapController().createMapView(styleMap);
+		selectStyleToEdit(mapStyleModel);
 		Controller controller = modeController.getController();
 		IMapViewManager styleMapViewManager = controller.getMapViewManager();
         Component mapViewComponent = styleMapViewManager.getMapViewComponent();
 		((DialogController) controller.getViewController()).setMapView(mapViewComponent);
 		dialog.setVisible(true);
+	}
+
+	private void selectStyleToEdit(final MapStyleModel mapStyleModel) {
+		if (styleToSelect == null)
+			return;
+		final NodeModel styleNode = mapStyleModel.getStyleNode(styleToSelect);
+		if (styleNode != null)
+			SwingUtilities.invokeLater(() -> getModeController().getMapController().select(styleNode));
 	}
 
 	void commit() {

@@ -116,6 +116,7 @@ import org.freeplane.features.styles.MapStyle;
 import org.freeplane.features.styles.mindmapmode.MLogicalStyleController;
 import org.freeplane.features.styles.mindmapmode.MUIFactory;
 import org.freeplane.features.styles.mindmapmode.ShowFormatPanelAction;
+import org.freeplane.features.styles.mindmapmode.stylespane.StylesPanel;
 import org.freeplane.features.styles.mindmapmode.styleeditorpanel.StyleEditorPanel;
 import org.freeplane.features.text.mindmapmode.MTextController;
 import org.freeplane.features.text.mindmapmode.SortNodes;
@@ -177,6 +178,14 @@ public class MModeControllerFactory {
 		final JTabbedPane tabs = UITools.getFreeplaneTabbedPanel();
 		tabs.addTab("", ResourceController.getResourceController().getIcon("/images/panelTabs/formatTab.svg?useAccentColor=true"),
 		        styleScrollPane, TextUtils.getText("format_panel"));
+		final StylesPanel stylesPanel = new StylesPanel(modeController);
+		final MMapController styleListenersController = (MMapController) modeController.getMapController();
+		styleListenersController.addNodeSelectionListener(stylesPanel);
+		styleListenersController.addUINodeChangeListener(stylesPanel);
+		styleListenersController.addUIMapChangeListener(stylesPanel);
+		modeController.getController().getMapViewManager().addMapSelectionListener(stylesPanel);
+		tabs.addTab("", ResourceController.getResourceController().getIcon("/images/panelTabs/stylesTab.svg?useAccentColor=true"),
+		        stylesPanel, TextUtils.getText("styles_panel"));
 		tabs.addTab("", ResourceController.getResourceController().getIcon("/images/panelTabs/attributeTab.svg?useAccentColor=true"),
 		        createAttributesPanel(), TextUtils.getText("attributes_and_tags"));
         HierarchicalIcons.install(modeController);

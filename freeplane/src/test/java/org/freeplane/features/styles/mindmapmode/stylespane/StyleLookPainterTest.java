@@ -76,4 +76,10 @@ public class StyleLookPainterTest {
 		assertThat(font.isItalic()).isFalse();
 		assertThat(font.getSize()).isEqualTo(13);
 	}
+
+	@Test
+	public void insetsTextMoreForShapesThatCutCorners() {
+		assertThat(StyleLookPainter.textInset(NodeStyleShape.oval, 24)).isGreaterThan(StyleLookPainter.textInset(NodeStyleShape.bubble, 24));
+		assertThat(StyleLookPainter.textInset(NodeStyleShape.rectangle, 24)).isEqualTo(StyleLookPainter.textInset(NodeStyleShape.fork, 24));
+	}
 }

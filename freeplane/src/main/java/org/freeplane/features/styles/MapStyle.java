@@ -1030,7 +1030,10 @@ public class MapStyle extends PersistentNodeHook implements IExtension, IMapLife
     }
 
     public void redefineStyle(final NodeModel node, boolean copyToExternalTemplate) {
-        final IStyle style = LogicalStyleController.getController().getFirstStyle(node);
+        redefineStyle(node, LogicalStyleController.getController().getFirstStyle(node), copyToExternalTemplate);
+    }
+
+    public void redefineStyle(final NodeModel node, final IStyle style, boolean copyToExternalTemplate) {
         MapModel map = node.getMap();
 		final MapStyleModel extension = MapStyleModel.getExtension(map);
         final NodeModel styleNode = extension.getStyleNode(style);
@@ -1038,7 +1041,8 @@ public class MapStyle extends PersistentNodeHook implements IExtension, IMapLife
             return;
         styleNode.getMap().putExtension(IUndoHandler.class, map.getExtension(IUndoHandler.class));
         Controller.getCurrentModeController().undoableCopyExtensions(LogicalStyleKeys.NODE_STYLE, node, styleNode);
-        Controller.getCurrentModeController().undoableRemoveExtensions(LogicalStyleKeys.NODE_STYLE, node, node);
+        if(style.equals(LogicalStyleController.getController().getFirstStyle(node)))
+            Controller.getCurrentModeController().undoableRemoveExtensions(LogicalStyleKeys.NODE_STYLE, node, node);
         LogicalStyleController.getController().refreshMapLaterUndoable(map);
         if(copyToExternalTemplate)
             undoableCopyStyleToAssociatedExternalTemplate(map, style);

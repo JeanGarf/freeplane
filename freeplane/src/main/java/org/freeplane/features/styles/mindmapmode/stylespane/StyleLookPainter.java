@@ -32,6 +32,19 @@ public class StyleLookPainter {
 		}
 	}
 
+	public static int textInset(NodeStyleShape shape, int height) {
+		switch (shape) {
+		case oval:
+			return height / 2 + 2;
+		case wide_hexagon:
+			return height / 2;
+		case narrow_hexagon:
+			return height / 4 + 4;
+		default:
+			return 8;
+		}
+	}
+
 	public static Font fontFor(StyleLook look, Font base) {
 		final int style = (look.bold ? Font.BOLD : 0) | (look.italic ? Font.ITALIC : 0);
 		return new Font(look.fontFamily != null ? look.fontFamily : base.getFamily(), style, base.getSize());
