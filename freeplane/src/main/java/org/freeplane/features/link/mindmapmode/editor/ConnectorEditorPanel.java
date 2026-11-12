@@ -37,7 +37,7 @@ import org.freeplane.features.map.MapModel;
 import org.freeplane.features.styles.IStyle;
 import org.freeplane.features.styles.MapStyleModel;
 import org.freeplane.features.styles.StyleString;
-import org.freeplane.features.styles.mindmapmode.ComboBoxRendererWithTooltip;
+import org.freeplane.features.styles.mindmapmode.stylespane.StyleComboBoxRenderer;
 
 import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.factories.Paddings;
@@ -128,7 +128,7 @@ public class ConnectorEditorPanel extends JPanel {
         final JComboBox<IStyle> stylesBox = new JComboBox(styles);
         stylesBox.setSelectedItem(link.getStyle());
         stylesBox.setPrototypeDisplayValue(new StyleString("XXXXXXXXXXXXXXXXXXXXXXXX"));
-        stylesBox.setRenderer(new ComboBoxRendererWithTooltip(stylesBox));
+        stylesBox.setRenderer(new StyleComboBoxRenderer(stylesBox));
         stylesBox.setAlignmentX(JComponent.LEFT_ALIGNMENT);
         stylesBox.addItemListener(item -> {
             linkController.setConnectorStyle(link, (IStyle)stylesBox.getSelectedItem());

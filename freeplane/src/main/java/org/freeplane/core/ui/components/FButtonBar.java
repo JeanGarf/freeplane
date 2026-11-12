@@ -88,6 +88,10 @@ public class FButtonBar extends JComponent implements IAcceleratorChangeListener
 		onModifierChange();
 	}
 
+	public void repaintButtons() {
+		repaint();
+	}
+
 	@Override
 	public void acceleratorChanged(final AFreeplaneAction action, final KeyStroke oldStroke, final KeyStroke newStroke) {
 		final int oldButtonNumber = oldStroke != null ? oldStroke.getKeyCode() - KeyEvent.VK_F1 : -1;

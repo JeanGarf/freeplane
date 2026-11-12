@@ -87,6 +87,10 @@ import org.freeplane.features.layout.LayoutController;
 import org.freeplane.features.layout.mindmapmode.MLayoutController;
 import org.freeplane.features.link.LinkController;
 import org.freeplane.features.link.mindmapmode.MLinkController;
+import org.freeplane.features.map.MapModel;
+import org.freeplane.features.map.MapChangeEvent;
+import org.freeplane.features.map.IMapSelectionListener;
+import org.freeplane.features.map.IMapChangeListener;
 import org.freeplane.features.map.AlwaysUnfoldedNode;
 import org.freeplane.features.map.FoldingController;
 import org.freeplane.features.map.FreeNode;
@@ -366,6 +370,19 @@ public class MModeControllerFactory {
 		mapController.addUIMapChangeListener(uiFactory);
 		controller.getMapViewManager().addMapSelectionListener(uiFactory);
 		modeController.addExtension(MUIFactory.class, uiFactory);
+		mapController.addUIMapChangeListener(new IMapChangeListener() {
+			@Override
+			public void mapChanged(MapChangeEvent event) {
+				if (MapStyle.MAP_STYLES.equals(event.getProperty()))
+					fButtonToolBar.repaintButtons();
+			}
+		});
+		controller.getMapViewManager().addMapSelectionListener(new IMapSelectionListener() {
+			@Override
+			public void afterMapChange(MapModel oldMap, MapModel newMap) {
+				fButtonToolBar.repaintButtons();
+			}
+		});
 
 		MapDisplayNameRefreshCoordinator mapDisplayNameRefreshCoordinator = new MapDisplayNameRefreshCoordinator();
 		mapController.addUINodeChangeListener(mapDisplayNameRefreshCoordinator);
