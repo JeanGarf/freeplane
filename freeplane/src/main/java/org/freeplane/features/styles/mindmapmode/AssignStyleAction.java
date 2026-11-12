@@ -22,6 +22,8 @@ package org.freeplane.features.styles.mindmapmode;
 import java.awt.event.ActionEvent;
 
 import org.freeplane.core.ui.AMultipleNodeAction;
+import org.freeplane.core.ui.components.ButtonLook;
+import org.freeplane.core.ui.components.ButtonLookProvider;
 import org.freeplane.core.ui.SelectableAction;
 import org.freeplane.features.map.IMapSelection;
 import org.freeplane.features.map.NodeModel;
@@ -30,13 +32,14 @@ import org.freeplane.features.styles.IStyle;
 import org.freeplane.features.styles.LogicalStyleController;
 import org.freeplane.features.styles.LogicalStyleModel;
 import org.freeplane.features.styles.StyleTranslatedObject;
+import org.freeplane.features.styles.mindmapmode.stylespane.StyleLookReader;
 
 /**
  * @author Dimitry Polivaev
  * 28.09.2009
  */
 @SelectableAction(checkOnPopup = true)
-public class AssignStyleAction extends AMultipleNodeAction {
+public class AssignStyleAction extends AMultipleNodeAction implements ButtonLookProvider {
 	final private IStyle style;
 
 	public AssignStyleAction(final IStyle style) {
@@ -49,8 +52,17 @@ public class AssignStyleAction extends AMultipleNodeAction {
     }
 
 	private static String actionName(final IStyle style) {
+			return actionKey(style);
+    }
+
+	public static String actionKey(final IStyle style) {
 			return "AssignStyleAction." + StyleTranslatedObject.toKeyString(style);
     }
+
+	@Override
+	public ButtonLook currentButtonLook() {
+		return new StyleLookReader().read(Controller.getCurrentController().getMap(), style);
+	}
 
 	/**
 	 * 

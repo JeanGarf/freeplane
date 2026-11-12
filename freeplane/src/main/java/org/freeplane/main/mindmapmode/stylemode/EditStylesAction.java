@@ -29,6 +29,7 @@ import java.awt.event.WindowEvent;
 
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import org.freeplane.core.resources.WindowConfigurationStorage;
 import org.freeplane.core.ui.AFreeplaneAction;
@@ -61,6 +62,10 @@ public class EditStylesAction extends AFreeplaneAction {
 
 	public EditStylesAction() {
 		super("EditStylesAction");
+	}
+
+	public void edit(final IStyle style) {
+		editStyle(null, style);
 	}
 
 	@Override
@@ -107,7 +112,7 @@ public class EditStylesAction extends AFreeplaneAction {
 			return;
 		final NodeModel styleNode = mapStyleModel.getStyleNode(styleToSelect);
 		if (styleNode != null)
-			getModeController().getMapController().select(styleNode);
+			SwingUtilities.invokeLater(() -> getModeController().getMapController().select(styleNode));
 	}
 
 	void commit() {

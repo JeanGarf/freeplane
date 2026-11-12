@@ -45,6 +45,7 @@ import org.freeplane.features.mode.Controller;
 import org.freeplane.features.mode.ModeController;
 import org.freeplane.features.nodestyle.NodeStyleController;
 import org.freeplane.features.nodestyle.mindmapmode.MNodeStyleController;
+import org.freeplane.features.styles.mindmapmode.stylespane.StyleComboBoxRenderer;
 import org.freeplane.features.styles.IStyle;
 import org.freeplane.features.styles.LogicalStyleController;
 import org.freeplane.features.styles.LogicalStyleController.StyleOption;
@@ -200,7 +201,7 @@ public class MUIFactory implements INodeSelectionListener, INodeChangeListener, 
 
 	public Container createStyleBox() {
 		final JComboBox stylesBox = JComboBoxFactory.create(styles);
-		stylesBox.setRenderer(new ComboBoxRendererWithTooltip(stylesBox));
+		stylesBox.setRenderer(new StyleComboBoxRenderer(stylesBox));
 		return stylesBox;
 	}
 

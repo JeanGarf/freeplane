@@ -88,6 +88,10 @@ import org.freeplane.features.layout.LayoutController;
 import org.freeplane.features.layout.mindmapmode.MLayoutController;
 import org.freeplane.features.link.LinkController;
 import org.freeplane.features.link.mindmapmode.MLinkController;
+import org.freeplane.features.map.MapModel;
+import org.freeplane.features.map.MapChangeEvent;
+import org.freeplane.features.map.IMapSelectionListener;
+import org.freeplane.features.map.IMapChangeListener;
 import org.freeplane.features.map.AlwaysUnfoldedNode;
 import org.freeplane.features.map.FoldingController;
 import org.freeplane.features.map.FreeNode;
@@ -126,6 +130,7 @@ import org.freeplane.features.treetable.mindmapmode.TreeTablePropertiesAction;
 import org.freeplane.features.treetable.mindmapmode.ToggleTreeTableTextWrapAction;
 import org.freeplane.features.treetable.mindmapmode.TreeTableColumnActions;
 import org.freeplane.features.treetable.mindmapmode.TreeTableEditing;
+import org.freeplane.features.styles.mindmapmode.stylespane.StylesPanel;
 import org.freeplane.features.styles.mindmapmode.styleeditorpanel.StyleEditorPanel;
 import org.freeplane.features.text.mindmapmode.MTextController;
 import org.freeplane.features.text.mindmapmode.SortNodes;
@@ -189,6 +194,14 @@ public class MModeControllerFactory {
 		final JTabbedPane tabs = UITools.getFreeplaneTabbedPanel();
 		tabs.addTab("", ResourceController.getResourceController().getIcon("/images/panelTabs/formatTab.svg?useAccentColor=true"),
 		        styleScrollPane, TextUtils.getText("format_panel"));
+		final StylesPanel stylesPanel = new StylesPanel(modeController);
+		final MMapController styleListenersController = (MMapController) modeController.getMapController();
+		styleListenersController.addNodeSelectionListener(stylesPanel);
+		styleListenersController.addUINodeChangeListener(stylesPanel);
+		styleListenersController.addUIMapChangeListener(stylesPanel);
+		modeController.getController().getMapViewManager().addMapSelectionListener(stylesPanel);
+		tabs.addTab("", ResourceController.getResourceController().getIcon("/images/panelTabs/stylesTab.svg?useAccentColor=true"),
+		        stylesPanel, TextUtils.getText("styles_panel"));
 		tabs.addTab("", ResourceController.getResourceController().getIcon("/images/panelTabs/attributeTab.svg?useAccentColor=true"),
 		        createAttributesPanel(), TextUtils.getText("attributes_and_tags"));
         HierarchicalIcons.install(modeController);
@@ -381,6 +394,19 @@ public class MModeControllerFactory {
 		mapController.addUIMapChangeListener(uiFactory);
 		controller.getMapViewManager().addMapSelectionListener(uiFactory);
 		modeController.addExtension(MUIFactory.class, uiFactory);
+		mapController.addUIMapChangeListener(new IMapChangeListener() {
+			@Override
+			public void mapChanged(MapChangeEvent event) {
+				if (MapStyle.MAP_STYLES.equals(event.getProperty()))
+					fButtonToolBar.repaintButtons();
+			}
+		});
+		controller.getMapViewManager().addMapSelectionListener(new IMapSelectionListener() {
+			@Override
+			public void afterMapChange(MapModel oldMap, MapModel newMap) {
+				fButtonToolBar.repaintButtons();
+			}
+		});
 
 		MapDisplayNameRefreshCoordinator mapDisplayNameRefreshCoordinator = new MapDisplayNameRefreshCoordinator();
 		mapController.addUINodeChangeListener(mapDisplayNameRefreshCoordinator);

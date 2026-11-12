@@ -32,6 +32,7 @@ import javax.swing.JPanel;
 
 import org.freeplane.core.resources.IFreeplanePropertyListener;
 import org.freeplane.core.resources.ResourceController;
+import org.freeplane.core.resources.components.CollapsibleSections;
 import org.freeplane.core.resources.components.SeparatorProperty;
 import org.freeplane.core.ui.components.UITools;
 import org.freeplane.features.map.IMapSelectionListener;
@@ -211,6 +212,7 @@ public class StyleEditorPanel extends JPanel {
 		}
 		formBuilder.getLayout().setHonorsVisibility(false);
 		add(formBuilder.getPanel(), BorderLayout.CENTER);
+		CollapsibleSections.install(formBuilder.getPanel(), "format");
 		addListeners();
 		setFont(this, panelConfiguration.fontSize);
 	}
