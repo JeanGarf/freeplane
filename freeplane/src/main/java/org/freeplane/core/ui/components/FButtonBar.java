@@ -21,8 +21,12 @@ package org.freeplane.core.ui.components;
 
 import static org.freeplane.core.ui.svgicons.FreeplaneIconFactory.toImageIcon;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.Window;
@@ -35,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -103,6 +108,7 @@ public class FButtonBar extends JComponent implements IAcceleratorChangeListener
 			button.setText(text);
 			button.setToolTipText(text);
 			button.setAction(action);
+			button.setContentAreaFilled(!(action instanceof ButtonLookProvider));
 			button.setEnabled(action.isEnabled());
 		}
 	}
@@ -111,6 +117,7 @@ public class FButtonBar extends JComponent implements IAcceleratorChangeListener
     private void assignSetAcceleratorOnNextClickAction(final JButton button, final KeyStroke ks) {
         final Action setAcceleratorAction = new SetFKeyAcceleratorOnNextClickAction(ks);
         button.setAction(setAcceleratorAction);
+        button.setContentAreaFilled(true);
         button.setEnabled(setAcceleratorAction.isEnabled());
         final String text = TextUtils.getText("f_button_unassigned");
         button.setText(text);
@@ -129,22 +136,50 @@ public class FButtonBar extends JComponent implements IAcceleratorChangeListener
 		final JButton[] buttons = new JButton[BUTTON_NUMBER];
 		for (int i = 0; i < BUTTON_NUMBER; i++) {
 			final String name = "f" + (i + 1) + ".svg";
-			final JButton button = buttons[i] = new JButton(toImageIcon(IconStoreFactory.ICON_STORE.getUIIcon(name).getIcon())) {
-				/**
-				 *
-				 */
-				private static final long serialVersionUID = 1L;
-
-				@Override
-				protected void configurePropertiesFromAction(final Action a) {
-				}
-			};
+			final JButton button = buttons[i] = new FunctionKeyButton(toImageIcon(IconStoreFactory.ICON_STORE.getUIIcon(name).getIcon()));
 			button.setFocusable(false);
             KeyStroke ks = KeyStroke.getKeyStroke(KeyEvent.VK_F1 + i, modifiers);
             assignSetAcceleratorOnNextClickAction(button, ks);
 
 		}
 		return buttons;
+	}
+
+	private static class FunctionKeyButton extends JButton {
+		private static final long serialVersionUID = 1L;
+
+		FunctionKeyButton(Icon icon) {
+			super(icon);
+		}
+
+		@Override
+		protected void configurePropertiesFromAction(final Action a) {
+		}
+
+		private ButtonLook look() {
+			final Action action = getAction();
+			return action instanceof ButtonLookProvider ? ((ButtonLookProvider) action).currentButtonLook() : null;
+		}
+
+		@Override
+		public Color getForeground() {
+			final ButtonLook look = look();
+			return look != null && look.foreground() != null ? look.foreground() : super.getForeground();
+		}
+
+		@Override
+		public Font getFont() {
+			final ButtonLook look = look();
+			return look != null ? look.deriveFont(super.getFont()) : super.getFont();
+		}
+
+		@Override
+		protected void paintComponent(final Graphics g) {
+			final ButtonLook look = look();
+			if (look != null)
+				look.paintBackground((Graphics2D) g, 0, 0, getWidth(), getHeight());
+			super.paintComponent(g);
+		}
 	}
 
 	private JButton[] createButtons(final int modifiers) {
