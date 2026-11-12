@@ -79,6 +79,7 @@ import org.freeplane.features.icon.factory.IconStoreFactory;
 import org.freeplane.features.icon.mindmapmode.TagSelection;
 import org.freeplane.features.link.LinkController;
 import org.freeplane.features.link.NodeLinks;
+import org.freeplane.features.edge.EdgeAttachment;
 import org.freeplane.features.map.MapController;
 import org.freeplane.features.map.NodeModel;
 import org.freeplane.features.map.ITooltipProvider.TooltipTrigger;
@@ -1031,6 +1032,10 @@ public class MainView extends ZoomableLabel {
 
 	public Point getLeftPoint() {
 		return painter.getLeftPoint();
+	}
+
+	public Point getEntryPoint(boolean leftSide, EdgeAttachment attachment) {
+		return painter.getEntryPoint(leftSide, attachment);
 	}
 
 	public Point getRightPoint() {

@@ -66,6 +66,7 @@ public class EdgeController implements IExtension {
 	final private ExclusivePropertyChain<EdgeStyle, NodeModel> styleHandlers;
 	final private ExclusivePropertyChain<Integer, NodeModel> widthHandlers;
 	final private ExclusivePropertyChain<Dash, NodeModel> dashHandlers;
+	final private ExclusivePropertyChain<EdgeAttachment, NodeModel> attachmentHandlers;
 	private ModeController modeController;
 	final protected EdgeColorsConfigurationFactory edgeColorsConfigurationFactory;
 
@@ -76,6 +77,7 @@ public class EdgeController implements IExtension {
 		styleHandlers = new ExclusivePropertyChain<EdgeStyle, NodeModel>();
 		widthHandlers = new ExclusivePropertyChain<Integer, NodeModel>();
 		dashHandlers = new ExclusivePropertyChain<Dash, NodeModel>();
+		attachmentHandlers = new ExclusivePropertyChain<EdgeAttachment, NodeModel>();
 
 		addColorGetter(IPropertyHandler.NODE, new IPropertyHandler<ObjectRule<Color, Rules>, NodeModel>() {
 			public ObjectRule<Color, Rules> getProperty(final NodeModel node, LogicalStyleController.StyleOption option, final ObjectRule<Color, Rules> currentValue) {
@@ -157,6 +159,12 @@ public class EdgeController implements IExtension {
 			}
 		});
 
+		addAttachmentGetter(IPropertyHandler.STYLE, new IPropertyHandler<EdgeAttachment, NodeModel>() {
+			public EdgeAttachment getProperty(final NodeModel node, LogicalStyleController.StyleOption option, final EdgeAttachment currentValue) {
+				return getStyleAttachment(node.getMap(), LogicalStyleController.getController(modeController).getStyles(node, option));
+			}
+		});
+
 		final MapController mapController = Controller.getCurrentModeController().getMapController();
 		final ReadManager readManager = mapController.getReadManager();
 		final WriteManager writeManager = mapController.getWriteManager();
@@ -182,6 +190,11 @@ public class EdgeController implements IExtension {
 	public IPropertyHandler<Dash, NodeModel> addDashGetter(final Integer key,
 			final IPropertyHandler<Dash, NodeModel> getter) {
 		return dashHandlers.addGetter(key, getter);
+	}
+
+	public IPropertyHandler<EdgeAttachment, NodeModel> addAttachmentGetter(final Integer key,
+			final IPropertyHandler<EdgeAttachment, NodeModel> getter) {
+		return attachmentHandlers.addGetter(key, getter);
 	}
 
 	public Color getColor(final NodeModel node, StyleOption option) {
@@ -222,6 +235,17 @@ public class EdgeController implements IExtension {
 			return getWidth(node.getParentNode(), option);
 		return width;
     }
+
+	public EdgeAttachment getAttachment(NodeModel node, StyleOption option) {
+		return getAttachment(node, option, true);
+	}
+
+	public EdgeAttachment getAttachment(NodeModel node, StyleOption option, final boolean resolveParent) {
+		final EdgeAttachment attachment = attachmentHandlers.getProperty(node, option);
+		if (attachment == null && resolveParent && node.getParentNode() != null)
+			return getAttachment(node.getParentNode(), option);
+		return attachment;
+	}
 
 	public Dash getDash(NodeModel node, StyleOption option) {
 		return getDash(node, option, true);
@@ -275,6 +299,22 @@ public class EdgeController implements IExtension {
 				continue;
 			}
 			return width;
+		}
+		return null;
+	}
+
+	private EdgeAttachment getStyleAttachment(final MapModel map, final Collection<IStyle> collection) {
+		final MapStyleModel model = MapStyleModel.getExtension(map);
+		for(IStyle styleKey : collection){
+			final NodeModel styleNode = model.getStyleNode(styleKey);
+			if (styleNode == null) {
+				continue;
+			}
+			final EdgeModel styleModel = EdgeModel.getModel(styleNode);
+			if (styleModel == null || styleModel.getAttachment() == null) {
+				continue;
+			}
+			return styleModel.getAttachment();
 		}
 		return null;
 	}

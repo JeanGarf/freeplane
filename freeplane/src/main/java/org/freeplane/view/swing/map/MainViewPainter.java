@@ -25,8 +25,10 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Shape;
 import java.awt.Rectangle;
 
+import org.freeplane.features.edge.EdgeAttachment;
 import org.freeplane.features.map.MapController;
 import org.freeplane.features.nodestyle.NodeGeometryModel;
 import org.freeplane.view.swing.map.MainView.ConnectorLocation;
@@ -64,6 +66,22 @@ abstract class MainViewPainter{
 	abstract Point getLeftPoint();
 
 	abstract Point getRightPoint();
+
+	Shape getOutlineShape() {
+		return null;
+	}
+
+	int getEntryMargin() {
+		return 0;
+	}
+
+	Point getEntryPoint(boolean leftSide, EdgeAttachment attachment) {
+		final Point side = leftSide ? getLeftPoint() : getRightPoint();
+		final int y = EdgeEntryGeometry.entryY(attachment, mainView.getHeight(), mainView.getPaintedBorderWidth(),
+		    getEntryMargin());
+		final int x = EdgeEntryGeometry.entryX(getOutlineShape(), leftSide, y, mainView.getWidth(), side.x);
+		return new Point(x, y);
+	}
 
     Point getTopPoint() {
         return new Point(mainView.getWidth()/2, 0);

@@ -170,6 +170,7 @@ public class StyleEditorPanel extends JPanel {
 				new EdgeDashControlGroup(),
 				new EdgeStyleControlGroup(),
 				new EdgeColorControlGroup(),
+				new EdgeAttachmentControlGroup(),
 				new NextLineControlGroup(),
 
                 new GroupSeparator("OptionPanel.separator.NodeShape"),

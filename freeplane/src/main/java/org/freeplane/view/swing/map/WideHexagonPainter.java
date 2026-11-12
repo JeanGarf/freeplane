@@ -22,6 +22,7 @@ package org.freeplane.view.swing.map;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.awt.Polygon;
 
 import org.freeplane.features.nodestyle.NodeGeometryModel;
@@ -68,6 +69,11 @@ class WideHexagonPainter extends VariableInsetsPainter {
 	void paintNodeShape(final Graphics2D g) {
 		Polygon polygon = getPaintedShape(PaintOperation.DRAW);
 		g.draw(polygon);
+	}
+
+	@Override
+	Shape getOutlineShape() {
+		return getPaintedShape(PaintOperation.DRAW);
 	}
 
 	Polygon getPaintedShape(PaintOperation operation) {

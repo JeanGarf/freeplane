@@ -32,6 +32,9 @@ import org.freeplane.api.ChildrenSides;
 import org.freeplane.api.Dash;
 import org.freeplane.api.LayoutOrientation;
 import org.freeplane.core.ui.components.UITools;
+import org.freeplane.features.edge.EdgeAttachment;
+import org.freeplane.features.edge.EdgeController;
+import org.freeplane.features.styles.LogicalStyleController.StyleOption;
 import org.freeplane.view.swing.map.MainView;
 import org.freeplane.view.swing.map.MainView.ConnectorLocation;
 import org.freeplane.view.swing.map.MapView;
@@ -176,6 +179,17 @@ public abstract class EdgeView {
 				shapeStart = start;
 
         }
+        end = enteringPoint(targetMainView, end, endConnectorLocation, usesHorizontalLayout);
+    }
+
+    private Point enteringPoint(MainView targetMainView, Point end, ConnectorLocation location, boolean usesHorizontalLayout) {
+        if(usesHorizontalLayout || ! (location == ConnectorLocation.LEFT || location == ConnectorLocation.RIGHT))
+            return end;
+        final EdgeAttachment attachment = EdgeController.getController(target.getMap().getModeController())
+                .getAttachment(target.getNode(), StyleOption.FOR_UNSELECTED_NODE);
+        if(attachment == null)
+            return end;
+        return targetMainView.getEntryPoint(location == ConnectorLocation.LEFT, attachment);
     }
 
     protected ConnectorLocation getStartConnectorLocation() {

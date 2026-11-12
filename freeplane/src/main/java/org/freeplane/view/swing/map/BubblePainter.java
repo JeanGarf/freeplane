@@ -20,6 +20,8 @@
 package org.freeplane.view.swing.map;
 
 import java.awt.Color;
+import java.awt.Shape;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.Graphics2D;
 
 import org.freeplane.api.Dash;
@@ -37,6 +39,14 @@ class BubblePainter extends RectanglePainter {
 		final int zoomedBorderWidth = mainView.getPaintedBorderWidth();
 		int arcWidth = getArcWidth();
         g.drawRoundRect(zoomedBorderWidth / 2, zoomedBorderWidth / 2, mainView.getWidth() - zoomedBorderWidth, mainView.getHeight() - zoomedBorderWidth, arcWidth, arcWidth);
+	}
+
+	@Override
+	Shape getOutlineShape() {
+		final int borderWidth = mainView.getPaintedBorderWidth();
+		final int arcWidth = getArcWidth();
+		return new RoundRectangle2D.Double(borderWidth / 2.0, borderWidth / 2.0, mainView.getWidth() - borderWidth,
+		    mainView.getHeight() - borderWidth, arcWidth, arcWidth);
 	}
 
     private int getArcWidth() {
