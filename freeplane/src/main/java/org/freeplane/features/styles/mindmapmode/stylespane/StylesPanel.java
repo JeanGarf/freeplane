@@ -154,8 +154,14 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		final JMenuItem update = new JMenuItem(TextUtils.format("styles_panel.update_style", style.toString()),
 		    ResourceController.getResourceController().getIcon("/images/stylePaneUpdate.svg"));
 		update.setEnabled(node != null);
-		update.addActionListener(e -> updateStyleFromSelectedNode(style));
+		update.addActionListener(e -> updateStyleFromSelectedNode(style, false));
 		menu.add(update);
+		final JMenuItem updateWithTemplate = new JMenuItem(
+		    TextUtils.format("styles_panel.update_style_and_template", style.toString()),
+		    ResourceController.getResourceController().getIcon("/images/stylePaneUpdate.svg"));
+		updateWithTemplate.setEnabled(node != null);
+		updateWithTemplate.addActionListener(e -> updateStyleFromSelectedNode(style, true));
+		menu.add(updateWithTemplate);
 		final JMenuItem edit = new JMenuItem(TextUtils.getText("styles_panel.edit_style"),
 		    ResourceController.getResourceController().getIcon("/images/stylePaneEdit.svg"));
 		edit.addActionListener(e -> editStyle(style));
@@ -214,17 +220,18 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 			((EditStylesAction) action).edit(style);
 	}
 
-	private void updateStyleFromSelectedNode(IStyle style) {
+	private void updateStyleFromSelectedNode(IStyle style, boolean alsoUpdateAssociatedTemplate) {
 		final IMapSelection selection = Controller.getCurrentController().getSelection();
 		final NodeModel node = selection == null ? null : selection.getSelected();
 		if (node == null)
 			return;
-		final String message = TextUtils.format("styles_panel.confirm_update", style.toString(),
-		    node.toString());
+		final String messageKey = alsoUpdateAssociatedTemplate ? "styles_panel.confirm_update_template"
+		        : "styles_panel.confirm_update";
+		final String message = TextUtils.format(messageKey, style.toString(), node.toString());
 		final int answer = JOptionPane.showConfirmDialog(UITools.getCurrentFrame(), message,
 		    TextUtils.getText("styles_panel.update_title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 		if (answer == JOptionPane.YES_OPTION)
-			MapStyle.getController().redefineStyle(node, style, false);
+			MapStyle.getController().redefineStyle(node, style, alsoUpdateAssociatedTemplate);
 	}
 
 	private void reloadStyles() {
