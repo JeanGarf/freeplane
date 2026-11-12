@@ -63,9 +63,29 @@ public class EdgeEntryGeometryTest {
 	}
 
 	@Test
-	public void fallsBackWhenOutlineDoesNotContainTheRow() {
-		final Ellipse2D outline = new Ellipse2D.Double(0, 0, 100, 40);
+	public void fallsBackWhenOutlineIsEmpty() {
+		final Ellipse2D outline = new Ellipse2D.Double(0, 0, 0, 0);
 
-		assertThat(EdgeEntryGeometry.entryX(outline, true, 200, 100, 7)).isEqualTo(7);
+		assertThat(EdgeEntryGeometry.entryX(outline, true, 20, 100, 7)).isEqualTo(7);
+	}
+
+	@Test
+	public void findsStraightPartOfTheBottomSideEvenOnTheBoundaryRow() {
+		final RoundRectangle2D outline = new RoundRectangle2D.Double(0.5, 0.5, 99, 29, 10, 10);
+
+		final int left = EdgeEntryGeometry.entryX(outline, true, 29, 100, -1);
+		final int right = EdgeEntryGeometry.entryX(outline, false, 29, 100, -1);
+
+		assertThat(left).isBetween(3, 7);
+		assertThat(right).isBetween(92, 96);
+	}
+
+	@Test
+	public void findsStraightPartOfTheTopSideEvenOnTheBoundaryRow() {
+		final RoundRectangle2D outline = new RoundRectangle2D.Double(0.5, 0.5, 99, 29, 10, 10);
+
+		final int left = EdgeEntryGeometry.entryX(outline, true, 0, 100, -1);
+
+		assertThat(left).isBetween(3, 7);
 	}
 }

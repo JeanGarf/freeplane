@@ -65,6 +65,7 @@ import org.freeplane.features.attribute.AttributeController;
 import org.freeplane.features.attribute.NodeAttributeTableModel;
 import org.freeplane.features.cloud.CloudController;
 import org.freeplane.features.cloud.CloudModel;
+import org.freeplane.features.edge.EdgeAttachment;
 import org.freeplane.features.edge.EdgeController;
 import org.freeplane.features.edge.EdgeController.Rules;
 import org.freeplane.features.edge.EdgeStyle;
@@ -152,6 +153,7 @@ public class NodeView extends JComponent implements INodeView, EdgeColorContext 
 
     private boolean isFolded;
     private Dash edgeDash = Dash.DEFAULT;
+    private EdgeAttachment edgeAttachment;
     private final NodeViewLayoutHelper layoutHelper;
     private ChildNodeViewLayout childNodeViewLayout;
     static class ChildNodeViewLayout {
@@ -2132,14 +2134,17 @@ public class NodeView extends JComponent implements INodeView, EdgeColorContext 
         final NodeModel realNode = SummaryNode.getRealNode(viewedNode);
         Integer newEdgeWidth = edgeController.getWidth(realNode, getStyleOption(), false);
         Dash newEdgeDash = edgeController.getDash(realNode, getStyleOption(), false);
+        EdgeAttachment newEdgeAttachment = edgeController.getAttachment(realNode, getStyleOption(), false);
         final ObjectRule<Color, Rules> newColor = edgeController.getColorRule(realNode, getStyleOption());
         if(newEdgeStyle != edgeStyle
                 || ! Objects.equals(newEdgeWidth, edgeWidth)
                 || newEdgeDash != edgeDash
+                || newEdgeAttachment != edgeAttachment
                 || ! Objects.equals(newColor, edgeColor)) {
             this.edgeStyle = newEdgeStyle;
             this.edgeWidth = newEdgeWidth;
             this.edgeDash = newEdgeDash;
+            this.edgeAttachment = newEdgeAttachment;
             this.edgeColor = newColor;
             if(! isRoot()) {
                 NodeView ancestorWithVisibleContent = getAncestorWithVisibleContent();
@@ -2159,6 +2164,15 @@ public class NodeView extends JComponent implements INodeView, EdgeColorContext 
         if(parentView != null)
             return parentView.getEdgeStyle();
         return EdgeStyle.values()[0];
+    }
+
+    public EdgeAttachment getEdgeAttachment() {
+        if(edgeAttachment != null)
+            return edgeAttachment;
+        final NodeView parentView = getParentNodeView();
+        if(parentView != null)
+            return parentView.getEdgeAttachment();
+        return null;
     }
 
     public Dash getEdgeDash() {

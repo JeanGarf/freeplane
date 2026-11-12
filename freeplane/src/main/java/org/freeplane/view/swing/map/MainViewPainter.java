@@ -19,6 +19,8 @@
  */
 package org.freeplane.view.swing.map;
 
+import java.awt.BasicStroke;
+import java.awt.Stroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -28,6 +30,8 @@ import java.awt.Point;
 import java.awt.Shape;
 import java.awt.Rectangle;
 
+import org.freeplane.core.ui.components.UITools;
+import org.freeplane.features.edge.EdgeStyle;
 import org.freeplane.features.edge.EdgeAttachment;
 import org.freeplane.features.map.MapController;
 import org.freeplane.features.nodestyle.NodeGeometryModel;
@@ -73,6 +77,34 @@ abstract class MainViewPainter{
 
 	int getEntryMargin() {
 		return 0;
+	}
+
+	void paintEntryLine(Graphics2D g) {
+		final NodeView nodeView = mainView.getNodeView();
+		final NodeView parentView = nodeView.getParentNodeView();
+		if (nodeView.isRoot() || parentView == null || parentView.usesHorizontalLayout()
+		        || EdgeStyle.EDGESTYLE_HIDDEN.equals(nodeView.getEdgeStyle()))
+			return;
+		final EdgeAttachment attachment = nodeView.getEdgeAttachment();
+		if (attachment == null || attachment == EdgeAttachment.middle || drawsOwnEntryLine(attachment))
+			return;
+		final int y = EdgeEntryGeometry.entryY(attachment, mainView.getHeight(), mainView.getPaintedBorderWidth(),
+		    getEntryMargin());
+		final Shape outline = getOutlineShape();
+		final int fromX = EdgeEntryGeometry.entryX(outline, true, y, mainView.getWidth(), 0);
+		final int toX = EdgeEntryGeometry.entryX(outline, false, y, mainView.getWidth(), mainView.getWidth() - 1);
+		final float width = nodeView.getEdgeWidth() * nodeView.getMap().getZoom();
+		final Stroke oldStroke = g.getStroke();
+		final Color oldColor = g.getColor();
+		g.setColor(nodeView.getEdgeColor());
+		g.setStroke(UITools.createStroke(width <= 0 ? 1 : width, nodeView.getEdgeDash().pattern, BasicStroke.JOIN_MITER));
+		g.drawLine(fromX, y, toX, y);
+		g.setStroke(oldStroke);
+		g.setColor(oldColor);
+	}
+
+	boolean drawsOwnEntryLine(@SuppressWarnings("unused") EdgeAttachment attachment) {
+		return false;
 	}
 
 	Point getEntryPoint(boolean leftSide, EdgeAttachment attachment) {

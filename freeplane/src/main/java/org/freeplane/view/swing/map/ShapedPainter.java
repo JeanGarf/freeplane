@@ -49,6 +49,7 @@ abstract class ShapedPainter extends MainViewPainter {
 		if(mainView.getBorderColor().getAlpha() != 0) {
 			paintNodeShapeConfiguringGraphics(g);
 		}
+		paintEntryLine(g);
 		super.paintComponent(g);
 	}
 
