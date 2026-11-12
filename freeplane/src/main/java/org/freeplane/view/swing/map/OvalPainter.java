@@ -21,6 +21,8 @@ package org.freeplane.view.swing.map;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 import java.awt.Graphics2D;
 import java.awt.Point;
 
@@ -41,6 +43,18 @@ class OvalPainter extends VariableInsetsPainter {
 	@Override
 	double getHorizontalMarginFactor() {
 		return MARGIN_FACTOR;
+	}
+
+	@Override
+	Shape getOutlineShape() {
+		final int borderWidth = mainView.getPaintedBorderWidth();
+		return new Ellipse2D.Double(borderWidth / 2.0, borderWidth / 2.0, mainView.getWidth() - borderWidth,
+		    mainView.getHeight() - borderWidth);
+	}
+
+	@Override
+	int getEntryMargin() {
+		return Math.round(mainView.getHeight() * 0.12f);
 	}
 
 	@Override
