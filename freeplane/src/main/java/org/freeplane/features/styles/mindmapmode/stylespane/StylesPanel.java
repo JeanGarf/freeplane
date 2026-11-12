@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -18,6 +19,7 @@ import java.awt.event.MouseEvent;
 import java.util.List;
 
 import javax.swing.DefaultListModel;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
@@ -63,8 +65,8 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 	private static final String EDIT_ACTION = "EditStylesAction";
 
 	private final ModeController modeController;
-	private final DefaultListModel<IStyle> model = new DefaultListModel<>();
-	private final JList<IStyle> list = new StyleList();
+	private final DefaultListModel<StyleListItem> model = new DefaultListModel<>();
+	private final JList<StyleListItem> list = new StyleList();
 	private final StyleLookReader lookReader = new StyleLookReader();
 	private int hoveredIndex = -1;
 	private Target hoveredTarget;
@@ -105,15 +107,42 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		    JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		UITools.setScrollbarIncrement(scrollPane);
 		add(scrollPane, BorderLayout.CENTER);
+		add(createManageButtonBar(), BorderLayout.NORTH);
 		reloadStyles();
+	}
+
+	private JComponent createManageButtonBar() {
+		final JButton manage = new JButton(TextUtils.getText("styles_panel.manage") + "  \u25BE");
+		manage.setFocusable(false);
+		manage.addActionListener(e -> showManageMenu(manage));
+		final JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
+		bar.add(manage);
+		return bar;
+	}
+
+	private void showManageMenu(JComponent invoker) {
+		final ActionAcceleratorManager accelerators = ResourceController.getResourceController().getAcceleratorManager();
+		final JPopupMenu menu = new JPopupMenu();
+		for (final String entry : ManageStylesMenuLayout.available(ManageStylesMenuLayout.ENTRIES,
+		    key -> modeController.getAction(key) != null)) {
+			if (ManageStylesMenuLayout.SEPARATOR.equals(entry)) {
+				menu.addSeparator();
+				continue;
+			}
+			final AFreeplaneAction action = modeController.getAction(entry);
+			final JMenuItem item = new JMenuItem(action);
+			item.setAccelerator(accelerators.getAccelerator(action));
+			menu.add(item);
+		}
+		menu.show(invoker, 0, invoker.getHeight());
 	}
 
 	private void updateHover(Point point) {
 		int index = list.locationToIndex(point);
 		Target target = null;
 		final Rectangle cell = index < 0 ? null : list.getCellBounds(index, index);
-		if (cell != null && cell.contains(point))
-			target = layoutFor(cell, model.get(index)).targetAt(new Point(point.x - cell.x, point.y - cell.y));
+		if (cell != null && cell.contains(point) && !model.get(index).isHeader())
+			target = layoutFor(cell, model.get(index).style).targetAt(new Point(point.x - cell.x, point.y - cell.y));
 		else
 			index = -1;
 		if (index != hoveredIndex || target != hoveredTarget) {
@@ -131,7 +160,9 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		final Rectangle cell = list.getCellBounds(index, index);
 		if (cell == null || !cell.contains(point))
 			return;
-		final IStyle style = model.get(index);
+		if (model.get(index).isHeader())
+			return;
+		final IStyle style = model.get(index).style;
 		if (e.isPopupTrigger()) {
 			showMenu(style, point, false);
 			return;
@@ -235,12 +266,20 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 	}
 
 	private void reloadStyles() {
-		model.clear();
 		final MapModel map = Controller.getCurrentController().getMap();
 		final MapStyleModel mapStyles = map == null ? null : MapStyleModel.getExtension(map);
-		if (mapStyles != null)
-			for (final IStyle style : mapStyles.getNodeStyles())
-				model.addElement(style);
+		final MapModel styleMap = mapStyles == null ? null : mapStyles.getStyleMap();
+		if (map != null && styleMap == null)
+			return;
+		model.clear();
+		if (styleMap != null) {
+			final int userCount = mapStyles.getStyleNodeGroup(styleMap, MapStyleModel.STYLES_USER_DEFINED).getChildCount();
+			final int levelCount = mapStyles.getStyleNodeGroup(styleMap, MapStyleModel.STYLES_AUTOMATIC_LAYOUT).getChildCount();
+			for (final StyleListItem item : StyleSections.items(mapStyles.getNodeStyles(), userCount, levelCount,
+			    TextUtils.getText(MapStyleModel.STYLES_PREDEFINED), TextUtils.getText(MapStyleModel.STYLES_USER_DEFINED),
+			    TextUtils.getText(MapStyleModel.STYLES_AUTOMATIC_LAYOUT)))
+				model.addElement(item);
+		}
 		list.revalidate();
 		list.repaint();
 	}
@@ -274,17 +313,17 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		reloadStyles();
 	}
 
-	private class StyleList extends JList<IStyle> {
+	private class StyleList extends JList<StyleListItem> {
 		private static final long serialVersionUID = 1L;
 
 		@Override
 		public String getToolTipText(MouseEvent event) {
 			final int index = locationToIndex(event.getPoint());
 			final Rectangle cell = index < 0 ? null : getCellBounds(index, index);
-			if (cell == null || !cell.contains(event.getPoint()))
+			if (cell == null || !cell.contains(event.getPoint()) || model.get(index).isHeader())
 				return null;
 			final Point inCell = new Point(event.getX() - cell.x, event.getY() - cell.y);
-			if (layoutFor(cell, model.get(index)).targetAt(inCell) == Target.MENU)
+			if (layoutFor(cell, model.get(index).style).targetAt(inCell) == Target.MENU)
 				return TextUtils.getText("styles_panel.menu");
 			return TextUtils.getText("styles_panel.apply_style");
 		}
@@ -300,26 +339,35 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		}
 	}
 
-	private class StyleRow extends JComponent implements ListCellRenderer<IStyle> {
+	private class StyleRow extends JComponent implements ListCellRenderer<StyleListItem> {
 		private static final long serialVersionUID = 1L;
+		private static final int HEADER_PADDING = 5;
+		private String header;
 		private IStyle style;
 		private boolean current;
 		private Target hovered;
 
 		@Override
-		public Component getListCellRendererComponent(JList<? extends IStyle> list, IStyle value, int index,
+		public Component getListCellRendererComponent(JList<? extends StyleListItem> list, StyleListItem value, int index,
 		                                              boolean isSelected, boolean cellHasFocus) {
-			style = value;
-			final IMapSelection selection = Controller.getCurrentController().getSelection();
-			final NodeModel node = selection == null ? null : selection.getSelected();
-			current = node != null && value.equals(LogicalStyleController.getController().getFirstStyle(node));
-			hovered = index == hoveredIndex ? hoveredTarget : null;
+			header = value.isHeader() ? value.header : null;
+			style = value.style;
+			current = false;
+			hovered = null;
+			if (style != null) {
+				final IMapSelection selection = Controller.getCurrentController().getSelection();
+				final NodeModel node = selection == null ? null : selection.getSelected();
+				current = node != null && style.equals(LogicalStyleController.getController().getFirstStyle(node));
+				hovered = index == hoveredIndex ? hoveredTarget : null;
+			}
 			return this;
 		}
 
 		@Override
 		public Dimension getPreferredSize() {
 			final FontMetrics metrics = getFontMetrics(getFont());
+			if (header != null)
+				return new Dimension(100, metrics.getHeight() + 2 * HEADER_PADDING + 2);
 			return new Dimension(100, Math.max(StyleRowLayout.MENU_SIZE, metrics.getHeight() + 6) + StyleRowLayout.PADDING);
 		}
 
@@ -330,6 +378,10 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 				g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 				g.setColor(list.getBackground());
 				g.fillRect(0, 0, getWidth(), getHeight());
+				if (header != null) {
+					paintHeader(g);
+					return;
+				}
 				final StyleRowLayout layout = new StyleRowLayout(getWidth(), getHeight(), acceleratorWidth(style));
 				paintCurrentMarker(g);
 				paintStyle(g, layout.style);
@@ -339,6 +391,18 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 			finally {
 				g.dispose();
 			}
+		}
+
+		private void paintHeader(Graphics2D g) {
+			final Color color = UIManager.getColor("Label.disabledForeground");
+			g.setFont(list.getFont().deriveFont(Font.BOLD));
+			g.setColor(color != null ? color : Color.GRAY);
+			final FontMetrics metrics = g.getFontMetrics();
+			final int baseline = HEADER_PADDING + metrics.getAscent();
+			g.drawString(header, StyleRowLayout.PADDING, baseline);
+			final int ruleStart = StyleRowLayout.PADDING + metrics.stringWidth(header) + 8;
+			final int ruleY = HEADER_PADDING + metrics.getAscent() / 2;
+			g.drawLine(ruleStart, ruleY, getWidth() - StyleRowLayout.PADDING, ruleY);
 		}
 
 		private void paintCurrentMarker(Graphics2D g) {
