@@ -36,6 +36,8 @@ import javax.swing.UIManager;
 import org.freeplane.core.resources.ResourceController;
 import org.freeplane.core.ui.AFreeplaneAction;
 import org.freeplane.core.ui.components.UITools;
+import org.freeplane.core.ui.menubuilders.generic.Entry;
+import org.freeplane.core.ui.menubuilders.menu.EntryPopupMenuFactory;
 import org.freeplane.core.util.TextUtils;
 import org.freeplane.features.map.IMapChangeListener;
 import org.freeplane.features.map.IMapSelection;
@@ -63,6 +65,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
         IMapSelectionListener {
 	private static final long serialVersionUID = 1L;
 	private static final String EDIT_ACTION = "EditStylesAction";
+	private static final String MANAGE_STYLES_MENU = "menu_manageStyles";
 
 	private final ModeController modeController;
 	private final DefaultListModel<StyleListItem> model = new DefaultListModel<>();
@@ -121,19 +124,12 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 	}
 
 	private void showManageMenu(JComponent invoker) {
-		final ActionAcceleratorManager accelerators = ResourceController.getResourceController().getAcceleratorManager();
-		final JPopupMenu menu = new JPopupMenu();
-		for (final String entry : ManageStylesMenuLayout.available(ManageStylesMenuLayout.ENTRIES,
-		    key -> modeController.getAction(key) != null)) {
-			if (ManageStylesMenuLayout.SEPARATOR.equals(entry)) {
-				menu.addSeparator();
-				continue;
-			}
-			final AFreeplaneAction action = modeController.getAction(entry);
-			final JMenuItem item = new JMenuItem(action);
-			item.setAccelerator(accelerators.getAccelerator(action));
-			menu.add(item);
-		}
+		final Entry menuStructure = modeController.getUserInputListenerFactory().getGenericMenuStructure();
+		final Entry manageStyles = menuStructure == null ? null
+		        : EntryPopupMenuFactory.findByName(menuStructure, MANAGE_STYLES_MENU);
+		if (manageStyles == null)
+			return;
+		final JPopupMenu menu = new EntryPopupMenuFactory().createPopupMenu(manageStyles);
 		menu.show(invoker, 0, invoker.getHeight());
 	}
 
@@ -141,7 +137,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		int index = list.locationToIndex(point);
 		Target target = null;
 		final Rectangle cell = index < 0 ? null : list.getCellBounds(index, index);
-		if (cell != null && cell.contains(point) && !model.get(index).isHeader())
+		if (cell != null && cell.contains(point) && model.get(index).isStyle())
 			target = layoutFor(cell, model.get(index).style).targetAt(new Point(point.x - cell.x, point.y - cell.y));
 		else
 			index = -1;
@@ -160,7 +156,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		final Rectangle cell = list.getCellBounds(index, index);
 		if (cell == null || !cell.contains(point))
 			return;
-		if (model.get(index).isHeader())
+		if (!model.get(index).isStyle())
 			return;
 		final IStyle style = model.get(index).style;
 		if (e.isPopupTrigger()) {
@@ -320,7 +316,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		public String getToolTipText(MouseEvent event) {
 			final int index = locationToIndex(event.getPoint());
 			final Rectangle cell = index < 0 ? null : getCellBounds(index, index);
-			if (cell == null || !cell.contains(event.getPoint()) || model.get(index).isHeader())
+			if (cell == null || !cell.contains(event.getPoint()) || !model.get(index).isStyle())
 				return null;
 			final Point inCell = new Point(event.getX() - cell.x, event.getY() - cell.y);
 			if (layoutFor(cell, model.get(index).style).targetAt(inCell) == Target.MENU)
@@ -343,6 +339,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		private static final long serialVersionUID = 1L;
 		private static final int HEADER_PADDING = 5;
 		private String header;
+		private boolean blank;
 		private IStyle style;
 		private boolean current;
 		private Target hovered;
@@ -351,6 +348,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		public Component getListCellRendererComponent(JList<? extends StyleListItem> list, StyleListItem value, int index,
 		                                              boolean isSelected, boolean cellHasFocus) {
 			header = value.isHeader() ? value.header : null;
+			blank = value.isBlank();
 			style = value.style;
 			current = false;
 			hovered = null;
@@ -366,6 +364,8 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		@Override
 		public Dimension getPreferredSize() {
 			final FontMetrics metrics = getFontMetrics(getFont());
+			if (blank)
+				return new Dimension(100, metrics.getHeight());
 			if (header != null)
 				return new Dimension(100, metrics.getHeight() + 2 * HEADER_PADDING + 2);
 			return new Dimension(100, Math.max(StyleRowLayout.MENU_SIZE, metrics.getHeight() + 6) + StyleRowLayout.PADDING);
@@ -378,6 +378,8 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 				g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 				g.setColor(list.getBackground());
 				g.fillRect(0, 0, getWidth(), getHeight());
+				if (blank)
+					return;
 				if (header != null) {
 					paintHeader(g);
 					return;
@@ -394,9 +396,8 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		}
 
 		private void paintHeader(Graphics2D g) {
-			final Color color = UIManager.getColor("Label.disabledForeground");
 			g.setFont(list.getFont().deriveFont(Font.BOLD));
-			g.setColor(color != null ? color : Color.GRAY);
+			g.setColor(list.getForeground());
 			final FontMetrics metrics = g.getFontMetrics();
 			final int baseline = HEADER_PADDING + metrics.getAscent();
 			g.drawString(header, StyleRowLayout.PADDING, baseline);

@@ -20,6 +20,8 @@ class StyleSections {
 	private static void addSection(List<StyleListItem> items, String title, List<IStyle> styles) {
 		if (styles.isEmpty())
 			return;
+		if (!items.isEmpty())
+			items.add(StyleListItem.blank());
 		items.add(StyleListItem.header(title));
 		for (final IStyle style : styles)
 			items.add(StyleListItem.style(style));

@@ -19,7 +19,19 @@ class StyleListItem {
 		return new StyleListItem(null, style);
 	}
 
+	static StyleListItem blank() {
+		return new StyleListItem(null, null);
+	}
+
 	boolean isHeader() {
 		return header != null;
+	}
+
+	boolean isBlank() {
+		return header == null && style == null;
+	}
+
+	boolean isStyle() {
+		return style != null;
 	}
 }

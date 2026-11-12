@@ -21,7 +21,7 @@ public class StyleSectionsTest {
 	private static List<String> describe(List<StyleListItem> items) {
 		final List<String> description = new ArrayList<>();
 		for (final StyleListItem item : items)
-			description.add(item.isHeader() ? "[" + item.header + "]" : item.style.toString());
+			description.add(item.isHeader() ? "[" + item.header + "]" : item.isBlank() ? "" : item.style.toString());
 		return description;
 	}
 
@@ -30,15 +30,15 @@ public class StyleSectionsTest {
 		final List<StyleListItem> items = StyleSections.items(styles("default", "floating", "topic", "flower", "level1", "level2"),
 		    2, 2, "Predefined", "User", "Levels");
 
-		assertThat(describe(items)).containsExactly("[Predefined]", "default", "floating", "[User]", "topic", "flower",
-		    "[Levels]", "level1", "level2");
+		assertThat(describe(items)).containsExactly("[Predefined]", "default", "floating", "", "[User]", "topic", "flower",
+		    "", "[Levels]", "level1", "level2");
 	}
 
 	@Test
 	public void omitsEmptySections() {
 		final List<StyleListItem> items = StyleSections.items(styles("default", "floating", "level1"), 0, 1, "Predefined", "User", "Levels");
 
-		assertThat(describe(items)).containsExactly("[Predefined]", "default", "floating", "[Levels]", "level1");
+		assertThat(describe(items)).containsExactly("[Predefined]", "default", "floating", "", "[Levels]", "level1");
 	}
 
 	@Test
