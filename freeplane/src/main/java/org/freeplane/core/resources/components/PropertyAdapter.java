@@ -130,6 +130,7 @@ abstract public class PropertyAdapter implements HighlightablePropertyControl {
 	}
 
 	static void highlight(JLabel label) {
+		CollapsibleSections.expandSectionContaining(label);
 		if(selectionColorCheckingTextFieldComponent == null)
 			selectionColorCheckingTextFieldComponent = new JTextField();
 		Color selectionColor = selectionColorCheckingTextFieldComponent.getSelectionColor();

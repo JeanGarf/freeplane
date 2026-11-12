@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -143,11 +144,13 @@ class OptionPanel {
 		final Iterator<IPropertyControl> iterator = controls.iterator();
 		int tabIndex = 0;
 		PropertyPane propertyPane = null;
+		final List<PropertyPane> propertyPanes = new ArrayList<>();
 		while (iterator.hasNext()) {
 			final IPropertyControl control = iterator.next();
             if (control instanceof TabProperty) {
 				final TabProperty newTab = (TabProperty) control;
 				propertyPane = new PropertyPane(newTab.getLayout());
+				propertyPanes.add(propertyPane);
 				propertyPane.border(Borders.DIALOG);
 				final JScrollPane bottomComponent = new JScrollPane(propertyPane);
 				UITools.setScrollbarIncrement(bottomComponent);
@@ -169,6 +172,8 @@ class OptionPanel {
 			    propertyPane.addProperty(control);
 			}
 		}
+		for (final PropertyPane pane : propertyPanes)
+			CollapsibleSections.install(pane, "preferences");
 		tabbedPane.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(final ChangeEvent event) {

@@ -67,10 +67,12 @@ public class SeparatorProperty implements HighlightablePropertyControl {
 		if (builder.getColumn() > 1)
 			builder.nextLine();
 		separator = builder.appendSeparator(text);
+		separator.putClientProperty(CollapsibleSections.SECTION_KEY, labelKey);
 		if(text != null) {
 			for (Component child : separator.getComponents()) {
 				if(child instanceof JLabel) {
 					this.labelComponent = (JLabel) child;
+					separator.putClientProperty(CollapsibleSections.SECTION_LABEL, labelComponent);
                     TranslatedElement.TEXT.setKey(labelComponent, labelKey);
                     labelComponent.setFont(labelComponent.getFont().deriveFont(FONT_TRANSFORM));
                 }
