@@ -185,7 +185,11 @@ abstract class MainViewPainter{
 		    }
 		}
 		else {
-		    p = mainView.getNodeView().paintsChildrenOnTheLeft() ? getLeftPoint() : getRightPoint();
+		    final boolean childrenOnTheLeft = mainView.getNodeView().paintsChildrenOnTheLeft();
+		    p = childrenOnTheLeft ? getLeftPoint() : getRightPoint();
+		    final EdgeAttachment attachment = nodeView.getEdgeAttachment();
+		    if (attachment != null)
+		        p.y = getEntryPoint(childrenOnTheLeft, attachment).y;
 		    if (p.x <= 0) {
 		        p.x -= halfWidth;
 		    }

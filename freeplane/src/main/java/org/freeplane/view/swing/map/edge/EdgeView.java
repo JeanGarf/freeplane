@@ -123,6 +123,7 @@ public abstract class EdgeView {
 				    startConnectorLocation = ConnectorLocation.LEFT;
 				}
 			}
+            start = exitingPoint(mainView, start, startConnectorLocation, usesHorizontalLayout);
             shapeStart = start;
             if(target.isTopOrLeft()){
                 end = targetMainView.getRightPoint();
@@ -161,6 +162,7 @@ public abstract class EdgeView {
             	startConnectorLocation = mainView.getConnectorLocation(relativeLocation, LayoutOrientation.NOT_SET,  ChildNodesAlignment.NOT_SET);
             	start = mainView.getConnectorPoint(relativeLocation, startConnectorLocation);
             }
+            start = exitingPoint(mainView, start, startConnectorLocation, usesHorizontalLayout);
         	final boolean needsSpaceForFoldingMark = source.isAutoCompactLayoutEnabled() && !childNodesAlignment.isStacked() && ! source.isRoot();
 			if(needsSpaceForFoldingMark) {
 				switch (startConnectorLocation) {
@@ -180,6 +182,15 @@ public abstract class EdgeView {
 
         }
         end = enteringPoint(targetMainView, end, endConnectorLocation, usesHorizontalLayout);
+    }
+
+    private Point exitingPoint(MainView sourceMainView, Point start, ConnectorLocation location, boolean usesHorizontalLayout) {
+        if(usesHorizontalLayout || ! (location == ConnectorLocation.LEFT || location == ConnectorLocation.RIGHT))
+            return start;
+        final EdgeAttachment attachment = source.getEdgeAttachment();
+        if(attachment == null)
+            return start;
+        return sourceMainView.getEntryPoint(location == ConnectorLocation.LEFT, attachment);
     }
 
     private Point enteringPoint(MainView targetMainView, Point end, ConnectorLocation location, boolean usesHorizontalLayout) {
