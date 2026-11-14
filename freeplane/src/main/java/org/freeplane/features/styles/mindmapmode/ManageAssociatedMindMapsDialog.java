@@ -1,6 +1,7 @@
 package org.freeplane.features.styles.mindmapmode;
 
 import java.awt.Frame;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -8,6 +9,7 @@ import java.net.URISyntaxException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import org.freeplane.api.swing.JFileChooser;
@@ -78,6 +80,14 @@ public class ManageAssociatedMindMapsDialog{
         updateAssociatedMap(MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY, followedMapField, TextUtils.getText("no_map_followed"));      
         updateAssociatedMap(MapStyleModel.ASSOCIATED_TEMPLATE_LOCATION_PROPERTY, associatedMapField, TextUtils.getText("no_template_associated"));      
 
+        UITools.addEscapeActionToDialog(dialog, new AbstractAction() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                dialog.setVisible(false);
+            }
+        });
         dialog.setModal(true);
         dialog.setTitle(title);
         dialog.getContentPane().add(formBuilder.build());
