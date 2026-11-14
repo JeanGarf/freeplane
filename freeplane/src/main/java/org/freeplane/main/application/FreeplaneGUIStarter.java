@@ -151,6 +151,7 @@ public class FreeplaneGUIStarter implements FreeplaneStarter {
 
 	public FreeplaneGUIStarter(CommandLineOptions options) {
 		super();
+		StartupClassPreloader.start();
 		this.options = options;
 		userPropertiesStatus = new UserPropertiesUpdater().importOldProperties();
 		applicationResourceController = new ApplicationResourceController();
