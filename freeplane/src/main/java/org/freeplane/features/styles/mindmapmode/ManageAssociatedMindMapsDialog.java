@@ -2,6 +2,8 @@ package org.freeplane.features.styles.mindmapmode;
 
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -13,7 +15,8 @@ import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import org.freeplane.api.swing.JFileChooser;
-import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.text.JTextComponent;
 
 import org.freeplane.core.ui.components.UITools;
 import org.freeplane.core.util.Hyperlink;
@@ -37,17 +40,18 @@ public class ManageAssociatedMindMapsDialog{
     private final JButton[] followedMapButtons;
     private final JButton[] associatedMapButtons;
     
+    static String titleOf(String actionName) {
+        return actionName.replaceAll("\\s*(\\u2026|\\.\\.\\.)\\s*$", "");
+    }
+
     public ManageAssociatedMindMapsDialog(String title, final MapModel map){
         this.map = map;
         Frame owner = UITools.getCurrentFrame();
         dialog = new JDialog(owner);
         FormBuilder formBuilder = FormBuilder.create().columns("p, 3dlu, fill:3dlu:grow, 3dlu, p")
-                .rows("p, 3dlu, p, 3dlu, p, 3dlu, p, 3dlu, p, 3dlu, p");
+                .rows("p, 3dlu, p, 24dlu, p, 3dlu, p, 3dlu, p");
         formBuilder.add(TextUtils.getText("followed_map")).xy(1,  1);
-        JTextArea followedMapField = new JTextArea();
-        followedMapField.setColumns(80);
-        followedMapField.setLineWrap(true);
-        followedMapField.setWrapStyleWord(false);
+        JTextField followedMapField = createReadOnlyField();
         formBuilder.add(followedMapField).xy(3, 1);
         JButton changeFollowedMapButton = createChangeMapButton(MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY, "select_followed_map", followedMapField);
         formBuilder.add(changeFollowedMapButton).xy(5, 1);
@@ -60,10 +64,7 @@ public class ManageAssociatedMindMapsDialog{
                 replaceStylesFromFollowedMapButton, unfolowButton).xyw(1, 3, 5);
         
         formBuilder.add(TextUtils.getText("associated_template")).xy(1,  5);
-        JTextArea associatedMapField = new JTextArea();
-        associatedMapField.setColumns(80);
-        associatedMapField.setLineWrap(true);
-        associatedMapField.setWrapStyleWord(false);
+        JTextField associatedMapField = createReadOnlyField();
         formBuilder.add(associatedMapField).xy(3, 5);
         JButton changeAssosiatedMapButton = createChangeMapButton(MapStyleModel.ASSOCIATED_TEMPLATE_LOCATION_PROPERTY, "select_associated_template", associatedMapField);
         formBuilder.add(changeAssosiatedMapButton).xy(5, 5);
@@ -75,11 +76,17 @@ public class ManageAssociatedMindMapsDialog{
                 replaceStylesFromAssociatedMapButton).xyw(1, 7, 5);
         
         JButton closeButton = createCloseMapButton();
-        formBuilder.add(closeButton).xy(1, 9, "l,c");
+        formBuilder.add(closeButton).xyw(1, 9, 5, "r,c");
 
         updateAssociatedMap(MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY, followedMapField, TextUtils.getText("no_map_followed"));      
         updateAssociatedMap(MapStyleModel.ASSOCIATED_TEMPLATE_LOCATION_PROPERTY, associatedMapField, TextUtils.getText("no_template_associated"));      
 
+        dialog.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowOpened(WindowEvent e) {
+                closeButton.requestFocusInWindow();
+            }
+        });
         UITools.addEscapeActionToDialog(dialog, new AbstractAction() {
             private static final long serialVersionUID = 1L;
 
@@ -89,18 +96,40 @@ public class ManageAssociatedMindMapsDialog{
             }
         });
         dialog.setModal(true);
-        dialog.setTitle(title);
+        dialog.setTitle(titleOf(title));
         dialog.getContentPane().add(formBuilder.build());
         dialog.pack();
         dialog.setLocationRelativeTo(owner);
     }
-    private JButton createUnfollowButton(JTextArea followedMapField) {
+    private static JTextField createReadOnlyField() {
+        final JTextField field = new JTextField(60);
+        field.setEditable(false);
+        return field;
+    }
+
+    static String fileNameOf(String location) {
+        final String trimmed = location.replaceAll("[/\\\\]+$", "");
+        final int separator = Math.max(trimmed.lastIndexOf('/'), trimmed.lastIndexOf('\\'));
+        return separator < 0 ? trimmed : trimmed.substring(separator + 1);
+    }
+
+    private static void showText(JTextComponent field, String text) {
+        showText(field, text, text);
+    }
+
+    private static void showText(JTextComponent field, String text, String tooltip) {
+        field.setText(text);
+        field.setCaretPosition(0);
+        field.setToolTipText(tooltip);
+    }
+
+    private JButton createUnfollowButton(JTextComponent followedMapField) {
         JButton unfolowButton = new JButton(TextUtils.getText("unfollow"));
         unfolowButton.setEnabled(followedMapLocation != null);
         unfolowButton.addActionListener(e -> {
             MapStyle.getController().setProperty(map, MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY, null);
             MapStyle.getController().setProperty(map, MapStyleModel.FOLLOWED_MAP_LAST_TIME, null);
-            followedMapField.setText(TextUtils.getText("no_map_followed"));
+            showText(followedMapField, TextUtils.getText("no_map_followed"));
             enableButtons(followedMapButtons, false);
         });
         return unfolowButton;
@@ -147,8 +176,8 @@ public class ManageAssociatedMindMapsDialog{
         return openFollowedMapButton;
     }
 
-    private JButton createChangeMapButton(String mapProperty, String fileChooserTitleProperty, JTextArea field) {
-        JButton assignMapButton = new JButton(TextUtils.getText("OptionPanel.set_property_text"));
+    private JButton createChangeMapButton(String mapProperty, String fileChooserTitleProperty, JTextComponent field) {
+        JButton assignMapButton = new JButton(TextUtils.getText("browse"));
         assignMapButton.addActionListener(e -> {
             MindMapPreviewWithOptions previewWithOptions = MindMapPreviewWithOptions.createFileOpenDialogAndOptions(
                     TextUtils.getText(fileChooserTitleProperty)
@@ -169,7 +198,7 @@ public class ManageAssociatedMindMapsDialog{
         return assignMapButton;
     }
 
-    private void updateAssociatedMap(String propertyName, JTextArea mapField, String noMapMessage) {
+    private void updateAssociatedMap(String propertyName, JTextComponent mapField, String noMapMessage) {
         String followedMap = MapStyle.getController().getProperty(map, propertyName);
         mapField.setEditable(false);
         URI uri = null;
@@ -177,14 +206,14 @@ public class ManageAssociatedMindMapsDialog{
             try {
                 uri = new URI(followedMap);
                 String message = TemplateManager.INSTANCE.describeNormalizedLocation(uri);
-                mapField.setText(message);
+                showText(mapField, fileNameOf(message), message);
                 uri = TemplateManager.INSTANCE.expandTemplateLocation(uri);
             } catch (URISyntaxException e) {
                 LogUtils.severe(e);               
             }
         } 
         else {
-            mapField.setText(noMapMessage);
+            showText(mapField, noMapMessage);
         }
         if(MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY.equals(propertyName)) {
             followedMapLocation = uri;

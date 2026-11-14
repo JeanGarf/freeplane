@@ -503,13 +503,14 @@
 					<Entry name="NewUserStyleFromSelectionAction" />
 					<Entry name="RedefineStyleAction" accelerator="alt shift R" />
 					<Entry name="RedefineStyleUpdateTemplateAction" />
+					<Entry name="EditStylesAction" accelerator="control F11" />
+					<Entry builder="separator" />
 					<Entry name="ManageConditionalStylesAction" />
 					<Entry name="ManageNodeConditionalStylesAction" />
 					<Entry builder="separator" />
 					<Entry name="CopyMapStylesAction"/>
 					<Entry name="ReplaceMapStylesAction"/>
 					<Entry name="ManageAssociatedMindMapsAction"/>
-					<Entry name="EditStylesAction" accelerator="control F11" />
 				</Entry>
 				<Entry name="FormatCopy" accelerator="alt shift C" />
 				<Entry name="FormatPaste" accelerator="alt shift V" />
