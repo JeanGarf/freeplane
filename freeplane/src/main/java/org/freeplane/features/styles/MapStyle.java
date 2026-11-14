@@ -608,6 +608,10 @@ public class MapStyle extends PersistentNodeHook implements IExtension, IMapLife
 	        });
 	}
 
+    public void copyStyleToAssociatedTemplate(MapModel map, IStyle styleKey) {
+        undoableCopyStyleToAssociatedExternalTemplate(map, styleKey);
+    }
+
     private void undoableCopyStyleToAssociatedExternalTemplate(MapModel map, IStyle styleKey){
         final TemplateManager templateManager = TemplateManager.INSTANCE;
         String templateLocationPropertyValue = getProperty(map, MapStyleModel.ASSOCIATED_TEMPLATE_LOCATION_PROPERTY);

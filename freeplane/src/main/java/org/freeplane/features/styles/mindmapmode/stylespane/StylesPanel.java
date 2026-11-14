@@ -189,6 +189,11 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		updateWithTemplate.setEnabled(node != null);
 		updateWithTemplate.addActionListener(e -> updateStyleFromSelectedNode(style, true));
 		menu.add(updateWithTemplate);
+		final JMenuItem updateTemplate = new JMenuItem(
+		    TextUtils.format("styles_panel.update_template", style.toString()),
+		    ResourceController.getResourceController().getIcon("/images/stylePaneUpdate.svg"));
+		updateTemplate.addActionListener(e -> updateAssociatedTemplateWithStyle(style));
+		menu.add(updateTemplate);
 		final JMenuItem edit = new JMenuItem(TextUtils.getText("styles_panel.edit_style"),
 		    ResourceController.getResourceController().getIcon("/images/stylePaneEdit.svg"));
 		edit.addActionListener(e -> editStyle(style));
@@ -259,6 +264,17 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		    TextUtils.getText("styles_panel.update_title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 		if (answer == JOptionPane.YES_OPTION)
 			MapStyle.getController().redefineStyle(node, style, alsoUpdateAssociatedTemplate);
+	}
+
+	private void updateAssociatedTemplateWithStyle(IStyle style) {
+		final MapModel map = Controller.getCurrentController().getMap();
+		if (map == null)
+			return;
+		final String message = TextUtils.format("styles_panel.confirm_update_template_only", style.toString());
+		final int answer = JOptionPane.showConfirmDialog(UITools.getCurrentFrame(), message,
+		    TextUtils.getText("styles_panel.update_title"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+		if (answer == JOptionPane.YES_OPTION)
+			MapStyle.getController().copyStyleToAssociatedTemplate(map, style);
 	}
 
 	private void reloadStyles() {
