@@ -109,6 +109,16 @@ public class CollapsibleSections {
 				label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 				label.setIcon(icon);
 				label.setIconTextGap(4);
+				header.addHierarchyListener(new java.awt.event.HierarchyListener() {
+					@Override
+					public void hierarchyChanged(java.awt.event.HierarchyEvent e) {
+						if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && header.isShowing()) {
+							header.invalidate();
+							header.doLayout();
+							header.repaint();
+						}
+					}
+				});
 			}
 			if (CollapsedSections.isCollapsed(stateKey))
 				setCollapsed(true);
