@@ -1,8 +1,10 @@
 package org.freeplane.features.styles.mindmapmode.styleeditorpanel;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Container;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -20,12 +22,11 @@ import javax.swing.JComponent;
 import org.freeplane.api.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JRadioButton;
-import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import org.freeplane.core.extension.IExtension;
 import org.freeplane.core.resources.TranslatedObject;
-import org.freeplane.core.ui.components.InfoArea;
 import org.freeplane.core.ui.components.JComboBoxFactory;
 import org.freeplane.core.ui.components.UITools;
 import org.freeplane.core.ui.textchanger.TranslatedElement;
@@ -51,6 +52,7 @@ import org.freeplane.features.styles.LogicalStyleController;
 import org.freeplane.features.styles.LogicalStyleModel;
 import org.freeplane.features.styles.MapStyle;
 import org.freeplane.features.styles.MapStyleModel;
+import org.freeplane.features.styles.mindmapmode.LocationNames;
 import org.freeplane.features.styles.mindmapmode.MLogicalStyleController;
 import org.freeplane.features.styles.mindmapmode.MUIFactory;
 import org.freeplane.features.styles.mindmapmode.ManageMapConditionalStylesAction;
@@ -63,7 +65,7 @@ import com.jgoodies.forms.layout.FormSpecs;
 class StyleControlGroup implements ControlGroup{
     private static final int LEFT_MARGIN = (int) (15 * UITools.FONT_SCALE_FACTOR);
     private static final int GAP = (int) (6 * UITools.FONT_SCALE_FACTOR);
-    private static final String CHOOSE_TEMPLATE = "choose_template";
+    private static final String CHOOSE_TEMPLATE = "browse";
     private static final String MAKE_FORMATTING_DEFAULT = "make_formatting_default";
     private static final String FOR_ALL_NODES_OF_STYLE = "for_all_nodes_of_style";
     private static final String FOR_THIS_MAP = "changes_style_for_this_map";
@@ -73,10 +75,10 @@ class StyleControlGroup implements ControlGroup{
 	private RevertingProperty mSetStyle;
 	private JButton mNodeStyleButton;
 	private JButton mMapStyleButton;
-	private JLabel styleNameLabel;
+	private JTextField styleNameField;
 	private JRadioButton redefinesStyleForCurrentMapOnly;
     private JRadioButton redefinesStyleForCurrentMapAndTemplate;
-    private JTextArea redefinedTemplate;
+    private JTextField redefinedTemplate;
     private JButton chooseTemplateButton;
 	private final boolean addStyleBox;
 	private JComboBox mAutomaticLayoutComboBox;
@@ -132,9 +134,14 @@ class StyleControlGroup implements ControlGroup{
 				mSetStyle.setValue(isStyleSet);
 				setStyleList(mMapStyleButton, logicalStyleController.getMapStyleNames(node, "\n"));
 	            IStyle firstStyle = logicalStyleController.getFirstStyle(node);
-	            String styleName = TextUtils.format(FOR_ALL_NODES_OF_STYLE, firstStyle.toString());
-	            if(! styleNameLabel.getText().equals(styleName))
-	                styleNameLabel.setText(styleName);
+	            String styleName = firstStyle.toString();
+	            if(! styleNameField.getText().equals(styleName)) {
+	                styleNameField.setText(styleName);
+	                styleNameField.setCaretPosition(0);
+	                styleNameField.setColumns(Math.max(8, styleName.length() + 2));
+	                styleNameField.setMaximumSize(styleNameField.getPreferredSize());
+	                styleNameField.revalidate();
+	            }
 	            updateTemplateName(node.getMap());
 
 			}
@@ -187,8 +194,7 @@ class StyleControlGroup implements ControlGroup{
 
             addAutomaticLayout(formBuilder);
 
-            styleNameLabel = new JLabel();
-            styleNameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+            styleNameField = readOnlyField(12);
 
             redefinesStyleForCurrentMapOnly = new JRadioButton();
             redefinesStyleForCurrentMapOnly.setSelected(true);
@@ -205,11 +211,11 @@ class StyleControlGroup implements ControlGroup{
 
             Box styleAndButtonBox = Box.createVerticalBox();
             Box radioButtonBox = Box.createVerticalBox();
-            radioButtonBox.setBorder(BorderFactory.createEmptyBorder(0, LEFT_MARGIN * 2, 0, 0));
             radioButtonBox.add(redefinesStyleForCurrentMapOnly);
             radioButtonBox.add(redefinesStyleForCurrentMapAndTemplate);
             radioButtonBox.setAlignmentX(Component.LEFT_ALIGNMENT);
-            radioButtonBox.setBorder(BorderFactory.createEmptyBorder(0, 0, GAP, 0));
+            radioButtonBox.setBorder(BorderFactory.createEmptyBorder(0, LEFT_MARGIN * 2, 0, 0));
+            final int textIndent = LEFT_MARGIN * 2 + textOffsetOf(redefinesStyleForCurrentMapAndTemplate);
 
             JButton redefineStyleBtn = TranslatedElementFactory.createButton("ApplyAction.text");
             redefineStyleBtn.addActionListener(e -> {
@@ -217,20 +223,21 @@ class StyleControlGroup implements ControlGroup{
                     MapStyle.getController().redefineStyle(node, redefinesStyleForCurrentMapAndTemplate.isSelected());
 
             });
-            radioButtonBox.setBorder(BorderFactory.createEmptyBorder(0, LEFT_MARGIN * 2, 0, 0));
 
-            styleAndButtonBox.add(padded(styleNameLabel));
-            styleAndButtonBox.add(padded(redefineStyleBtn));
+            Box styleLine = Box.createHorizontalBox();
+            styleLine.setAlignmentX(Component.LEFT_ALIGNMENT);
+            styleLine.add(new JLabel(TextUtils.getText(FOR_ALL_NODES_OF_STYLE)));
+            styleLine.add(Box.createHorizontalStrut(GAP));
+            styleLine.add(styleNameField);
+            styleLine.add(Box.createHorizontalStrut(GAP / 2));
+            styleLine.add(new JLabel(":"));
+            styleAndButtonBox.add(padded(styleLine));
+            styleAndButtonBox.add(Box.createVerticalStrut(GAP));
             styleAndButtonBox.add(radioButtonBox);
 
-            redefinedTemplate= new InfoArea();
-            redefinedTemplate.setColumns(80);
-            redefinedTemplate.setLineWrap(true);
-            redefinedTemplate.setWrapStyleWord(false);
-            redefinedTemplate.setBorder(BorderFactory.createEmptyBorder());
-            redefinedTemplate.setFont(redefinedTemplate.getFont().deriveFont(Font.ITALIC));
-            redefinedTemplate.setAlignmentX(Component.LEFT_ALIGNMENT);
-            styleAndButtonBox.add(padded(redefinedTemplate));
+            redefinedTemplate = readOnlyField(20);
+            styleAndButtonBox.add(indented(redefinedTemplate, textIndent));
+            styleAndButtonBox.add(Box.createVerticalStrut(GAP / 2));
 
             chooseTemplateButton = new JButton(TextUtils.getRawText(CHOOSE_TEMPLATE));
             chooseTemplateButton.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -269,7 +276,9 @@ class StyleControlGroup implements ControlGroup{
                 }
             });
 
-            styleAndButtonBox.add(padded(chooseTemplateButton));
+            styleAndButtonBox.add(indented(chooseTemplateButton, textIndent));
+            styleAndButtonBox.add(Box.createVerticalStrut(GAP));
+            styleAndButtonBox.add(padded(redefineStyleBtn));
             UITools.addTitledBorder(styleAndButtonBox, TextUtils.getRawText(MAKE_FORMATTING_DEFAULT), fontSize);
             formBuilder.append(styleAndButtonBox, formBuilder.getColumnCount());
             formBuilder.nextLine();
@@ -288,6 +297,27 @@ class StyleControlGroup implements ControlGroup{
 		}
 	}
 
+	private static JTextField readOnlyField(int columns) {
+		final JTextField field = new JTextField(columns);
+		field.setEditable(false);
+		field.setAlignmentX(Component.LEFT_ALIGNMENT);
+		field.setMaximumSize(new Dimension(Integer.MAX_VALUE, field.getPreferredSize().height));
+		return field;
+	}
+
+	private static int textOffsetOf(JRadioButton radio) {
+		final FontMetrics metrics = radio.getFontMetrics(radio.getFont());
+		return Math.max(0, radio.getPreferredSize().width - metrics.stringWidth(radio.getText()) - radio.getInsets().right);
+	}
+
+	private JComponent indented(Component component, int indent) {
+		Box box = Box.createHorizontalBox();
+		box.setAlignmentX(Component.LEFT_ALIGNMENT);
+		box.add(Box.createHorizontalStrut(indent));
+		box.add(component);
+		return box;
+	}
+
 	private JComponent padded(Component component) {
 		Box box = Box.createHorizontalBox();
 		box.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -299,8 +329,12 @@ class StyleControlGroup implements ControlGroup{
     private void updateTemplateName(MapModel map) {
         String templateLocation = MapStyle.getController().getProperty(map, MapStyleModel.ASSOCIATED_TEMPLATE_LOCATION_PROPERTY);
         String templateDescription = TemplateManager.INSTANCE.describeNormalizedLocation(templateLocation);
-        if(! templateDescription.equals(redefinedTemplate.getText()))
-            redefinedTemplate.setText(templateDescription);
+        final String templateName = LocationNames.fileNameOf(templateDescription);
+        if(! templateName.equals(redefinedTemplate.getText())) {
+            redefinedTemplate.setText(templateName);
+            redefinedTemplate.setCaretPosition(0);
+        }
+        redefinedTemplate.setToolTipText(templateDescription);
         redefinesStyleForCurrentMapAndTemplate.setToolTipText(
                 TextUtils.format(FOR_TEMPLATE_TOOLTIP, templateDescription));
         if(templateLocation == null)

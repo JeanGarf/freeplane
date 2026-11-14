@@ -107,12 +107,6 @@ public class ManageAssociatedMindMapsDialog{
         return field;
     }
 
-    static String fileNameOf(String location) {
-        final String trimmed = location.replaceAll("[/\\\\]+$", "");
-        final int separator = Math.max(trimmed.lastIndexOf('/'), trimmed.lastIndexOf('\\'));
-        return separator < 0 ? trimmed : trimmed.substring(separator + 1);
-    }
-
     private static void showText(JTextComponent field, String text) {
         showText(field, text, text);
     }
@@ -206,7 +200,7 @@ public class ManageAssociatedMindMapsDialog{
             try {
                 uri = new URI(followedMap);
                 String message = TemplateManager.INSTANCE.describeNormalizedLocation(uri);
-                showText(mapField, fileNameOf(message), message);
+                showText(mapField, LocationNames.fileNameOf(message), message);
                 uri = TemplateManager.INSTANCE.expandTemplateLocation(uri);
             } catch (URISyntaxException e) {
                 LogUtils.severe(e);               
