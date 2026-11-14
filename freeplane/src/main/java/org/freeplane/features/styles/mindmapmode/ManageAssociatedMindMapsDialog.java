@@ -49,7 +49,7 @@ public class ManageAssociatedMindMapsDialog{
         Frame owner = UITools.getCurrentFrame();
         dialog = new JDialog(owner);
         FormBuilder formBuilder = FormBuilder.create().columns("p, 3dlu, fill:3dlu:grow, 3dlu, p")
-                .rows("p, 3dlu, p, 12dlu, p, 3dlu, p, 3dlu, p");
+                .rows("p, 3dlu, p, 24dlu, p, 3dlu, p, 3dlu, p");
         formBuilder.add(TextUtils.getText("followed_map")).xy(1,  1);
         JTextField followedMapField = createReadOnlyField();
         formBuilder.add(followedMapField).xy(3, 1);
@@ -76,7 +76,7 @@ public class ManageAssociatedMindMapsDialog{
                 replaceStylesFromAssociatedMapButton).xyw(1, 7, 5);
         
         JButton closeButton = createCloseMapButton();
-        formBuilder.add(closeButton).xy(1, 9, "l,c");
+        formBuilder.add(closeButton).xyw(1, 9, 5, "r,c");
 
         updateAssociatedMap(MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY, followedMapField, TextUtils.getText("no_map_followed"));      
         updateAssociatedMap(MapStyleModel.ASSOCIATED_TEMPLATE_LOCATION_PROPERTY, associatedMapField, TextUtils.getText("no_template_associated"));      
@@ -107,10 +107,20 @@ public class ManageAssociatedMindMapsDialog{
         return field;
     }
 
+    static String fileNameOf(String location) {
+        final String trimmed = location.replaceAll("[/\\\\]+$", "");
+        final int separator = Math.max(trimmed.lastIndexOf('/'), trimmed.lastIndexOf('\\'));
+        return separator < 0 ? trimmed : trimmed.substring(separator + 1);
+    }
+
     private static void showText(JTextComponent field, String text) {
+        showText(field, text, text);
+    }
+
+    private static void showText(JTextComponent field, String text, String tooltip) {
         field.setText(text);
-        field.setCaretPosition(text.length());
-        field.setToolTipText(text);
+        field.setCaretPosition(0);
+        field.setToolTipText(tooltip);
     }
 
     private JButton createUnfollowButton(JTextComponent followedMapField) {
@@ -196,7 +206,7 @@ public class ManageAssociatedMindMapsDialog{
             try {
                 uri = new URI(followedMap);
                 String message = TemplateManager.INSTANCE.describeNormalizedLocation(uri);
-                showText(mapField, message);
+                showText(mapField, fileNameOf(message), message);
                 uri = TemplateManager.INSTANCE.expandTemplateLocation(uri);
             } catch (URISyntaxException e) {
                 LogUtils.severe(e);               
