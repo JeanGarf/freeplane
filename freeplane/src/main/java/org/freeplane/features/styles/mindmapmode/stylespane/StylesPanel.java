@@ -378,6 +378,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 	private class StyleRow extends JComponent implements ListCellRenderer<StyleListItem> {
 		private static final long serialVersionUID = 1L;
 		private static final int HEADER_PADDING = 5;
+		private final Color CURRENT_FRAME_COLOR = new Color(0, 0, 128);
 		private String header;
 		private boolean blank;
 		private IStyle style;
@@ -408,7 +409,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 				return new Dimension(100, metrics.getHeight());
 			if (header != null)
 				return new Dimension(100, metrics.getHeight() + 2 * HEADER_PADDING + 2);
-			return new Dimension(100, Math.max(StyleRowLayout.MENU_SIZE, metrics.getHeight() + 6) + StyleRowLayout.PADDING);
+			return new Dimension(100, Math.max(StyleRowLayout.MENU_SIZE, metrics.getHeight() + 6) + StyleRowLayout.ROW_VERTICAL_PADDING);
 		}
 
 		@Override
@@ -449,12 +450,9 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		private void paintCurrentMarker(Graphics2D g) {
 			if (!current)
 				return;
-			Color color = UIManager.getColor("Component.focusColor");
-			if (color == null)
-				color = UIManager.getColor("List.selectionBackground");
-			g.setColor(color != null ? color : Color.BLUE);
-			g.setStroke(new BasicStroke(2f));
-			g.drawRect(1, 1, getWidth() - 3, getHeight() - 3);
+			g.setColor(CURRENT_FRAME_COLOR);
+			g.setStroke(new BasicStroke(3f));
+			g.drawRect(2, 2, getWidth() - 5, getHeight() - 5);
 		}
 
 		private void paintStyle(Graphics2D g, Rectangle bounds) {
