@@ -1,5 +1,6 @@
 package org.freeplane.features.styles.mindmapmode.stylespane;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -115,10 +116,14 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 	}
 
 	private JComponent createManageButtonBar() {
-		final JButton manage = new JButton(TextUtils.getText("styles_panel.manage") + "  \u25BE");
+		final JButton styles = new JButton(TextUtils.removeMnemonic(TextUtils.getText(MANAGE_STYLES_MENU)) + "  \u25BE");
+		styles.setFocusable(false);
+		styles.addActionListener(e -> showManageMenu(styles));
+		final JButton manage = new JButton(TextUtils.removeMnemonic(TextUtils.getText(EDIT_ACTION + ".text")));
 		manage.setFocusable(false);
-		manage.addActionListener(e -> showManageMenu(manage));
+		manage.addActionListener(e -> editStyle(null));
 		final JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 4));
+		bar.add(styles);
 		bar.add(manage);
 		return bar;
 	}
@@ -248,7 +253,9 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 
 	private void editStyle(IStyle style) {
 		final AFreeplaneAction action = modeController.getAction(EDIT_ACTION);
-		if (action instanceof EditStylesAction)
+		if (style == null)
+			action.actionPerformed(null);
+		else if (action instanceof EditStylesAction)
 			((EditStylesAction) action).edit(style);
 	}
 
@@ -294,10 +301,27 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		}
 		list.revalidate();
 		list.repaint();
+		SwingUtilities.invokeLater(this::scrollToCurrentStyle);
 	}
 
 	private void refreshLooks() {
 		list.repaint();
+		SwingUtilities.invokeLater(this::scrollToCurrentStyle);
+	}
+
+	private void scrollToCurrentStyle() {
+		final IMapSelection selection = Controller.getCurrentController().getSelection();
+		final NodeModel node = selection == null ? null : selection.getSelected();
+		if (node == null)
+			return;
+		final IStyle current = LogicalStyleController.getController().getFirstStyle(node);
+		for (int index = 0; index < model.size(); index++) {
+			final StyleListItem item = model.get(index);
+			if (item.isStyle() && item.style.equals(current)) {
+				list.ensureIndexIsVisible(index);
+				return;
+			}
+		}
 	}
 
 	@Override
@@ -354,6 +378,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 	private class StyleRow extends JComponent implements ListCellRenderer<StyleListItem> {
 		private static final long serialVersionUID = 1L;
 		private static final int HEADER_PADDING = 5;
+		private final Color CURRENT_FRAME_COLOR = new Color(0, 0, 128);
 		private String header;
 		private boolean blank;
 		private IStyle style;
@@ -384,7 +409,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 				return new Dimension(100, metrics.getHeight());
 			if (header != null)
 				return new Dimension(100, metrics.getHeight() + 2 * HEADER_PADDING + 2);
-			return new Dimension(100, Math.max(StyleRowLayout.MENU_SIZE, metrics.getHeight() + 6) + StyleRowLayout.PADDING);
+			return new Dimension(100, Math.max(StyleRowLayout.MENU_SIZE, metrics.getHeight() + 6) + StyleRowLayout.ROW_VERTICAL_PADDING);
 		}
 
 		@Override
@@ -425,9 +450,9 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		private void paintCurrentMarker(Graphics2D g) {
 			if (!current)
 				return;
-			final Color color = UIManager.getColor("List.selectionBackground");
-			g.setColor(color != null ? color : Color.BLUE);
-			g.fillRect(0, 0, 3, getHeight());
+			g.setColor(CURRENT_FRAME_COLOR);
+			g.setStroke(new BasicStroke(3f));
+			g.drawRect(2, 2, getWidth() - 5, getHeight() - 5);
 		}
 
 		private void paintStyle(Graphics2D g, Rectangle bounds) {
