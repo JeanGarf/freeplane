@@ -31,6 +31,7 @@ public class CommandSearchAction extends AFreeplaneAction {
     private static final long serialVersionUID = 1L;
     public static final String KEY = "CommandSearchAction";
     private CommandSearchDialog commandSearchDialog;
+    private boolean searchesPreferencesOnlyInDialog;
     private DefaultComboBoxModel<String> sharedSearchHistory;
 
     @SuppressWarnings("serial")
@@ -66,22 +67,34 @@ public class CommandSearchAction extends AFreeplaneAction {
     }
 
     public void showOwnedBy(Window owner) {
-        if(commandSearchDialog != null && commandSearchDialog.getOwner() != owner) {
+        show(owner, false);
+    }
+
+    public void showForPreferences(Window owner) {
+        show(owner, true);
+    }
+
+    private void show(Window owner, boolean searchesPreferencesOnly) {
+        if(commandSearchDialog != null && (commandSearchDialog.getOwner() != owner || searchesPreferencesOnly != searchesPreferencesOnlyInDialog)) {
             commandSearchDialog.dispose();
             commandSearchDialog = null;
         }
         if(commandSearchDialog == null)
-            createDialog(owner);
+            createDialog(owner, searchesPreferencesOnly);
         else
             commandSearchDialog.toFront();
     }
 
-    private void createDialog(Window owner) {
+    private void createDialog(Window owner, boolean searchesPreferencesOnly) {
+        final CommandSearchStateOverride override = searchesPreferencesOnly ? CommandSearchStateOverride.forPreferencesOnly() : null;
         final CommandSearchDialog dialog = new CommandSearchDialog(owner, sharedSearchHistory);
         commandSearchDialog = dialog;
+        searchesPreferencesOnlyInDialog = searchesPreferencesOnly;
         dialog.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
+                if(override != null)
+                    override.restore();
                 if(commandSearchDialog == dialog)
                     commandSearchDialog = null;
             }
