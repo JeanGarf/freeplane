@@ -21,6 +21,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -30,6 +31,9 @@ import org.freeplane.core.ui.AFreeplaneAction;
 import org.freeplane.core.ui.CaseSensitiveFileNameExtensionFilter;
 import org.freeplane.core.ui.components.UITools;
 import org.freeplane.core.util.LogUtils;
+import org.freeplane.core.util.TextUtils;
+import org.freeplane.features.mindmanager2002.MindmanagerFileFormat;
+import org.freeplane.features.mindmanager2002.Mindmanager2002Importer;
 import org.freeplane.features.mode.Controller;
 
 /**
@@ -46,10 +50,10 @@ public class ImportMindmanagerFiles extends AFreeplaneAction {
 	}
 
 	public void actionPerformed(final ActionEvent e) {
-		final String type = "mmap";
 		final Component component = Controller.getCurrentController().getViewController().getCurrentRootComponent();
 		final JFileChooser chooser = UITools.newFileChooser();
-		final CaseSensitiveFileNameExtensionFilter filter = new CaseSensitiveFileNameExtensionFilter(type, null);
+		final CaseSensitiveFileNameExtensionFilter filter = new CaseSensitiveFileNameExtensionFilter(
+				new String[] { "mmap", "mmp" }, TextUtils.getText("ImportMindmanagerFiles.filter"));
 		chooser.setFileFilter(filter);
 		chooser.setAcceptAllFileFilterUsed(true);
 		final File mmFile = Controller.getCurrentController().getMap().getFile();
@@ -61,7 +65,16 @@ public class ImportMindmanagerFiles extends AFreeplaneAction {
 			return;
 		}
 		final File chosenFile = chooser.getSelectedFile();
-		importMindmanagerFile(chosenFile);
+		try {
+			if (MindmanagerFileFormat.detect(chosenFile) == MindmanagerFileFormat.MM2002)
+				new Mindmanager2002Importer().importFile(chosenFile);
+			else
+				importMindmanagerFile(chosenFile);
+		}
+		catch (final IOException ex) {
+			LogUtils.warn(ex);
+			UITools.errorMessage(ex.getMessage());
+		}
 	}
 
 	private void importMindmanagerFile(final File file) {

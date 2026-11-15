@@ -112,10 +112,7 @@
 				<Entry name="ImportFolderStructureAction" />
 				<Entry name="ImportXmlFile" />
 				<Entry name="ImportTextTreeAction" />
-				<Entry name="import_mindmanager">
-					<Entry name="ImportMindmanagerFiles" />
-					<Entry name="ImportMindmanager2002Files" />
-				</Entry>
+				<Entry name="ImportMindmanagerFiles" />
 			</Entry>
 			<Entry builder="separator" />
 						<Entry name="print">

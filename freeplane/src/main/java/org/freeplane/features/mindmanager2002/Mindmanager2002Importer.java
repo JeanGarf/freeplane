@@ -2,7 +2,6 @@ package org.freeplane.features.mindmanager2002;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.StringReader;
 import java.util.Collections;
@@ -15,21 +14,15 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import org.freeplane.api.swing.JFileChooser;
 import org.freeplane.core.resources.ResourceController;
-import org.freeplane.core.ui.AFreeplaneAction;
-import org.freeplane.core.ui.CaseSensitiveFileNameExtensionFilter;
 import org.freeplane.core.ui.components.UITools;
 import org.freeplane.core.util.LogUtils;
 import org.freeplane.core.util.TextUtils;
 import org.freeplane.features.export.mindmapmode.XmlImporter;
-import org.freeplane.features.map.MapModel;
 import org.freeplane.features.mode.Controller;
 import org.freeplane.features.url.UrlManager;
 
-public class ImportMindmanager2002Files extends AFreeplaneAction {
-	private static final long serialVersionUID = 1L;
-	private static final String FILE_EXTENSION = "mmp";
+public class Mindmanager2002Importer {
 	private static final int MAX_VISIBLE_PROBLEMS = 15;
 	private static final ImportProblem.Texts FREEPLANE_TEXTS = new ImportProblem.Texts() {
 		@Override
@@ -43,32 +36,7 @@ public class ImportMindmanager2002Files extends AFreeplaneAction {
 		}
 	};
 
-	public ImportMindmanager2002Files() {
-		super("ImportMindmanager2002Files");
-	}
-
-	@Override
-	public void actionPerformed(final ActionEvent e) {
-		final File mmpFile = chooseFile();
-		if (mmpFile != null)
-			importFile(mmpFile);
-	}
-
-	private File chooseFile() {
-		final Component component = Controller.getCurrentController().getViewController().getCurrentRootComponent();
-		final JFileChooser chooser = UITools.newFileChooser();
-		chooser.setFileFilter(new CaseSensitiveFileNameExtensionFilter(FILE_EXTENSION, null));
-		chooser.setAcceptAllFileFilterUsed(true);
-		final MapModel currentMap = Controller.getCurrentController().getMap();
-		final File currentFile = currentMap != null ? currentMap.getFile() : null;
-		if (currentFile != null && currentFile.getParentFile() != null)
-			chooser.setSelectedFile(currentFile.getParentFile());
-		if (chooser.showOpenDialog(component) != JFileChooser.APPROVE_OPTION)
-			return null;
-		return chooser.getSelectedFile();
-	}
-
-	private void importFile(final File mmpFile) {
+	public void importFile(final File mmpFile) {
 		try {
 			final File outputFile = new File(mmpFile.getParentFile(),
 					mmpFile.getName() + UrlManager.FREEPLANE_FILE_EXTENSION);
