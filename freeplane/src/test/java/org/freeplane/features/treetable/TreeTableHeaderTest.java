@@ -2,6 +2,9 @@ package org.freeplane.features.treetable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
+import java.util.Collections;
+
 import org.freeplane.features.map.MapFake;
 import org.freeplane.features.map.NodeModel;
 import org.freeplane.features.styles.LogicalStyleModel;
@@ -155,12 +158,12 @@ public class TreeTableHeaderTest {
 	}
 
 	@Test
-	public void passesNoKeyToSubColumnNamedLikeAnotherColumn() {
+	public void passesKeyToSubColumnNamedLikeAnotherColumn() {
 		final NodeModel price = childOf(header, "Price");
 		childOf(price, "Net");
 		childOf(header, "Net");
 
-		assertThat(TreeTableHeader.keyInheritedFrom(price)).isNull();
+		assertThat(TreeTableHeader.keyInheritedFrom(price)).isEqualTo("Price");
 	}
 
 	@Test
@@ -177,7 +180,7 @@ public class TreeTableHeaderTest {
 		final NodeModel financial = childOf(cons, "Financial");
 		cons.remove(cons.getIndex(financial));
 
-		assertThat(TreeTableHeader.keyReturnedTo(cons, financial)).isEqualTo("Financial");
+		assertThat(TreeTableHeader.keyReturnedTo(cons, financial)).isEqualTo("Cons \u203A Financial");
 	}
 
 	@Test
@@ -188,7 +191,7 @@ public class TreeTableHeaderTest {
 		childOf(group, "Planning");
 		cons.remove(cons.getIndex(group));
 
-		assertThat(TreeTableHeader.keyReturnedTo(cons, group)).isEqualTo("Financial");
+		assertThat(TreeTableHeader.keyReturnedTo(cons, group)).isEqualTo("Cons \u203A Group \u203A Financial");
 	}
 
 	@Test
@@ -211,13 +214,13 @@ public class TreeTableHeaderTest {
 	}
 
 	@Test
-	public void returnsNoKeyStillShownByAnotherColumn() {
+	public void returnsKeyEvenIfAnotherColumnHasTheSameName() {
 		final NodeModel cons = childOf(header, "Cons");
 		final NodeModel financial = childOf(cons, "Financial");
 		childOf(header, "Financial");
 		cons.remove(cons.getIndex(financial));
 
-		assertThat(TreeTableHeader.keyReturnedTo(cons, financial)).isNull();
+		assertThat(TreeTableHeader.keyReturnedTo(cons, financial)).isEqualTo("Cons \u203A Financial");
 	}
 
 	@Test
@@ -269,5 +272,145 @@ public class TreeTableHeaderTest {
 
 		assertThat(TreeTableHeader.lowestCommonAncestor(pros, cons)).isSameAs(analysis);
 		assertThat(TreeTableHeader.lowestCommonAncestor(cons, ford)).isSameAs(header);
+	}
+
+	@Test
+	public void givesSameNamedColumnsInDistinctBranchesDistinctPathKeys() {
+		final NodeModel tesla = childOf(header, "Tesla");
+		final NodeModel teslaS = childOf(tesla, "S");
+		final NodeModel ford = childOf(header, "Ford");
+		final NodeModel fordS = childOf(ford, "S");
+		final NodeModel price = childOf(header, "Price");
+
+		assertThat(TreeTableHeader.keyOf(teslaS)).isEqualTo("Tesla \u203A S");
+		assertThat(TreeTableHeader.keyOf(fordS)).isEqualTo("Ford \u203A S");
+		assertThat(TreeTableHeader.keyOf(price)).isEqualTo("Price");
+		assertThat(TreeTableHeader.distinctColumnNodesOf(table)).containsExactly(teslaS, fordS, price);
+		assertThat(TreeTableHeader.isKeyUsedByAnotherColumn(fordS, "Tesla \u203A S")).isTrue();
+		assertThat(TreeTableHeader.isKeyUsedByAnotherColumn(price, "Price")).isFalse();
+		assertThat(TreeTableHeader.isKeyUsedByAnotherColumn(fordS, "S")).isFalse();
+	}
+
+	@Test
+	public void computesKeysOfDescendantsWithRenamedAncestor() {
+		final NodeModel models = childOf(header, "Models");
+		final NodeModel ford = childOf(models, "Ford");
+		final NodeModel s = childOf(ford, "S");
+
+		assertThat(TreeTableHeader.keyOf(s, models, "Mod")).isEqualTo("Mod \u203A Ford \u203A S");
+		assertThat(TreeTableHeader.keyOf(s, s, "T")).isEqualTo("Models \u203A Ford \u203A T");
+	}
+
+	@Test
+	public void escapesSeparatorInColumnNames() {
+		final NodeModel group = childOf(header, "a \u203A b");
+		final NodeModel column = childOf(group, "c");
+
+		assertThat(TreeTableHeader.keyOf(column)).isEqualTo("a \\\u203A b \u203A c");
+	}
+
+	@Test
+	public void refusesRenamingToNameOfSiblingColumn() {
+		final NodeModel group = childOf(header, "Models");
+		final NodeModel first = childOf(group, "Tesla");
+		childOf(group, "Ford");
+		final NodeModel other = childOf(header, "Ford");
+
+		assertThat(TreeTableHeader.acceptsRenaming(first, "Ford")).isFalse();
+		assertThat(TreeTableHeader.acceptsRenaming(first, "Other")).isTrue();
+		assertThat(TreeTableHeader.acceptsRenaming(other, "Tesla")).isTrue();
+	}
+
+	@Test
+	public void detectsRenamingToNameOfSiblingColumn() {
+		final NodeModel group = childOf(header, "Models");
+		final NodeModel tesla = childOf(group, "Tesla");
+		childOf(group, "Ford");
+
+		assertThat(TreeTableHeader.collisionAfterRenaming(tesla, "Ford")).isEqualTo("Models \u203A Ford");
+		assertThat(TreeTableHeader.collisionAfterRenaming(tesla, "Other")).isNull();
+		assertThat(TreeTableHeader.collisionAfterRenaming(tesla, "Tesla")).isNull();
+	}
+
+	@Test
+	public void acceptsSameNameInDistinctBranches() {
+		final NodeModel tesla = childOf(header, "Tesla");
+		final NodeModel teslaS = childOf(tesla, "S");
+		final NodeModel ford = childOf(header, "Ford");
+		childOf(ford, "T");
+
+		assertThat(TreeTableHeader.collisionAfterRenaming(ford.getChildAt(0), "S")).isNull();
+		assertThat(TreeTableHeader.collisionAfterRenaming(teslaS, "T")).isNull();
+	}
+
+	@Test
+	public void detectsRenamingOfGroupMakingColumnsCollide() {
+		final NodeModel first = childOf(header, "A");
+		childOf(first, "S");
+		final NodeModel second = childOf(header, "B");
+		childOf(second, "S");
+
+		assertThat(TreeTableHeader.collisionAfterRenaming(second, "A")).isEqualTo("A \u203A S");
+		assertThat(TreeTableHeader.collisionAfterRenaming(second, "C")).isNull();
+	}
+
+	@Test
+	public void ignoresPreexistingDuplicatesElsewhereWhenRenaming() {
+		childOf(header, "S");
+		childOf(header, "S");
+		final NodeModel other = childOf(header, "X");
+
+		assertThat(TreeTableHeader.collisionAfterRenaming(other, "Y")).isNull();
+	}
+
+	@Test
+	public void detectsDeletionMakingParentCollideWithSiblingColumn() {
+		final NodeModel group = childOf(header, "S");
+		final NodeModel toto = childOf(group, "toto");
+		childOf(header, "S");
+
+		assertThat(TreeTableHeader.collisionAfterDeleting(Collections.singletonList(toto))).isEqualTo("S");
+	}
+
+	@Test
+	public void acceptsDeletionWhenParentKeepsOtherChildOrKeyStaysUnique() {
+		final NodeModel group = childOf(header, "S");
+		final NodeModel toto = childOf(group, "toto");
+		childOf(group, "titi");
+		childOf(header, "S");
+		final NodeModel lonely = childOf(header, "Other");
+		final NodeModel lonelyChild = childOf(lonely, "x");
+
+		assertThat(TreeTableHeader.collisionAfterDeleting(Collections.singletonList(toto))).isNull();
+		assertThat(TreeTableHeader.collisionAfterDeleting(Collections.singletonList(lonelyChild))).isNull();
+		assertThat(TreeTableHeader.collisionAfterDeleting(Arrays.asList(toto, group.getChildAt(1)))).isEqualTo("S");
+	}
+
+	@Test
+	public void ignoresDeletionOutsideHeader() {
+		final NodeModel row = childOf(table, "Row");
+
+		assertThat(TreeTableHeader.collisionAfterDeleting(Collections.singletonList(row))).isNull();
+	}
+
+	@Test
+	public void findsDuplicateColumnKeyIntroducedByNode() {
+		final NodeModel existing = childOf(header, "S");
+		final NodeModel added = childOf(header, "S");
+		final NodeModel group = childOf(header, "G");
+		childOf(group, "S");
+
+		assertThat(TreeTableHeader.duplicateColumnKeyIn(added)).isEqualTo("S");
+		assertThat(TreeTableHeader.duplicateColumnKeyIn(group)).isNull();
+		assertThat(TreeTableHeader.duplicateColumnKeyIn(existing)).isEqualTo("S");
+	}
+
+	@Test
+	public void extractsLastNameOfPathKey() {
+		assertThat(TreeTableHeader.nameOfKey("S")).isEqualTo("S");
+		assertThat(TreeTableHeader.nameOfKey("Models \u203A Ford \u203A S")).isEqualTo("S");
+		final NodeModel group = childOf(header, "a \u203A b");
+		final NodeModel column = childOf(group, "c \u203A d");
+		assertThat(TreeTableHeader.nameOfKey(TreeTableHeader.keyOf(column))).isEqualTo("c \u203A d");
 	}
 }

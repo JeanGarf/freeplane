@@ -97,6 +97,7 @@ import org.freeplane.features.text.TextController;
 import org.freeplane.features.text.mindmapmode.MTextController;
 import org.freeplane.features.url.UrlManager;
 import org.freeplane.n3.nanoxml.XMLException;
+import org.freeplane.features.treetable.TreeTableCells;
 import org.freeplane.features.treetable.TreeTableSheet;
 import org.freeplane.features.treetable.mindmapmode.TreeTableEditing;
 import org.freeplane.view.swing.features.filepreview.ImageAdder;
@@ -914,11 +915,22 @@ public class MMapClipboardController extends MapClipboardController implements M
 			    newNodes = new LinkedList<NodeModel>();
 			}
 			newNodes.clear();
-			handler.paste(t, target, side, dropAction);
+			final NodeModel blankCellContent = TreeTableCells.blankContentAt(target);
+			NodeModel unfoldedTarget = target;
+			if (blankCellContent == null)
+				handler.paste(t, target, side, dropAction);
+			else {
+				final NodeModel cell = blankCellContent.getParentNode();
+				handler.paste(t, blankCellContent, Side.AS_SIBLING_BEFORE, dropAction);
+				if (cell.getChildCount() > 1) {
+					mapController.deleteNode(blankCellContent);
+					unfoldedTarget = cell;
+				}
+			}
 			if ( ! side.isSibling()) {
-			    if (mapController.isFolded(target)) {
+			    if (mapController.isFolded(unfoldedTarget)) {
                     if (ResourceController.getResourceController().getBooleanProperty(RESOURCE_UNFOLD_ON_PASTE)) {
-                        mapController.unfoldAndScroll(target, controller.getSelection().getFilter());
+                        mapController.unfoldAndScroll(unfoldedTarget, controller.getSelection().getFilter());
                     }
                 }
 			}

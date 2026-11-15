@@ -7,6 +7,7 @@ import java.util.Map;
 import org.freeplane.api.LengthUnit;
 import org.freeplane.api.Quantity;
 import org.freeplane.core.undo.IActor;
+import org.freeplane.core.ui.components.UITools;
 import org.freeplane.core.util.TextUtils;
 import org.freeplane.features.map.MapController;
 import org.freeplane.features.map.MapModel;
@@ -36,9 +37,19 @@ public class TreeTableEditing {
 	private static boolean completesCells;
 
 	public static void installListeners(final MapController mapController) {
+		if (mapController instanceof MMapController)
+			((MMapController) mapController).addNodeOperationGuard(new TreeTableNodeGuard());
 		mapController.addNodeChangeListener(new TreeTableColumnRenaming());
 		mapController.addMapChangeListener(new TreeTableColumnSplitting());
 		mapController.addMapLifeCycleListener(new TreeTableCellMigrationOnLoad());
+	}
+
+	static void warnAboutDuplicateColumns(final NodeModel header) {
+		if (header.getMap().isUndoActionRunning() || !TreeTableHeader.isBelowHeaderRoot(header))
+			return;
+		final String key = TreeTableHeader.duplicateColumnKeyIn(header);
+		if (key != null)
+			UITools.informationMessage(TextUtils.format("treetable.duplicate_column_notice", TreeTableHeader.nameOfKey(key)));
 	}
 
 	public static void selectCellContent(final NodeModel row, final String columnKey) {
@@ -56,7 +67,8 @@ public class TreeTableEditing {
 	static void renameColumnValues(final NodeModel columnNode, final String oldKey, final String newKey) {
 		final NodeModel treeTableRoot = TreeTableNodes.treeTableRootOf(columnNode);
 		if (treeTableRoot == null || oldKey.isEmpty() || newKey.isEmpty() || oldKey.equals(newKey)
-				|| isUsedByAnotherColumn(columnNode, newKey))
+				|| TreeTableHeader.isKeyUsedByAnotherColumn(columnNode, newKey)
+				|| TreeTableHeader.isKeyUsedByAnotherColumn(columnNode, oldKey))
 			return;
 		for (final NodeModel row : TreeTableNodes.rowsOf(treeTableRoot))
 			renameCell(row, oldKey, newKey);
@@ -106,15 +118,22 @@ public class TreeTableEditing {
 			return;
 		final String parentKey = TreeTableHeader.keyOf(formerParent);
 		for (final NodeModel row : TreeTableNodes.rowsOf(TreeTableNodes.treeTableRootOf(formerParent)))
-			renameCell(row, returnedKey, parentKey);
+			returnCell(row, returnedKey, parentKey);
 	}
 
-	private static boolean isUsedByAnotherColumn(final NodeModel columnNode, final String key) {
-		for (final NodeModel other : TreeTableHeader.columnNodesOf(TreeTableHeader.headerRootAbove(columnNode))) {
-			if (other != columnNode && TreeTableHeader.keyOf(other).equals(key))
-				return true;
+	private static void returnCell(final NodeModel row, final String returnedKey, final String parentKey) {
+		final NodeModel returned = TreeTableCells.cellOf(row, returnedKey);
+		final NodeModel former = TreeTableCells.cellOf(row, parentKey);
+		if (returned == null || former == null) {
+			renameCell(row, returnedKey, parentKey);
+			return;
 		}
-		return false;
+		if (TreeTableCells.hasContent(returned)) {
+			MTextController.getController().setNodeText(returned, parentKey);
+			mapController().deleteNode(former);
+		}
+		else
+			mapController().deleteNode(returned);
 	}
 
 	public static void addColumnRightOf(final NodeModel columnNode) {
@@ -126,7 +145,8 @@ public class TreeTableEditing {
 
 	private static void insertColumn(final NodeModel parent, final int index) {
 		final NodeModel treeTableRoot = TreeTableNodes.treeTableRootOf(parent);
-		final String name = TreeTableColumnNames.unusedName(TextUtils.getText("treetable.new_column"),
+		final String parentKey = TreeTableHeader.isHeaderRoot(parent) ? "" : TreeTableHeader.keyOf(parent);
+		final String name = TreeTableColumnNames.unusedName(TextUtils.getText("treetable.new_column"), parentKey,
 			TreeTableModel.columnsOf(treeTableRoot));
 		mapController().addNewNode(parent, index, node -> node.setUserObject(name));
 	}

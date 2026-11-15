@@ -92,8 +92,8 @@ public class TreeTableSheetExportTest {
 		childOf(price, "Max");
 		childOf(header, "Brand");
 		final NodeModel car = childOf(table, "Car");
-		setValue(car, "Min", "1");
-		setValue(car, "Max", "2");
+		setValue(car, "Price \u203A Min", "1");
+		setValue(car, "Price \u203A Max", "2");
 		setValue(car, "Brand", "X");
 
 		final TreeTableSheet sheet = TreeTableSheetExport.sheetOf(table);
@@ -114,5 +114,39 @@ public class TreeTableSheetExportTest {
 
 		assertThat(sheet.get(1, 0)).isEqualTo("Fast car");
 		assertThat(sheet.get(1, 1)).isEqualTo("good");
+	}
+
+	@Test
+	public void keepsFormattingOfNodesInsideCellTree() {
+		final NodeModel pros = mapFake.createNode("Pros");
+		TreeTableCellModel.markAsCell(pros);
+		final NodeModel door = mapFake.createNode(
+			"<html><body><p>a <span style=\"font-weight: bold; color: #0000ff;\">big </span>door</p></body></html>");
+		pros.insert(door);
+		door.insert(mapFake.createNode("wood"));
+		pros.insert(mapFake.createNode("a bicycle"));
+
+		final RichText text = TreeTableCells.richTextOf(pros);
+
+		assertThat(text.plainText()).isEqualTo("a big door\n    wood\na bicycle");
+		assertThat(text.isFormatted()).isTrue();
+		assertThat(text.toExcelHtml()).contains("<font color=\"#0000ff\"><b>big </b></font>")
+			.contains("&nbsp;&nbsp;&nbsp;&nbsp;wood");
+		assertThat(CellTextTree.parse(text).get(0).getContent()).contains("color: #0000ff");
+	}
+
+	@Test
+	public void exportsSameNamedColumnsOfDistinctBranchesWithTheirOwnValues() {
+		final NodeModel tesla = childOf(header, "Tesla");
+		childOf(tesla, "S");
+		final NodeModel ford = childOf(header, "Ford");
+		childOf(ford, "S");
+		final NodeModel car = childOf(table, "Car");
+		setValue(car, "Tesla \u203A S", "1");
+		setValue(car, "Ford \u203A S", "2");
+
+		final TreeTableSheet sheet = TreeTableSheetExport.sheetOf(table);
+
+		assertThat(sheet.toTabSeparatedText()).isEqualTo("Projects\tTesla\tFord\r\n\tS\tS\r\nCar\t1\t2\r\n");
 	}
 }

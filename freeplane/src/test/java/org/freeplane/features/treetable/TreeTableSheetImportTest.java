@@ -67,8 +67,8 @@ public class TreeTableSheetImportTest {
 		final List<Item> columns = table.getColumns();
 		assertThat(columns).extracting(Item::getText).containsExactly("Price", "Brand");
 		assertThat(columns.get(0).getChildren()).extracting(Item::getText).containsExactly("Min", "Max");
-		assertThat(table.getRows().get(0).getValues()).containsExactly(entry("Min", "1"), entry("Max", "2"),
-			entry("Brand", "X"));
+		assertThat(table.getRows().get(0).getValues()).containsExactly(entry("Price \u203A Min", "1"),
+			entry("Price \u203A Max", "2"), entry("Brand", "X"));
 	}
 
 	@Test
@@ -83,7 +83,7 @@ public class TreeTableSheetImportTest {
 		childOf(mapFake, header, "Brand");
 		final NodeModel phase = childOf(mapFake, tableNode, "Phase");
 		final NodeModel task = childOf(mapFake, phase, "Task");
-		TreeTableSheetExportTest.setValue(task, "Min", "7");
+		TreeTableSheetExportTest.setValue(task, "Price \u203A Min", "7");
 
 		final TreeTableSheetImport table = importOf(TreeTableSheetExport.sheetOf(tableNode).toTabSeparatedText());
 
@@ -93,7 +93,7 @@ public class TreeTableSheetImportTest {
 		assertThat(table.getRows()).extracting(Item::getText).containsExactly("Phase");
 		final Item importedTask = table.getRows().get(0).getChildren().get(0);
 		assertThat(importedTask.getText()).isEqualTo("Task");
-		assertThat(importedTask.getValues()).containsExactly(entry("Min", "7"));
+		assertThat(importedTask.getValues()).containsExactly(entry("Price \u203A Min", "7"));
 	}
 
 	@Test
@@ -144,6 +144,49 @@ public class TreeTableSheetImportTest {
 		final List<CellTextTree.Node> tree = table.getRows().get(0).getValueTrees().get("Delay");
 		assertThat(tree).extracting(CellTextTree.Node::getContent).containsExactly("3 days", "or 4 days");
 		assertThat(tree.get(0).getChildren()).extracting(CellTextTree.Node::getContent).containsExactly("working");
+	}
+
+	@Test
+	public void keepsSameNamedColumnsOfDistinctBranchesApart() {
+		final TreeTableSheetImport table = importOf("Cars\tTesla\tFord\r\n\tS\tS\r\nCar\t1\t2\r\n");
+
+		assertThat(table.getColumns().get(0).getChildren()).extracting(Item::getText).containsExactly("S");
+		assertThat(table.getColumns().get(1).getChildren()).extracting(Item::getText).containsExactly("S");
+		assertThat(table.getRows().get(0).getValues()).containsExactly(entry("Tesla \u203A S", "1"),
+			entry("Ford \u203A S", "2"));
+	}
+
+	@Test
+	public void renamesSameNamedSiblingColumnsOnly() {
+		final TreeTableSheetImport table = importOf("Cars\tS\tS\r\nCar\t1\t2\r\n");
+
+		assertThat(table.getColumns()).extracting(Item::getText).containsExactly("S", "S 2");
+		assertThat(table.getRows().get(0).getValues()).containsExactly(entry("S", "1"), entry("S 2", "2"));
+	}
+
+	@Test
+	public void roundTripsRowsHavingTheSameName() {
+		final MapFake mapFake = new MapFake();
+		final NodeModel tableNode = childOf(mapFake, mapFake.getRoot(), "Projects");
+		TreeTableModel.createFor(tableNode);
+		final NodeModel header = childOf(mapFake, tableNode, "Columns");
+		LogicalStyleModel.createExtension(header).setStyle(TreeTableHeader.style());
+		childOf(mapFake, header, "Cost");
+		final NodeModel firstTask = childOf(mapFake, tableNode, "Task");
+		TreeTableSheetExportTest.setValue(firstTask, "Cost", "1");
+		final NodeModel secondTask = childOf(mapFake, tableNode, "Task");
+		TreeTableSheetExportTest.setValue(secondTask, "Cost", "2");
+		final NodeModel phase = childOf(mapFake, tableNode, "Task");
+		final NodeModel nestedTask = childOf(mapFake, phase, "Task");
+		TreeTableSheetExportTest.setValue(nestedTask, "Cost", "3");
+
+		final TreeTableSheetImport table = importOf(TreeTableSheetExport.sheetOf(tableNode).toTabSeparatedText());
+
+		assertThat(table.getRows()).extracting(Item::getText).containsExactly("Task", "Task", "Task");
+		assertThat(table.getRows().get(0).getValues()).containsExactly(entry("Cost", "1"));
+		assertThat(table.getRows().get(1).getValues()).containsExactly(entry("Cost", "2"));
+		assertThat(table.getRows().get(2).getChildren()).extracting(Item::getText).containsExactly("Task");
+		assertThat(table.getRows().get(2).getChildren().get(0).getValues()).containsExactly(entry("Cost", "3"));
 	}
 
 	private static NodeModel childOf(final MapFake mapFake, final NodeModel parent, final String text) {
