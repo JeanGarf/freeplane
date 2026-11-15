@@ -49,6 +49,7 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -60,14 +61,17 @@ import org.dpolivaev.mnemonicsetter.MnemonicSetter;
 import org.freeplane.api.swing.JFileChooser;
 import org.freeplane.core.resources.ResourceController;
 import org.freeplane.core.resources.components.IValidator.ValidationResult;
+import org.freeplane.core.ui.AFreeplaneAction;
 import org.freeplane.core.ui.FileOpener;
 import org.freeplane.core.ui.LabelAndMnemonicSetter;
 import org.freeplane.core.ui.components.UITools;
 import org.freeplane.core.util.Compat;
 import org.freeplane.core.util.LogUtils;
 import org.freeplane.core.util.TextUtils;
+import org.freeplane.features.commandsearch.CommandSearchAction;
 import org.freeplane.features.mode.Controller;
 
+import com.formdev.flatlaf.FlatLaf;
 import com.jgoodies.forms.builder.ButtonBarBuilder;
 import com.jgoodies.forms.factories.Borders;
 
@@ -85,6 +89,7 @@ class OptionPanel {
 	final private HashMap<String, Integer> tabStringToIndexMap = new HashMap<String, Integer>();
 	final private HashMap<Integer, String> tabIndexToStringMap = new HashMap<Integer, String>();
 	private String selectedPanel;
+	private JTabbedPane tabbedPane;
 	final private JDialog topDialog;
 	private JFileChooser fileChooser;
 	private boolean arePropertyValidatorsEnabled;
@@ -138,7 +143,7 @@ class OptionPanel {
 	public void buildPanel(final DefaultMutableTreeNode controlsTree) {
 		final JPanel centralPanel = new JPanel();
 		centralPanel.setLayout(new GridLayout(1, 1));
-		final JTabbedPane tabbedPane = new JTabbedPane();
+		tabbedPane = new JTabbedPane();
 		tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 		initControls(controlsTree);
 		final Iterator<IPropertyControl> iterator = controls.iterator();
@@ -182,6 +187,13 @@ class OptionPanel {
 			}
 		});
 		centralPanel.add(tabbedPane);
+		installSearchButton(tabbedPane);
+		topDialog.getRootPane().putClientProperty(PreferencesNavigator.ROOT_PANE_PROPERTY, new PreferencesNavigator() {
+			@Override
+			public void show(String tabIdentifier, String propertyName) {
+				showProperty(tabIdentifier, propertyName);
+			}
+		});
 		if (selectedPanel != null && tabStringToIndexMap.containsKey(selectedPanel)) {
 			// Without the containsKey call the loading of the tab "behaviour"/"behavior" gives a nullpointer exception
 			tabbedPane.setSelectedIndex(tabStringToIndexMap.get(selectedPanel));
@@ -257,6 +269,35 @@ class OptionPanel {
 		MnemonicSetter.INSTANCE.setComponentMnemonics(buttonPanel);
 		topDialog.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
+	}
+
+	private void installSearchButton(final JTabbedPane tabs) {
+		final JButton searchButton = new JButton(TextUtils.getText("OptionPanel.search_button"),
+				ResourceController.getResourceController().getIcon("FindAction.icon"));
+		searchButton.setFocusable(false);
+		searchButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				final AFreeplaneAction action = Controller.getCurrentModeController().getAction(CommandSearchAction.KEY);
+				if (action instanceof CommandSearchAction)
+					((CommandSearchAction) action).showOwnedBy(topDialog);
+			}
+		});
+		if (UIManager.getLookAndFeel() instanceof FlatLaf)
+			tabs.putClientProperty("JTabbedPane.trailingComponent", searchButton);
+		else {
+			final JPanel searchBar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+			searchBar.add(searchButton);
+			topDialog.getContentPane().add(searchBar, BorderLayout.NORTH);
+		}
+	}
+
+	private void showProperty(String tabIdentifier, String propertyName) {
+		final Integer tabIndex = tabStringToIndexMap.get(tabIdentifier);
+		if (tabIndex != null)
+			tabbedPane.setSelectedIndex(tabIndex);
+		if (propertyName != null)
+			highlight(propertyName);
 	}
 
 	public void highlight(String selectedProperty)
