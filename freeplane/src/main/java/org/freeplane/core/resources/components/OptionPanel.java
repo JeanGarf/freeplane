@@ -280,7 +280,7 @@ class OptionPanel {
 			public void actionPerformed(ActionEvent e) {
 				final AFreeplaneAction action = Controller.getCurrentModeController().getAction(CommandSearchAction.KEY);
 				if (action instanceof CommandSearchAction)
-					((CommandSearchAction) action).showOwnedBy(topDialog);
+					((CommandSearchAction) action).showForPreferences(topDialog);
 			}
 		});
 		if (UIManager.getLookAndFeel() instanceof FlatLaf)
