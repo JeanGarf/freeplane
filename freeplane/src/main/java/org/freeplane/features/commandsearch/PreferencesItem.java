@@ -17,12 +17,14 @@
  */
 package org.freeplane.features.commandsearch;
 
+import java.awt.Component;
 import java.awt.event.InputEvent;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 import org.freeplane.core.resources.ResourceController;
+import org.freeplane.core.resources.components.PreferencesNavigator;
 import org.freeplane.core.resources.components.ShowPreferencesAction;
 import org.freeplane.core.ui.svgicons.FreeplaneIconFactory;
 import org.freeplane.core.util.TextUtils;
@@ -80,7 +82,12 @@ public class PreferencesItem extends SearchItem {
 
     @Override
     void execute(InputEvent event) {
-        openPreferences();
+        final Object source = event.getSource();
+        final PreferencesNavigator navigator = source instanceof Component ? PreferencesNavigator.findFor((Component) source) : null;
+        if (navigator != null)
+            navigator.show(getTabIdentifier(), getPropertyName());
+        else
+            openPreferences();
     }
 
     public void openPreferences() {

@@ -23,7 +23,7 @@ import static org.freeplane.features.commandsearch.SearchItem.normalizeText;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Event;
-import java.awt.Frame;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -160,9 +160,9 @@ public class CommandSearchDialog extends JDialog
     private final ModeController modeController;
 
     @SuppressWarnings("serial")
-	CommandSearchDialog(Frame parent, DefaultComboBoxModel<String> sharedSearchHistory)
+	CommandSearchDialog(Window parent, DefaultComboBoxModel<String> sharedSearchHistory)
     {
-        super(parent, TextUtils.getText("CommandSearchAction.text"), false);
+        super(parent, TextUtils.getText("CommandSearchAction.text"), java.awt.Dialog.ModalityType.MODELESS);
 
         controller = Controller.getCurrentController();
         modeController = Controller.getCurrentModeController();

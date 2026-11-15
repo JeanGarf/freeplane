@@ -17,6 +17,7 @@
  */
 package org.freeplane.features.commandsearch;
 
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -28,7 +29,7 @@ import org.freeplane.core.ui.components.UITools;
 
 public class CommandSearchAction extends AFreeplaneAction {
     private static final long serialVersionUID = 1L;
-    static final String KEY = "CommandSearchAction";
+    public static final String KEY = "CommandSearchAction";
     private CommandSearchDialog commandSearchDialog;
     private DefaultComboBoxModel<String> sharedSearchHistory;
 
@@ -61,18 +62,28 @@ public class CommandSearchAction extends AFreeplaneAction {
     @Override
     public void actionPerformed(final ActionEvent e)
     {
+        showOwnedBy(UITools.getCurrentFrame());
+    }
+
+    public void showOwnedBy(Window owner) {
+        if(commandSearchDialog != null && commandSearchDialog.getOwner() != owner) {
+            commandSearchDialog.dispose();
+            commandSearchDialog = null;
+        }
         if(commandSearchDialog == null)
-            createDialog();
+            createDialog(owner);
         else
             commandSearchDialog.toFront();
     }
 
-    private void createDialog() {
-        commandSearchDialog = new CommandSearchDialog(UITools.getCurrentFrame(), sharedSearchHistory);
-        commandSearchDialog.addWindowListener(new WindowAdapter() {
+    private void createDialog(Window owner) {
+        final CommandSearchDialog dialog = new CommandSearchDialog(owner, sharedSearchHistory);
+        commandSearchDialog = dialog;
+        dialog.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
-                commandSearchDialog = null;
+                if(commandSearchDialog == dialog)
+                    commandSearchDialog = null;
             }
         });
 
