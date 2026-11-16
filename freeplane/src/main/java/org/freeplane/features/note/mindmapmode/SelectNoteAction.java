@@ -48,6 +48,7 @@ class SelectNoteAction extends AFreeplaneAction {
 	 */
 	public void actionPerformed(final ActionEvent e) {
 		if (noteController.isEditing()) {
+			noteController.hideNotesPanel();
 			noteController.setFocusToMap();
 			return;
 		}
