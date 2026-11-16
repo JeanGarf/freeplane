@@ -12,7 +12,8 @@ import java.util.zip.ZipOutputStream;
 
 public class MmxArchive {
 	public static final String MAP_ENTRY = "map.mm";
-	public static final String FILE_EXTENSION = ".mmx";
+	public static final String EXTENSION_WITHOUT_DOT = "mmx";
+	public static final String FILE_EXTENSION = "." + EXTENSION_WITHOUT_DOT;
 	private static final byte[] ZIP_SIGNATURE = { 'P', 'K', 3, 4 };
 
 	public static boolean isArchive(byte[] header, int length) {
