@@ -22,4 +22,31 @@ public class ImageDataUriTest {
 		assertThat(decoded.getWidth()).isEqualTo(7);
 		assertThat(EmbeddedImages.restore(extraction.text, extraction.images)).isEqualTo(html);
 	}
+
+	@Test
+	public void imageFileIsEmbeddedWithItsOwnBytesAndSize() throws Exception {
+		final java.io.File file = java.io.File.createTempFile("embedded", ".png");
+		try {
+			ImageIO.write(new BufferedImage(9, 4, BufferedImage.TYPE_INT_RGB), "png", file);
+			final String html = ImageDataUri.htmlForFile(file);
+			assertThat(html).contains("data:image/png;base64,").contains("width=\"9\"").contains("height=\"4\"");
+			final EmbeddedImages.Extraction extraction = EmbeddedImages.extract(html);
+			assertThat(extraction.images.values().iterator().next())
+			    .isEqualTo(java.nio.file.Files.readAllBytes(file.toPath()));
+		}
+		finally {
+			file.delete();
+		}
+	}
+
+	@Test
+	public void nonImageFileGivesNoHtml() throws Exception {
+		final java.io.File file = java.io.File.createTempFile("embedded", ".txt");
+		try {
+			assertThat(ImageDataUri.htmlForFile(file)).isNull();
+		}
+		finally {
+			file.delete();
+		}
+	}
 }

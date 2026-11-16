@@ -33,7 +33,8 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
+import java.io.ByteArrayInputStream;
+import org.freeplane.features.url.mmx.EmbeddedImages;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;
@@ -96,7 +97,7 @@ public class BitmapViewerComponent extends JComponent implements ScalableCompone
 	private AtomicReference<BufferedImage> cachedImage;
 	private AtomicInteger targetWidth = new AtomicInteger();
 	private WeakReference<BufferedImage> cachedImageWeakRef;
-	private final URL url;
+	private final URI uri;
 	private final Dimension originalSize;
 	private boolean scaleEnabled;
 	private Dimension maximumSize = null;
@@ -104,15 +105,20 @@ public class BitmapViewerComponent extends JComponent implements ScalableCompone
 	private static boolean disabledDueToJavaBug = false;
 
 	public BitmapViewerComponent(final URI uri) throws MalformedURLException, IOException {
-		url = uri.toURL();
-		originalSize = readImageSize(url);
+		this.uri = uri;
+		originalSize = readImageSize(uri);
 		hint = Image.SCALE_SMOOTH;
 		scaleEnabled = true;
 		cachedImage = new AtomicReference<>();
 	}
 
-	static private Dimension readImageSize(URL url) throws IOException {
-		try (InputStream inputStream = url.openStream();
+	static private InputStream openStream(URI uri) throws IOException {
+		final byte[] embedded = EmbeddedImages.decodeDataUri(uri.toString());
+		return embedded != null ? new ByteArrayInputStream(embedded) : uri.toURL().openStream();
+	}
+
+	static private Dimension readImageSize(URI uri) throws IOException {
+		try (InputStream inputStream = openStream(uri);
 			 ImageInputStream in = ImageIO.createImageInputStream(inputStream)){
 			final Iterator<ImageReader> readers = ImageIO.getImageReaders(in);
 			if (readers.hasNext()) {
@@ -324,7 +330,9 @@ public class BitmapViewerComponent extends JComponent implements ScalableCompone
 	private BufferedImage loadImageFromURL() {
 		BufferedImage tempImage = null;
 		try {
-			tempImage = ImageIO.read(url);
+			try (InputStream inputStream = openStream(uri)) {
+				tempImage = ImageIO.read(inputStream);
+			}
 		}
 		catch (final IOException e) {
 			logImageReadingException(e);

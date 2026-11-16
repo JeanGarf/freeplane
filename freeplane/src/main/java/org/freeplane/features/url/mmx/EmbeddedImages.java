@@ -62,12 +62,38 @@ public class EmbeddedImages {
 		return result.toString();
 	}
 
+	public static byte[] decodeDataUri(String uri) {
+		final Matcher matcher = DATA_URI.matcher(uri);
+		if (!matcher.matches())
+			return null;
+		try {
+			return Base64.getDecoder().decode(matcher.group(2));
+		}
+		catch (IllegalArgumentException e) {
+			return null;
+		}
+	}
+
+	public static String extensionOfDataUri(String uri) {
+		final Matcher matcher = DATA_URI.matcher(uri);
+		return matcher.matches() ? extensionOf(matcher.group(1)) : null;
+	}
+
 	public static boolean containsImages(String text) {
 		return DATA_URI.matcher(text).find();
 	}
 
 	public static String dataUri(byte[] content, String extension) {
 		return "data:" + mimeTypeOf("x." + extension) + ";base64," + Base64.getEncoder().encodeToString(content);
+	}
+
+	public static String extensionOfFileName(String fileName) {
+		final int dot = fileName.lastIndexOf('.');
+		if (dot < 0)
+			return null;
+		final String extension = fileName.substring(dot + 1).toLowerCase();
+		final String normalized = "jpeg".equals(extension) ? "jpg" : extension;
+		return mimeTypeOf("x." + normalized) != null ? normalized : null;
 	}
 
 	static String nameOf(byte[] content, String subtype) {

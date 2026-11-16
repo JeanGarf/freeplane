@@ -780,7 +780,8 @@ public class ViewerController extends PersistentNodeHook implements INodeViewLif
 		final ExternalResource preview = new ExternalResource(uri);
 		undoableDeactivateHook(node);
 		undoableActivateHook(node, preview);
-		ProgressIcons.updateExtendedProgressIcons(node, uri.getPath());
+		if (uri.getPath() != null)
+			ProgressIcons.updateExtendedProgressIcons(node, uri.getPath());
 		return true;
 	}
 

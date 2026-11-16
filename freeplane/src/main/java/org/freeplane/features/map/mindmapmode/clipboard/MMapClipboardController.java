@@ -41,7 +41,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.freeplane.api.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Element;
@@ -50,7 +49,6 @@ import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 
 import org.freeplane.core.resources.ResourceController;
-import org.freeplane.core.ui.CaseSensitiveFileNameExtensionFilter;
 import org.freeplane.core.ui.components.OptionalDontShowMeAgainDialog;
 import org.freeplane.core.ui.components.OptionalDontShowMeAgainDialog.MessageType;
 import org.freeplane.core.ui.components.UITools;
@@ -511,46 +509,11 @@ public class MMapClipboardController extends MapClipboardController implements M
 		public void paste(Transferable t, NodeModel target, Side side, int dropAction) {
 			final ModeController modeController = Controller.getCurrentModeController();
 			final MMapController mapController = (MMapController) modeController.getMapController();
-            File mindmapFile = target.getMap().getFile();
-            if(mindmapFile == null) {
-            	UITools.errorMessage(TextUtils.getRawText("map_not_saved"));
-            	return;
-            }
-            //file that we'll save to disk.
-            File imageFile;
-            try {
-            	imageFile = new TargetFileCreator().createTargetFile(mindmapFile, ImageAdder.IMAGE_FORMAT);
-    			imageFile.getParentFile().mkdirs();
-            	String imgfilepath=imageFile.getAbsolutePath();
-            	File tempFile = imageFile = new File(imgfilepath);
-            	final JFileChooser fileChooser = UITools.newFileChooser(imageFile);
-            	final CaseSensitiveFileNameExtensionFilter filter = new CaseSensitiveFileNameExtensionFilter();
-            	filter.addExtension(ImageAdder.IMAGE_FORMAT);
-            	fileChooser.setAcceptAllFileFilterUsed(false);
-            	fileChooser.setFileFilter(filter);
-            	fileChooser.setSelectedFile(imageFile);
-            	int returnVal = fileChooser.showSaveDialog(UITools.getCurrentRootComponent());
-            	if (returnVal != JFileChooser.APPROVE_OPTION) {
-            		tempFile.delete();
-            		return;
-            	}
-            	imageFile = fileChooser.getSelectedFile();
-            	if(tempFile.exists() && ! imageFile.getAbsoluteFile().equals(tempFile)){
-            		tempFile.delete();
-            	}
-            	if(imageFile.isDirectory())
-            		return;
-            	if(! FileUtils.getExtension(imageFile.getName()).equals(ImageAdder.IMAGE_FORMAT))
-            		imageFile = new File(imageFile.getPath() + '.' + ImageAdder.IMAGE_FORMAT);
-            	final NodeModel node = mapController.newNode(imageFile.getName(), target.getMap());
-				node.setSide(side.isSibling() ? target.getSide() : side);
-            	mapController.insertNode(node, target, InsertionRelation.bySide(side));
-            	new ImageAdder(image, mapController, mindmapFile, imageFile).attachImageToNode(node);
-            }
-            catch (IOException e) {
-            	e.printStackTrace();
-            }
-        }
+			final NodeModel node = mapController.newNode("", target.getMap());
+			node.setSide(side.isSibling() ? target.getSide() : side);
+			mapController.insertNode(node, target, InsertionRelation.bySide(side));
+			new ImageAdder(image, mapController).attachImageToNode(node);
+		}
 
     }
 	private static final Pattern HEADER_REGEX = Pattern.compile("h(\\d)", Pattern.CASE_INSENSITIVE);

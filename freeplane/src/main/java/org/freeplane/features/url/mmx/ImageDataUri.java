@@ -4,7 +4,9 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 
 import javax.imageio.ImageIO;
 
@@ -26,6 +28,22 @@ public class ImageDataUri {
 		if (!ImageIO.write(buffered, "png", bytes))
 			throw new IOException("No PNG writer available");
 		return EmbeddedImages.dataUri(bytes.toByteArray(), "png");
+	}
+
+	public static String htmlForFile(File file) {
+		try {
+			final BufferedImage image = ImageIO.read(file);
+			if (image == null)
+				return null;
+			final byte[] content = Files.readAllBytes(file.toPath());
+			final String extension = EmbeddedImages.extensionOfFileName(file.getName());
+			final String source = extension != null ? EmbeddedImages.dataUri(content, extension) : pngDataUri(image);
+			return "<img src=\"" + source + "\" width=\"" + image.getWidth() + "\" height=\"" + image.getHeight()
+			        + "\">";
+		}
+		catch (IOException e) {
+			return null;
+		}
 	}
 
 	public static String imageHtml(Image image) throws IOException {
