@@ -110,6 +110,9 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
     static final String BACKUP_DIR = ".backup";
 	private static final int DEBUG_OFFSET = 0;
 
+	static private class EmbeddedImagesOfferFlag implements IExtension {
+	}
+
 	static private class BackupFlag implements IExtension {
 	}
 
@@ -753,8 +756,32 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 			return saveAs(map);
 		}
 		else {
-			return save(map, map.getFile());
+			final File archive = offeredArchiveFile(map);
+			return save(map, archive != null ? archive : map.getFile());
 		}
+	}
+
+	private File offeredArchiveFile(final MapModel map) {
+		final File file = map.getFile();
+		if (file == null || file.getName().endsWith(MmxArchive.FILE_EXTENSION)
+		        || map.getExtension(EmbeddedImagesOfferFlag.class) != null || !MapEmbeddedImages.existIn(map))
+			return null;
+		map.addExtension(new EmbeddedImagesOfferFlag());
+		final int answer = JOptionPane.showConfirmDialog(
+		    Controller.getCurrentController().getMapViewManager().getMapViewComponent(),
+		    TextUtils.getText("embedded_images_offer_archive"), "Freeplane", JOptionPane.YES_NO_OPTION);
+		if (answer != JOptionPane.YES_OPTION)
+			return null;
+		final String name = file.getName();
+		final String baseName = name.endsWith(UrlManager.FREEPLANE_FILE_EXTENSION)
+		        ? name.substring(0, name.length() - UrlManager.FREEPLANE_FILE_EXTENSION.length())
+		        : name;
+		final File archive = new File(file.getParentFile(), baseName + MmxArchive.FILE_EXTENSION);
+		if (archive.exists() && JOptionPane.YES_OPTION != JOptionPane.showConfirmDialog(
+		    Controller.getCurrentController().getMapViewManager().getMapViewComponent(),
+		    TextUtils.getText("map_already_exists"), "Freeplane", JOptionPane.YES_NO_OPTION))
+			return null;
+		return archive;
 	}
 
 	public boolean save(final MapModel map, final File file) {
@@ -800,6 +827,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 		if(! urlAfter.equals(urlBefore))
 			mapController.fireMapChanged(new MapChangeEvent(this, map, UrlManager.MAP_URL, urlBefore, urlAfter, false));
 		mapController.mapSaved(map, true);
+		Controller.getCurrentController().getMapViewManager().updateMapViewName();
 		// The autosave listener must capture the reset change count.
 		((MMapModel) map).scheduleTimerForAutomaticSaving();
 		return true;
