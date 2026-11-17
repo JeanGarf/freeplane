@@ -42,7 +42,7 @@ class ImageFileDrop implements DropTargetListener {
 		if (!acceptsFiles(event.getCurrentDataFlavors()))
 			standard.dragEnter(event);
 		else
-			event.acceptDrag(DnDConstants.ACTION_COPY);
+			acceptDrag(event);
 	}
 
 	@Override
@@ -50,13 +50,31 @@ class ImageFileDrop implements DropTargetListener {
 		if (!acceptsFiles(event.getCurrentDataFlavors()))
 			standard.dragOver(event);
 		else
-			event.acceptDrag(DnDConstants.ACTION_COPY);
+			acceptDrag(event);
 	}
 
 	@Override
 	public void dropActionChanged(DropTargetDragEvent event) {
 		if (!acceptsFiles(event.getCurrentDataFlavors()))
 			standard.dropActionChanged(event);
+		else
+			acceptDrag(event);
+	}
+
+	private void acceptDrag(DropTargetDragEvent event) {
+		final int action = nonDestructiveAction(event.getSourceActions());
+		if (action == DnDConstants.ACTION_NONE)
+			event.rejectDrag();
+		else
+			event.acceptDrag(action);
+	}
+
+	static int nonDestructiveAction(int sourceActions) {
+		if ((sourceActions & DnDConstants.ACTION_COPY) != 0)
+			return DnDConstants.ACTION_COPY;
+		if ((sourceActions & DnDConstants.ACTION_LINK) != 0)
+			return DnDConstants.ACTION_LINK;
+		return DnDConstants.ACTION_NONE;
 	}
 
 	@Override
@@ -71,7 +89,12 @@ class ImageFileDrop implements DropTargetListener {
 			standard.drop(event);
 			return;
 		}
-		event.acceptDrop(DnDConstants.ACTION_COPY);
+		final int action = nonDestructiveAction(event.getSourceActions());
+		if (action == DnDConstants.ACTION_NONE) {
+			event.rejectDrop();
+			return;
+		}
+		event.acceptDrop(action);
 		try {
 			insert(images, editorPane.viewToModel(event.getLocation()));
 			event.dropComplete(true);
@@ -99,8 +122,10 @@ class ImageFileDrop implements DropTargetListener {
 			final List<File> files = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
 			for (final File file : files) {
 				final String html = ImageDataUri.htmlForFile(file);
-				if (html == null)
+				if (html == null) {
+					LogUtils.info("Dropped file is not a readable image: " + file);
 					return new ArrayList<>();
+				}
 				images.add(html);
 			}
 		}
