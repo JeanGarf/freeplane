@@ -31,7 +31,9 @@ import javax.swing.event.DocumentListener;
 
 import org.freeplane.core.resources.ResourceController;
 import org.freeplane.core.undo.IActor;
+import org.freeplane.features.icon.IconClickedEvent;
 import org.freeplane.features.icon.IconController;
+import org.freeplane.features.icon.IconMouseListener;
 import org.freeplane.features.map.IExtensionCopier;
 import org.freeplane.features.map.IMapSelection;
 import org.freeplane.features.map.MapController;
@@ -182,11 +184,26 @@ public class MNoteController extends NoteController {
             });
         }
 		modeController.getMapController().addMapLifeCycleListener(noteManager);
-		IconController.getController(modeController).addIconMouseListener(event -> {
-			if (!isNoteIcon(event.getUIIcon()))
-				return false;
-			showNoteAndFocusIt();
-			return true;
+		IconController.getController(modeController).addIconMouseListener(new IconMouseListener() {
+			@Override
+			public boolean onIconClicked(IconClickedEvent event) {
+				return openNoteOf(event);
+			}
+
+			@Override
+			public boolean onIconPlainClicked(IconClickedEvent event) {
+				return openNoteOf(event);
+			}
+
+			private boolean openNoteOf(IconClickedEvent event) {
+				if (!isNoteIcon(event.getUIIcon()))
+					return false;
+				final IMapSelection selection = Controller.getCurrentController().getSelection();
+				if (selection != null && selection.getSelected() != event.getNode())
+					selection.selectAsTheOnlyOneSelected(event.getNode());
+				showNoteAndFocusIt();
+				return true;
+			}
 		});
         noteContentTypes = new LinkedHashSet<>();
         noteContentTypes.add(TextController.CONTENT_TYPE_AUTO);

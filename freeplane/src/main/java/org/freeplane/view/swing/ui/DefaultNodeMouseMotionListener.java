@@ -77,6 +77,14 @@ public class DefaultNodeMouseMotionListener implements IMouseListener {
 		final boolean inside = nodeSelector.isInside(e);
 		Point point = e.getPoint();
 		if(e.getButton() == 1){
+			if(Compat.isPlainEvent(e)){
+				final NamedIcon plainClickedIcon = component.getUIIconAt(point);
+				if(plainClickedIcon != null
+				        && mc.getExtension(IconController.class).onIconPlainClicked(node, plainClickedIcon)) {
+					e.consume();
+					return;
+				}
+			}
             if(Compat.isCtrlEvent(e) || Compat.isPlainEvent(e) && ResourceController.getResourceController().getBooleanProperty(OPEN_LINKS_ON_PLAIN_CLICKS)){
 				NamedIcon uiIcon = component.getUIIconAt(point);
 				if(uiIcon != null){
