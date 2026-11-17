@@ -83,14 +83,7 @@ class EmbeddedImageResizer extends MouseAdapter {
 	}
 
 	void applySize(Element image, Dimension size) {
-		try {
-			final String source = String.valueOf(image.getAttributes().getAttribute(HTML.Attribute.SRC));
-			((HTMLDocument) editorPane.getDocument()).setOuterHTML(image,
-			    "<img src=\"" + source + "\" width=\"" + size.width + "\" height=\"" + size.height + "\">");
-		}
-		catch (Exception e) {
-			LogUtils.warn(e);
-		}
+		DeferredImages.setSize((HTMLDocument) editorPane.getDocument(), image, size.width, size.height);
 	}
 
 	private void resize(Element image) throws Exception {

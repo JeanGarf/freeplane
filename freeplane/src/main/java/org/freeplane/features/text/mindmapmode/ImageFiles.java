@@ -12,6 +12,7 @@ import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 
 import org.freeplane.core.util.LogUtils;
+import org.freeplane.features.url.mmx.DeferredImageSources;
 import org.freeplane.features.url.mmx.ImageDataUri;
 
 class ImageFiles {
@@ -43,11 +44,23 @@ class ImageFiles {
 	static void insert(JEditorPane editorPane, List<String> images, int position) throws Exception {
 		final HTMLDocument document = (HTMLDocument) editorPane.getDocument();
 		final HTMLEditorKit kit = (HTMLEditorKit) editorPane.getEditorKit();
-		int offset = position;
-		for (final String html : images) {
-			final int before = document.getLength();
-			kit.insertHTML(document, offset, html, 0, 0, HTML.Tag.IMG);
-			offset += document.getLength() - before;
-		}
+		final Exception[] failure = new Exception[1];
+		DeferredImages.compoundEdit(document, () -> {
+			try {
+				int offset = position;
+				for (final String html : images) {
+					final DeferredImageSources deferred = DeferredImageSources.defer(html);
+					final int before = document.getLength();
+					kit.insertHTML(document, offset, deferred.html, 0, 0, HTML.Tag.IMG);
+					DeferredImages.restore(document, deferred.sources);
+					offset += document.getLength() - before;
+				}
+			}
+			catch (Exception e) {
+				failure[0] = e;
+			}
+		});
+		if (failure[0] != null)
+			throw failure[0];
 	}
 }

@@ -52,6 +52,7 @@ import org.freeplane.features.note.NoteModel;
 import org.freeplane.features.note.mindmapmode.MNoteController.NoteDocumentListener;
 import org.freeplane.features.spellchecker.mindmapmode.SpellCheckerController;
 import org.freeplane.features.text.mindmapmode.FreeplaneToSHTMLPropertyChangeAdapter;
+import org.freeplane.features.text.mindmapmode.DeferredImages;
 import org.freeplane.features.text.mindmapmode.MTextController;
 import org.freeplane.view.swing.map.LinkOpener;
 
@@ -276,7 +277,7 @@ class NotePanel extends JPanel {
         updateStyleSheet(ownRule, customStyleSheet);
         updateColors(foreground, background);
         HtmlProcessor.configureUnknownTags(htmlEditorPanel.getDocument());
-		htmlEditorPanel.setCurrentDocumentContent(note);
+		DeferredImages.setContent(htmlEditorPanel, note);
 		if(note.isEmpty()) {
 			final JEditorPane editorPane = htmlEditorPanel.getEditorPane();
 			editorPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, false);
@@ -303,7 +304,7 @@ class NotePanel extends JPanel {
             updateStyleSheet(ownRule, customStyleSheet);
         }
 		updateColors(foreground, background);
-		htmlViewerPanel.setText(note);
+		DeferredImages.setText(htmlViewerPanel, note);
         if(note.isEmpty()) {
             htmlViewerPanel.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, false);
             htmlViewerPanel.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, true);
