@@ -22,7 +22,9 @@ class EmbeddedImageResizer extends MouseAdapter {
 	private final JEditorPane editorPane;
 
 	static void install(JEditorPane editorPane) {
-		editorPane.addMouseListener(new EmbeddedImageResizer(editorPane));
+		final EmbeddedImageResizer resizer = new EmbeddedImageResizer(editorPane);
+		editorPane.addMouseListener(resizer);
+		ImageResizeHandles.install(editorPane, resizer);
 	}
 
 	private EmbeddedImageResizer(JEditorPane editorPane) {
@@ -44,7 +46,7 @@ class EmbeddedImageResizer extends MouseAdapter {
 		}
 	}
 
-	private Element imageAt(Point point) {
+	Element imageAt(Point point) {
 		if (!(editorPane.getDocument() instanceof HTMLDocument))
 			return null;
 		final HTMLDocument document = (HTMLDocument) editorPane.getDocument();
@@ -58,13 +60,36 @@ class EmbeddedImageResizer extends MouseAdapter {
 	}
 
 	private boolean contains(Element element, Point point) {
+		final Rectangle bounds = boundsOf(element);
+		return bounds != null && bounds.contains(point);
+	}
+
+	Rectangle boundsOf(Element element) {
 		try {
 			final Rectangle start = editorPane.modelToView(element.getStartOffset());
 			final Rectangle end = editorPane.modelToView(element.getEndOffset());
-			return start != null && end != null && start.union(end).contains(point);
+			return start == null || end == null ? null : start.union(end);
 		}
 		catch (javax.swing.text.BadLocationException e) {
-			return false;
+			return null;
+		}
+	}
+
+	Element imageStartingAt(int offset) {
+		if (offset < 0 || !(editorPane.getDocument() instanceof HTMLDocument))
+			return null;
+		final Element element = ((HTMLDocument) editorPane.getDocument()).getCharacterElement(offset);
+		return HTML.Tag.IMG.toString().equalsIgnoreCase(element.getName()) ? element : null;
+	}
+
+	void applySize(Element image, Dimension size) {
+		try {
+			final String source = String.valueOf(image.getAttributes().getAttribute(HTML.Attribute.SRC));
+			((HTMLDocument) editorPane.getDocument()).setOuterHTML(image,
+			    "<img src=\"" + source + "\" width=\"" + size.width + "\" height=\"" + size.height + "\">");
+		}
+		catch (Exception e) {
+			LogUtils.warn(e);
 		}
 	}
 
@@ -78,9 +103,15 @@ class EmbeddedImageResizer extends MouseAdapter {
 		final Dimension chosen = ImageSizeDialog.ask(editorPane, current, original);
 		if (chosen == null)
 			return;
-		final HTMLDocument document = (HTMLDocument) editorPane.getDocument();
-		document.setOuterHTML(image, "<img src=\"" + source + "\" width=\"" + chosen.width + "\" height=\""
-		        + chosen.height + "\">");
+		applySize(image, chosen);
+	}
+
+	Rectangle displayedBoundsOf(Element image) {
+		final Rectangle bounds = boundsOf(image);
+		if (bounds == null)
+			return null;
+		final Dimension size = currentSize(image.getAttributes(), null);
+		return size == null ? bounds : new Rectangle(bounds.x, bounds.y, size.width, size.height);
 	}
 
 	private Dimension currentSize(AttributeSet attributes, Dimension original) {
