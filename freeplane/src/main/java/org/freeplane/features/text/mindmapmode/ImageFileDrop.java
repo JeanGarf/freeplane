@@ -1,24 +1,17 @@
 package org.freeplane.features.text.mindmapmode;
 
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JEditorPane;
-import javax.swing.text.html.HTML;
-import javax.swing.text.html.HTMLDocument;
-import javax.swing.text.html.HTMLEditorKit;
 
 import org.freeplane.core.util.LogUtils;
-import org.freeplane.features.url.mmx.ImageDataUri;
 
 class ImageFileDrop implements DropTargetListener {
 	private final JEditorPane editorPane;
@@ -84,8 +77,7 @@ class ImageFileDrop implements DropTargetListener {
 
 	@Override
 	public void drop(DropTargetDropEvent event) {
-		final List<String> images = imageHtmlOf(event);
-		if (images.isEmpty()) {
+		if (!acceptsFiles(event.getCurrentDataFlavors())) {
 			standard.drop(event);
 			return;
 		}
@@ -96,7 +88,12 @@ class ImageFileDrop implements DropTargetListener {
 		}
 		event.acceptDrop(action);
 		try {
-			insert(images, editorPane.viewToModel(event.getLocation()));
+			final List<String> images = ImageFiles.htmlOf(event.getTransferable());
+			if (images.isEmpty()) {
+				event.dropComplete(false);
+				return;
+			}
+			ImageFiles.insert(editorPane, images, editorPane.viewToModel(event.getLocation()));
 			event.dropComplete(true);
 		}
 		catch (Exception e) {
@@ -110,39 +107,5 @@ class ImageFileDrop implements DropTargetListener {
 			if (DataFlavor.javaFileListFlavor.equals(flavor))
 				return editorPane.isEditable();
 		return false;
-	}
-
-	@SuppressWarnings("unchecked")
-	private List<String> imageHtmlOf(DropTargetDropEvent event) {
-		final List<String> images = new ArrayList<>();
-		final Transferable transferable = event.getTransferable();
-		if (!editorPane.isEditable() || !transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor))
-			return images;
-		try {
-			final List<File> files = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
-			for (final File file : files) {
-				final String html = ImageDataUri.htmlForFile(file);
-				if (html == null) {
-					LogUtils.info("Dropped file is not a readable image: " + file);
-					return new ArrayList<>();
-				}
-				images.add(html);
-			}
-		}
-		catch (Exception e) {
-			return new ArrayList<>();
-		}
-		return images;
-	}
-
-	private void insert(List<String> images, int position) throws Exception {
-		final HTMLDocument document = (HTMLDocument) editorPane.getDocument();
-		final HTMLEditorKit kit = (HTMLEditorKit) editorPane.getEditorKit();
-		int offset = position;
-		for (final String html : images) {
-			final int before = document.getLength();
-			kit.insertHTML(document, offset, html, 0, 0, HTML.Tag.IMG);
-			offset += document.getLength() - before;
-		}
 	}
 }

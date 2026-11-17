@@ -12,9 +12,6 @@ import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.JEditorPane;
 import javax.swing.text.DefaultEditorKit;
-import javax.swing.text.html.HTML;
-import javax.swing.text.html.HTMLDocument;
-import javax.swing.text.html.HTMLEditorKit;
 
 import org.freeplane.core.util.LogUtils;
 import org.freeplane.features.url.mmx.ImageDataUri;
@@ -48,6 +45,14 @@ class ClipboardImagePaste {
 		final Transferable contents;
 		try {
 			contents = clipboard.getContents(null);
+			if (ImageFiles.holdsFiles(contents)) {
+				final java.util.List<String> images = ImageFiles.htmlOf(contents);
+				if (images.isEmpty())
+					return false;
+				deleteSelection(editorPane);
+				ImageFiles.insert(editorPane, images, editorPane.getSelectionStart());
+				return true;
+			}
 			if (!holdsOnlyAnImage(contents))
 				return false;
 			final Image image = (Image) contents.getTransferData(DataFlavor.imageFlavor);
@@ -60,13 +65,15 @@ class ClipboardImagePaste {
 		}
 	}
 
-	private static void insert(JEditorPane editorPane, String html) throws Exception {
-		final HTMLDocument document = (HTMLDocument) editorPane.getDocument();
-		final HTMLEditorKit kit = (HTMLEditorKit) editorPane.getEditorKit();
+	private static void deleteSelection(JEditorPane editorPane) throws Exception {
 		final int start = editorPane.getSelectionStart();
 		final int end = editorPane.getSelectionEnd();
 		if (end > start)
-			document.remove(start, end - start);
-		kit.insertHTML(document, start, html, 0, 0, HTML.Tag.IMG);
+			editorPane.getDocument().remove(start, end - start);
+	}
+
+	private static void insert(JEditorPane editorPane, String html) throws Exception {
+		deleteSelection(editorPane);
+		ImageFiles.insert(editorPane, java.util.Collections.singletonList(html), editorPane.getSelectionStart());
 	}
 }

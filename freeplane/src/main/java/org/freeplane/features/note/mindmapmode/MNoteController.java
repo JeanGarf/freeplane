@@ -20,6 +20,7 @@
 package org.freeplane.features.note.mindmapmode;
 
 import java.awt.Component;
+import java.awt.EventQueue;
 import java.awt.KeyboardFocusManager;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -30,6 +31,7 @@ import javax.swing.event.DocumentListener;
 
 import org.freeplane.core.resources.ResourceController;
 import org.freeplane.core.undo.IActor;
+import org.freeplane.features.icon.IconController;
 import org.freeplane.features.map.IExtensionCopier;
 import org.freeplane.features.map.IMapSelection;
 import org.freeplane.features.map.MapController;
@@ -180,6 +182,12 @@ public class MNoteController extends NoteController {
             });
         }
 		modeController.getMapController().addMapLifeCycleListener(noteManager);
+		IconController.getController(modeController).addIconMouseListener(event -> {
+			if (!isNoteIcon(event.getUIIcon()))
+				return false;
+			showNoteAndFocusIt();
+			return true;
+		});
         noteContentTypes = new LinkedHashSet<>();
         noteContentTypes.add(TextController.CONTENT_TYPE_AUTO);
         noteContentTypes.add(TextController.CONTENT_TYPE_HTML);
@@ -205,6 +213,19 @@ public class MNoteController extends NoteController {
     public String[] getNoteContentTypes() {
         return noteContentTypes.stream().toArray(String[]::new);
     }
+
+	void showNoteAndFocusIt() {
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
+		EventQueue.invokeLater(() -> {
+			if (!isNoteEditorShowing()) {
+				showNotesPanel();
+				EventQueue.invokeLater(getNotePanel()::editNote);
+			}
+			else {
+				getNotePanel().editNote();
+			}
+		});
+	}
 
 	void hideNotesPanel() {
 	    noteManager.saveNote();
