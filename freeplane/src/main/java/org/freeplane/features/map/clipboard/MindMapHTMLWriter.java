@@ -413,7 +413,7 @@ class MindMapHTMLWriter {
 			}
 			String link = NodeLinks.getLinkAsString(node);
 			if (link != null && ! text.contains(link)) {
-				if (link.endsWith(UrlManager.FREEPLANE_FILE_EXTENSION)) {
+				if (UrlManager.isFreeplaneMapName(link)) {
 					link += ".html";
 				}
 				writer.write("<a href=\"" + link + "\" target=\"_blank\">");

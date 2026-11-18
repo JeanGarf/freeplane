@@ -103,6 +103,7 @@ import org.freeplane.features.text.mindmapmode.MTextController;
 import org.freeplane.features.ui.IMapViewManager;
 import org.freeplane.features.ui.IMapViewManager.MapChangeEventProperty;
 import org.freeplane.features.ui.ViewController;
+import org.freeplane.features.url.UrlManager;
 import org.freeplane.features.url.NodeAndMapReference;
 import org.freeplane.features.url.mindmapmode.MFileManager;
 import org.freeplane.features.url.mindmapmode.MFileManager.AlternativeFileMode;
@@ -1137,7 +1138,7 @@ public class MMapController extends MapController {
         try {
             final URL endUrl = localFile.toURL();
             try {
-                if (endUrl.getFile().endsWith(".mm")) {
+                if (UrlManager.isFreeplaneMapName(endUrl.getFile())) {
                     Controller.getCurrentController().selectMode(MModeController.MODENAME);
                     openDocumentationMap(endUrl);
                     if(nodeAndMapReference.hasNodeReference())

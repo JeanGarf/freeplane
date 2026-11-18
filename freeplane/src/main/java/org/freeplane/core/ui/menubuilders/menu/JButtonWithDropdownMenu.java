@@ -7,6 +7,9 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
+import org.freeplane.core.ui.AFreeplaneAction;
+import org.freeplane.core.ui.components.JAutoCheckBoxMenuItem;
+
 public class JButtonWithDropdownMenu extends JButton {
 	private static final long serialVersionUID = 1L;
 	private JPopupMenu menu;
@@ -19,6 +22,8 @@ public class JButtonWithDropdownMenu extends JButton {
 	}
 
 	public JMenuItem addMenuAction(Action a) {
+		if (a instanceof AFreeplaneAction && ((AFreeplaneAction) a).isSelectable())
+			return menu.add(new JAutoCheckBoxMenuItem((AFreeplaneAction) a));
 		return menu.add(a);
 	}
 

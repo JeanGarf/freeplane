@@ -12,6 +12,7 @@ import javax.imageio.ImageIO;
 import org.freeplane.features.link.LinkController;
 import org.freeplane.features.map.NodeModel;
 import org.freeplane.features.map.mindmapmode.MMapController;
+import org.freeplane.features.url.fpmx.ImageDataUri;
 
 public class ImageAdder {
     private final Image image;
@@ -26,6 +27,10 @@ public class ImageAdder {
 		this.mapController = mapController;
 		this.mindmapFile = mindmapFile;
 		this.imageFile = imageFile;
+	}
+
+	public ImageAdder(Image image, final MMapController mapController) {
+		this(image, mapController, null, null);
 	}
 
 	public void attachImageToNode(final NodeModel node){
@@ -63,8 +68,13 @@ public class ImageAdder {
 		fig.dispose();
 		fixedImg.flush();
 		try {
-			ImageIO.write(fixedImg, IMAGE_FORMAT, imageFile);
-			final URI uri = LinkController.toLinkTypeDependantURI(mindmapFile, imageFile);
+			final URI uri;
+			if (imageFile == null)
+				uri = URI.create(ImageDataUri.pngDataUri(fixedImg));
+			else {
+				ImageIO.write(fixedImg, IMAGE_FORMAT, imageFile);
+				uri = LinkController.toLinkTypeDependantURI(mindmapFile, imageFile);
+			}
 			final ExternalResource extension = new ExternalResource(uri);
 			mapController.getModeController().getExtension(ViewerController.class).add(node, extension);
 		}

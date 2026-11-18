@@ -32,6 +32,7 @@ import javax.imageio.ImageReader;
 import javax.swing.JComponent;
 
 import org.freeplane.core.util.TextUtils;
+import org.freeplane.features.url.fpmx.EmbeddedImages;
 
 /**
  * @author Dimitry Polivaev
@@ -45,6 +46,9 @@ public class BitmapViewerFactory implements IViewerFactory {
 	}
 
 	private Iterator<ImageReader> getImageReaders(final URI uri) {
+        final String embeddedExtension = EmbeddedImages.extensionOfDataUri(uri.toString());
+        if (embeddedExtension != null)
+            return ImageIO.getImageReadersBySuffix(embeddedExtension);
         String path = uri.isOpaque() ? uri.getSchemeSpecificPart() : uri.getRawPath();
 		final int suffixPos = path.lastIndexOf('.') + 1;
 		if (suffixPos == 0) {

@@ -31,6 +31,7 @@ import org.freeplane.core.util.HtmlUtils;
 import org.freeplane.core.util.TextUtils;
 import org.freeplane.features.icon.IStateIconProvider;
 import org.freeplane.features.icon.IconController;
+import org.freeplane.features.icon.NamedIcon;
 import org.freeplane.features.icon.UIIcon;
 import org.freeplane.features.icon.factory.IconStoreFactory;
 import org.freeplane.features.map.ITooltipProvider;
@@ -186,6 +187,10 @@ public class NoteController implements IExtension {
 			}
 		});
     }
+
+	public static boolean isNoteIcon(NamedIcon icon) {
+		return icon != null && noteIcon.getName().equals(icon.getName());
+	}
 
 	public boolean showNotesInMap(MapModel model) {
 		final String property = MapStyleModel.getExtension(model).getProperty(NoteController.SHOW_NOTES_IN_MAP);

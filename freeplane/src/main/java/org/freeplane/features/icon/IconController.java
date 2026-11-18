@@ -227,6 +227,17 @@ public class IconController implements IExtension {
 		}
 		return icons;
 	}
+	public boolean onIconPlainClicked(NodeModel node, NamedIcon icon) {
+		boolean processed = false;
+		for (IconMouseListener listener : iconMouseListeners)
+		{
+			if(listener.onIconPlainClicked(new IconClickedEvent(icon, node))) {
+				processed = true;
+			}
+		}
+		return processed;
+	}
+
 	public boolean onIconClicked(NodeModel node, NamedIcon icon) {
 		boolean processed = false;
 		for (IconMouseListener listener : iconMouseListeners)

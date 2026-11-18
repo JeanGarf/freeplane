@@ -4,13 +4,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NodeAndMapReference {
-	private static final Pattern FREEPLANE_MAP_WITH_NODE_ID = Pattern.compile("\\.mm#(ID_\\d+|at\\([^#]*\\))$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern FREEPLANE_MAP_WITH_NODE_ID = Pattern.compile("\\.(?:mm|fpmx)#(ID_\\d+|at\\([^#]*\\))$", Pattern.CASE_INSENSITIVE);
 	final private String nodeReference;
 	final private String mapReference;
 	final private boolean hasFreeplaneFileExtension;
 	public NodeAndMapReference(String nodeInMapReference) {
-		final boolean hasFreeplaneFileExtension = nodeInMapReference.toLowerCase().endsWith(
-				UrlManager.FREEPLANE_FILE_EXTENSION);
+		final boolean hasFreeplaneFileExtension = UrlManager.isFreeplaneMapName(nodeInMapReference);
 		String mapReference = nodeInMapReference;
 		String nodeReference = null;
 		if (! hasFreeplaneFileExtension) {
@@ -22,7 +21,7 @@ public class NodeAndMapReference {
 		}
 		this.mapReference = mapReference;
 		this.nodeReference = nodeReference;
-		this.hasFreeplaneFileExtension = mapReference.toLowerCase().endsWith(UrlManager.FREEPLANE_FILE_EXTENSION);
+		this.hasFreeplaneFileExtension = UrlManager.isFreeplaneMapName(mapReference);
 	}
 	public boolean hasFreeplaneFileExtension() {
 		return hasFreeplaneFileExtension;

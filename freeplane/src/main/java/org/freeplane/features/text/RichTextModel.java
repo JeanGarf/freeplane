@@ -6,6 +6,7 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.freeplane.core.util.HtmlProcessor;
 import org.freeplane.core.util.HtmlUtils;
+import org.freeplane.features.url.fpmx.DeferredImageSources;
 import org.freeplane.core.util.LogUtils;
 import org.freeplane.core.util.XmlUtils;
 import org.xml.sax.InputSource;
@@ -51,13 +52,14 @@ public class RichTextModel {
         }
         if(HtmlUtils.isHtml(newContent)) {
             String html = XmlUtils.replaceAscii0BySpace(newContent);
-            HtmlProcessor htmlProcessor = new HtmlProcessor(html);
+            final DeferredImageSources deferredImages = DeferredImageSources.defer(html);
+            HtmlProcessor htmlProcessor = new HtmlProcessor(deferredImages.html);
             try {
                 if(htmlProcessor.isOk()) {
                     String xhtml = htmlProcessor.cleanXhtml().trim();
                     validateXml(xhtml);
-                    xml = xhtml;
-                    text = htmlProcessor.cleanHtml();
+                    xml = deferredImages.restoreIn(xhtml);
+                    text = deferredImages.restoreIn(htmlProcessor.cleanHtml());
                     return;
                 }
             } catch (Exception e) {

@@ -325,7 +325,7 @@ public class EditNodeWYSIWYG extends EditNodeBase {
 				content = HtmlUtils.plainToHTML(content);
 			}
 			HtmlProcessor.configureUnknownTags(htmlEditorPanel.getDocument());
-			htmlEditorPanel.setCurrentDocumentContent(content);
+			DeferredImages.setContent(htmlEditorPanel, content);
 			final AWTEvent firstKeyEvent = MTextController.getController().getEventQueue().getFirstEvent();
 			final JTextComponent currentPane = htmlEditorPanel.getEditorPane();
 			if (currentPane == htmlEditorPanel.getMostRecentFocusOwner()) {

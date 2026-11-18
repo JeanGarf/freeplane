@@ -19,8 +19,6 @@
  */
 package org.freeplane.features.note.mindmapmode;
 
-import java.awt.EventQueue;
-import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 
 import org.freeplane.core.ui.AFreeplaneAction;
@@ -48,18 +46,10 @@ class SelectNoteAction extends AFreeplaneAction {
 	 */
 	public void actionPerformed(final ActionEvent e) {
 		if (noteController.isEditing()) {
+			noteController.hideNotesPanel();
 			noteController.setFocusToMap();
 			return;
 		}
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
-		EventQueue.invokeLater(() -> {
-        	if (! noteController.isNoteEditorShowing()) {
-        		noteController.showNotesPanel();
-        		EventQueue.invokeLater(noteController.getNotePanel()::editNote);
-        	}
-        	else {
-                noteController.getNotePanel().editNote();
-        	}
-        });
+		noteController.showNoteAndFocusIt();
 	}
 }

@@ -10,6 +10,7 @@ import org.freeplane.features.clipboard.ClipboardAccessor;
 import org.freeplane.features.clipboard.ClipboardController;
 import org.freeplane.features.clipboard.ClipboardControllers;
 import org.freeplane.features.mode.Controller;
+import org.freeplane.features.map.mindmapmode.clipboard.PasteImageTarget;
 import org.freeplane.features.mode.ModeController;
 
 public class MClipboardControllers extends ClipboardControllers{
@@ -24,6 +25,8 @@ public class MClipboardControllers extends ClipboardControllers{
 		final ModeController modeController = Controller.getCurrentModeController();
 		modeController.addAction(new CutAction());
 		modeController.addAction(new PasteAction());
+		for (final PasteImageTarget target : PasteImageTarget.values())
+			modeController.addAction(new PasteImageAction(target));
 	}
 
 	public boolean add(MClipboardController e) {

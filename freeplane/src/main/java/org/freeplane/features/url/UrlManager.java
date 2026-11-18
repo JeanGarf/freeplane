@@ -72,6 +72,7 @@ public class UrlManager implements IExtension {
 	public static final String FILE_SCHEME = "file";
 	public static final String FREEPLANE_FILE_EXTENSION_WITHOUT_DOT = "mm";
 	public static final String FREEPLANE_FILE_EXTENSION = "." + FREEPLANE_FILE_EXTENSION_WITHOUT_DOT;
+	public static final String FREEPLANE_ARCHIVE_FILE_EXTENSION = ".fpmx";
 	public static final String FREEPLANE_ADD_ON_FILE_EXTENSION = ".addon." + FREEPLANE_FILE_EXTENSION_WITHOUT_DOT;
 	private File lastCurrentDir = null;
 	public static final String MAP_URL = "map_url";
@@ -85,6 +86,13 @@ public class UrlManager implements IExtension {
 	    final ModeController modeController = Controller.getCurrentModeController();
 	    modeController.addExtension(UrlManager.class, urlManager);
 	    urlManager.init();
+	}
+
+	public static boolean isFreeplaneMapName(final String name) {
+		if (name == null)
+			return false;
+		final String lowerCaseName = name.toLowerCase();
+		return lowerCaseName.endsWith(FREEPLANE_FILE_EXTENSION) || lowerCaseName.endsWith(FREEPLANE_ARCHIVE_FILE_EXTENSION);
 	}
 
 	public static URI getAbsoluteUri(final MapModel map, URI uri) throws MalformedURLException {
