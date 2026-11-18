@@ -44,16 +44,26 @@ public class ImageDataUri {
 		return EmbeddedImages.dataUri(bytes.toByteArray(), "png");
 	}
 
-	public static String htmlForFile(File file) {
+	public static String dataUriForFile(File file) {
 		try {
 			final BufferedImage image = ImageIO.read(file);
 			if (image == null)
 				return null;
-			final byte[] content = Files.readAllBytes(file.toPath());
 			final String extension = EmbeddedImages.extensionOfFileName(file.getName());
-			final String source = extension != null ? EmbeddedImages.dataUri(content, extension) : pngDataUri(image);
-			return "<img src=\"" + source + "\" width=\"" + image.getWidth() + "\" height=\"" + image.getHeight()
-			        + "\">";
+			return extension != null ? EmbeddedImages.dataUri(Files.readAllBytes(file.toPath()), extension)
+			        : pngDataUri(image);
+		}
+		catch (IOException e) {
+			return null;
+		}
+	}
+
+	public static String htmlForFile(File file) {
+		try {
+			final BufferedImage image = ImageIO.read(file);
+			final String source = image == null ? null : dataUriForFile(file);
+			return source == null ? null
+			        : "<img src=\"" + source + "\" width=\"" + image.getWidth() + "\" height=\"" + image.getHeight() + "\">";
 		}
 		catch (IOException e) {
 			return null;

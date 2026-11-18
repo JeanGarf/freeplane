@@ -44,7 +44,7 @@ import org.freeplane.features.map.clipboard.MindMapNodesSelection;
 
 public class FileOpener implements DropTargetListener {
 
-    private final String fileExtension;
+    private final String[] fileExtensions;
 	private Listener listener;
 
 	public static interface Listener {
@@ -53,8 +53,12 @@ public class FileOpener implements DropTargetListener {
 
 
 	public FileOpener(String fileExtension, Listener listener) {
+		this(new String[] { fileExtension }, listener);
+	}
+
+	public FileOpener(String[] fileExtensions, Listener listener) {
 		this.listener = listener;
-		this.fileExtension = fileExtension;
+		this.fileExtensions = fileExtensions;
 	}
 
 	public void dragEnter(final DropTargetDragEvent dtde) {
@@ -75,7 +79,13 @@ public class FileOpener implements DropTargetListener {
 
 	static final private Pattern filePattern = Pattern.compile("file://[^\\s" + File.pathSeparatorChar + "]+");
 	private boolean isMindMapUrl(final String urlString) {
-	    return urlString.substring(urlString.length() - fileExtension.length() - 1).equalsIgnoreCase("." + fileExtension);
+	    for (final String fileExtension : fileExtensions) {
+	        final String suffix = "." + fileExtension;
+	        if (urlString.length() >= suffix.length()
+	                && urlString.substring(urlString.length() - suffix.length()).equalsIgnoreCase(suffix))
+	            return true;
+	    }
+	    return false;
     }
 
 	@SuppressWarnings("unchecked")

@@ -363,6 +363,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 		modeController.addAction(new SaveAsAction());
 		modeController.addAction(new ExportBranchAction());
 		modeController.addAction(new ImportBranchAction());
+		modeController.addAction(new EmbedImagesAction());
 		modeController.addAction(new ImportLinkedBranchAction());
 		modeController.addAction(new ImportLinkedBranchWithoutRootAction());
 		modeController.addAction(new ImportExplorerFavoritesAction());
@@ -989,7 +990,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 	@Override
 	public void afterViewDisplayed(Component oldView, Component newView) {
 		if (newView != null) {
-			final FileOpener fileOpener = new FileOpener("mm", new DroppedMindMapOpener());
+			final FileOpener fileOpener = new FileOpener(new String[] { UrlManager.FREEPLANE_FILE_EXTENSION_WITHOUT_DOT, MmxArchive.EXTENSION_WITHOUT_DOT }, new DroppedMindMapOpener());
 			new DropTarget(newView, fileOpener);
 		}
 	}

@@ -97,6 +97,7 @@
 			<Entry name="SaveAsAction" accelerator="control shift S" />
 			<Entry name="SaveAll" />
 			<Entry name="RevertAction"/>
+			<Entry name="EmbedImagesAction" usedBy = "EDITOR" />
 			<Entry builder="separator"  />
 			<Entry name="OpenAction" accelerator="control O" />
 			<Entry name="OpenURLMapAction" />

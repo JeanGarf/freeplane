@@ -155,7 +155,7 @@ class MapViewDockingWindows implements IMapViewChangeListener, PropertyChangeLis
         }
 		removeDesktopPaneAccelerators();
 		mapViews = new Vector<Component>();
-		final FileOpener fileOpener = new FileOpener("mm", new DroppedMindMapOpener());
+		final FileOpener fileOpener = new FileOpener(new String[] { "mm", "mmx" }, new DroppedMindMapOpener());
 		new DropTarget(rootWindow, fileOpener);
 		rootWindow.addMouseListener(new DefaultMapMouseListener());
 
