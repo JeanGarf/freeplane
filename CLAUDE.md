@@ -175,6 +175,26 @@ git diff | head -20  # Verify only expected changes, no deletions
 - **Alphabetical sorting**: Properties are sorted alphabetically ignoring case (intentional)
 - **Always run format_translation**: After any translation file changes to maintain sorting
 
+### Popup Message Text
+User-facing popup messages (confirmations, notices, warnings) are written in 2 or 3 blocks separated by an empty line:
+1. **The situation**: one or two short sentences, with no question.
+2. **A question phrased affirmatively**: "Voulez-vous" + infinitive in French, "Do you want to" + verb in English. Never phrase it negatively.
+3. **Optionally, a remark**, introduced by "REMARQUE :" in French and "NOTE:" in English.
+
+- Use the present tense, not the future.
+- A popup with nothing to ask (information only) contains the situation and an optional remark, without the question block.
+- The rule does not apply to dialogs with input fields.
+- In `.properties` files, separate the blocks with `\n\n`.
+
+Example (French):
+```
+Cette carte contient des images embarquées.
+
+Voulez-vous l’enregistrer dans un fichier unique .fpmx qui les stocke de façon compacte ?
+
+REMARQUE : Le fichier .mm d’origine est déplacé dans le dossier OLD_MM_TO_DELETE et peut être supprimé.
+```
+
 ### Testing
 - JUnit 4.13.2 with Hamcrest and Mockito
 - AssertJ for fluent assertions
