@@ -757,8 +757,12 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 			return saveAs(map);
 		}
 		else {
+			final File original = map.getFile();
 			final File archive = offeredArchiveFile(map);
-			return save(map, archive != null ? archive : map.getFile());
+			final boolean saved = save(map, archive != null ? archive : original);
+			if (saved && archive != null)
+				OldMapFolder.moveInto(original);
+			return saved;
 		}
 	}
 
