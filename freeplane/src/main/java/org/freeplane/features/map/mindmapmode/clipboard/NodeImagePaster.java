@@ -46,6 +46,10 @@ public class NodeImagePaster {
 	}
 
 	public static void paste(Image image, NodeModel node, PasteImageTarget target) {
+		paste(image, node, target, NodeModel.Side.DEFAULT);
+	}
+
+	public static void paste(Image image, NodeModel node, PasteImageTarget target, NodeModel.Side side) {
 		try {
 			final ModeController modeController = Controller.getCurrentModeController();
 			switch (target) {
@@ -68,6 +72,9 @@ public class NodeImagePaster {
 				}
 				case EXTENSION:
 					modeController.getExtension(ViewerController.class).paste(URI.create(ImageDataUri.pngDataUri(image)), node);
+					break;
+				case LINKED_FILE:
+					LinkedImageFilePaster.paste(image, node, side);
 					break;
 			}
 		}

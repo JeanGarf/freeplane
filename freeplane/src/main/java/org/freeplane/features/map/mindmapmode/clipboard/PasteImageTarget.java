@@ -4,7 +4,8 @@ public enum PasteImageTarget {
 	NODE("PasteImageAsNodeAction"),
 	DETAILS("PasteImageAsDetailsAction"),
 	NOTE("PasteImageAsNoteAction"),
-	EXTENSION("PasteImageAsExtensionAction");
+	EXTENSION("PasteImageAsExtensionAction"),
+	LINKED_FILE("PasteImageAsLinkedFileAction");
 
 	public static final String PROPERTY_NAME = "paste_image_target";
 	public static final PasteImageTarget DEFAULT = NOTE;

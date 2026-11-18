@@ -35,6 +35,7 @@ public class ImageHtmlTest {
 	public void targetIsParsedLeniently() {
 		assertThat(PasteImageTarget.parse("note")).isEqualTo(PasteImageTarget.NOTE);
 		assertThat(PasteImageTarget.parse(" DETAILS ")).isEqualTo(PasteImageTarget.DETAILS);
+		assertThat(PasteImageTarget.parse("linked_file")).isEqualTo(PasteImageTarget.LINKED_FILE);
 		assertThat(PasteImageTarget.parse("nonsense")).isEqualTo(PasteImageTarget.DEFAULT);
 		assertThat(PasteImageTarget.parse(null)).isEqualTo(PasteImageTarget.DEFAULT);
 	}

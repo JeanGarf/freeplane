@@ -506,7 +506,7 @@ public class MMapClipboardController extends MapClipboardController implements M
 
         @Override
 		public void paste(Transferable t, NodeModel target, Side side, int dropAction) {
-			NodeImagePaster.paste(image, target, NodeImagePaster.rememberedTarget());
+			NodeImagePaster.paste(image, target, NodeImagePaster.rememberedTarget(), side);
 		}
 
     }
