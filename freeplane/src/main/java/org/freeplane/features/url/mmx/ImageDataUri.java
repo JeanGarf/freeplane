@@ -22,6 +22,20 @@ public class ImageDataUri {
 		return buffered;
 	}
 
+	public static BufferedImage limitedToWidth(Image image, int maximumWidth) {
+		final BufferedImage buffered = toBufferedImage(image);
+		if (buffered.getWidth() <= maximumWidth)
+			return buffered;
+		final int height = Math.max(1, Math.round((float) buffered.getHeight() * maximumWidth / buffered.getWidth()));
+		final BufferedImage scaled = new BufferedImage(maximumWidth, height, BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D graphics = scaled.createGraphics();
+		graphics.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION,
+		    java.awt.RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+		graphics.drawImage(buffered, 0, 0, maximumWidth, height, null);
+		graphics.dispose();
+		return scaled;
+	}
+
 	public static String pngDataUri(Image image) throws IOException {
 		final BufferedImage buffered = toBufferedImage(image);
 		final ByteArrayOutputStream bytes = new ByteArrayOutputStream();

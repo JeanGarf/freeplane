@@ -68,13 +68,13 @@ public class ToolbarComponentProvider implements ComponentProvider {
 		}
 		else if(entry.builders().contains("dropdownMenu")){
 			String textKey = (String) entry.getAttribute("text");
-			String text = textKey != null ? TextUtils.getText(textKey) +  "..."  :  "...";
+			String text = textKey == null ? "..." : textKey.isEmpty() ? "" : TextUtils.getText(textKey) +  "...";
 			String iconKey = (String) entry.getAttribute("icon");
 			Icon icon = ResourceController.getResourceController().getIcon(iconKey != null ? iconKey : "arrowDown.icon");
 			String tooltipKey = (String) entry.getAttribute("tooltip");
 			JButtonWithDropdownMenu buttonWithMenu = new JButtonWithDropdownMenu(text, icon);
 			IconReplacer.replaceByScaledImageIcon(buttonWithMenu);
-			if(textKey != null)
+			if(textKey != null && ! textKey.isEmpty())
 				TranslatedElement.TEXT.setKey(buttonWithMenu, textKey);
 			TranslatedElementFactory.createTooltip(buttonWithMenu, tooltipKey);
 			entry.children()

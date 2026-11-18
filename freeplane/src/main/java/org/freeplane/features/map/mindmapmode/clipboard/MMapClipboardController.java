@@ -95,7 +95,6 @@ import org.freeplane.features.text.TextController;
 import org.freeplane.features.text.mindmapmode.MTextController;
 import org.freeplane.features.url.UrlManager;
 import org.freeplane.n3.nanoxml.XMLException;
-import org.freeplane.view.swing.features.filepreview.ImageAdder;
 import org.freeplane.view.swing.features.filepreview.ViewerController;
 import org.freeplane.view.swing.features.filepreview.ViewerController.PasteMode;
 
@@ -507,12 +506,7 @@ public class MMapClipboardController extends MapClipboardController implements M
 
         @Override
 		public void paste(Transferable t, NodeModel target, Side side, int dropAction) {
-			final ModeController modeController = Controller.getCurrentModeController();
-			final MMapController mapController = (MMapController) modeController.getMapController();
-			final NodeModel node = mapController.newNode("", target.getMap());
-			node.setSide(side.isSibling() ? target.getSide() : side);
-			mapController.insertNode(node, target, InsertionRelation.bySide(side));
-			new ImageAdder(image, mapController).attachImageToNode(node);
+			NodeImagePaster.paste(image, target, NodeImagePaster.rememberedTarget());
 		}
 
     }
