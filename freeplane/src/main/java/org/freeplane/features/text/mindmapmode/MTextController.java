@@ -1232,6 +1232,7 @@ public class MTextController extends TextController {
 		final JEditorPane editorPane = shtmlPanel.getEditorPane();
 		editorPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, false);
 		ClipboardImagePaste.install(editorPane);
+		LinkShortcut.install(editorPane, shtmlPanel);
 		EmbeddedImageResizer.install(editorPane);
 		ImageFileDrop.install(editorPane);
 		fireEditorPaneCreated(editorPane, purpose);

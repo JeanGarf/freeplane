@@ -93,6 +93,7 @@ class ImageResizeHandles {
 			return;
 		selectedStart = image.getStartOffset();
 		overlay.showAround(bounds);
+		editorPane.select(image.getStartOffset(), image.getEndOffset());
 	}
 
 	private void deselect() {

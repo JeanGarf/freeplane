@@ -34,6 +34,11 @@ public class SHTMLEditLinkAction extends AFreeplaneAction implements SHTMLAction
 
    public void actionPerformed(final ActionEvent ae) {
         SHTMLEditorPane editorPane = panel.getSHTMLEditorPane();
+		final Element selectedImage = ImageLinks.selectedImage(editorPane);
+		if (selectedImage != null) {
+			editImageLink(editorPane, selectedImage);
+			return;
+		}
 		final Element linkElement = editorPane.getCurrentLinkElement();
         final boolean foundLink = (linkElement != null);
 		final String linkAsString;
@@ -48,7 +53,8 @@ public class SHTMLEditLinkAction extends AFreeplaneAction implements SHTMLAction
             	linkAsString = "http://";
         }
         else {
-            linkAsString = "http://";
+            final String clipboardAddress = ClipboardUrl.webAddressInClipboard();
+            linkAsString = clipboardAddress != null ? clipboardAddress : "http://";
         }
 		final String inputValue = UITools.showInputDialog(
 		    Controller.getCurrentController().getSelection().getSelected(), TextUtils.getText("edit_link_manually"), linkAsString);
@@ -69,6 +75,26 @@ public class SHTMLEditLinkAction extends AFreeplaneAction implements SHTMLAction
 			}
 		}
        panel.updateActions();
+   }
+
+   private void editImageLink(final SHTMLEditorPane editorPane, final Element image) {
+		final String currentLink = ImageLinks.linkOf(image);
+		final String clipboardAddress = ClipboardUrl.webAddressInClipboard();
+		final String proposal = currentLink != null ? currentLink : clipboardAddress != null ? clipboardAddress : "http://";
+		final String inputValue = UITools.showInputDialog(
+		    Controller.getCurrentController().getSelection().getSelected(), TextUtils.getText("edit_link_manually"), proposal);
+		if (inputValue == null || inputValue.matches("\\w+://"))
+			return;
+		try {
+			final String link = inputValue.isEmpty() ? null : LinkController.createHyperlink(inputValue.trim()).toString();
+			ImageLinks.setLink(editorPane, image, link);
+		}
+		catch (final URISyntaxException e1) {
+			LogUtils.warn(e1);
+			UITools.errorMessage(TextUtils.format("invalid_uri", inputValue));
+			return;
+		}
+		panel.updateActions();
    }
 
    public void update() {
