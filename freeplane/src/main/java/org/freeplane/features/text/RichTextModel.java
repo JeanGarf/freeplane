@@ -6,7 +6,7 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.freeplane.core.util.HtmlProcessor;
 import org.freeplane.core.util.HtmlUtils;
-import org.freeplane.features.url.mmx.DeferredImageSources;
+import org.freeplane.features.url.fpmx.DeferredImageSources;
 import org.freeplane.core.util.LogUtils;
 import org.freeplane.core.util.XmlUtils;
 import org.xml.sax.InputSource;

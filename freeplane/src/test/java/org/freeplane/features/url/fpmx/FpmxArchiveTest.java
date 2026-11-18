@@ -1,4 +1,4 @@
-package org.freeplane.features.url.mmx;
+package org.freeplane.features.url.fpmx;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,7 +10,7 @@ import java.util.zip.ZipInputStream;
 
 import org.junit.Test;
 
-public class MmxArchiveTest {
+public class FpmxArchiveTest {
 	private static final byte[] IMAGE = { (byte) 0x89, 'P', 'N', 'G', 1, 2, 3, 4, 5 };
 	private static final String DATA_URI = "data:image/png;base64," + Base64.getEncoder().encodeToString(IMAGE);
 
@@ -26,7 +26,7 @@ public class MmxArchiveTest {
 		final String name = extraction.images.keySet().iterator().next();
 		assertThat(name).matches("[0-9a-f]{40}\\.png");
 		assertThat(extraction.images.get(name)).isEqualTo(IMAGE);
-		assertThat(extraction.text).isEqualTo(mapWith("mmx:images/" + name));
+		assertThat(extraction.text).isEqualTo(mapWith("fpmx:images/" + name));
 	}
 
 	@Test
@@ -44,8 +44,16 @@ public class MmxArchiveTest {
 
 	@Test
 	public void unknownReferenceIsLeftUntouched() {
-		final String xml = mapWith("mmx:images/0123456789abcdef.png");
+		final String xml = mapWith("fpmx:images/0123456789abcdef.png");
 		assertThat(EmbeddedImages.restore(xml, new java.util.HashMap<String, byte[]>())).isEqualTo(xml);
+	}
+
+	@Test
+	public void referencesWrittenWithTheEarlierPrefixAreStillRestored() {
+		final String xml = mapWith(DATA_URI);
+		final EmbeddedImages.Extraction extraction = EmbeddedImages.extract(xml);
+		final String legacy = extraction.text.replace("fpmx:images/", "mmx:images/");
+		assertThat(EmbeddedImages.restore(legacy, extraction.images)).isEqualTo(xml);
 	}
 
 	@Test
@@ -62,16 +70,16 @@ public class MmxArchiveTest {
 	public void archiveRoundTripKeepsMapAndImages() throws Exception {
 		final String xml = mapWith(DATA_URI);
 		final ByteArrayOutputStream out = new ByteArrayOutputStream();
-		MmxArchive.write(out, xml);
+		FpmxArchive.write(out, xml);
 		final byte[] zipped = out.toByteArray();
-		assertThat(MmxArchive.isArchive(zipped, zipped.length)).isTrue();
-		assertThat(MmxArchive.read(new ByteArrayInputStream(zipped))).isEqualTo(xml);
+		assertThat(FpmxArchive.isArchive(zipped, zipped.length)).isTrue();
+		assertThat(FpmxArchive.read(new ByteArrayInputStream(zipped))).isEqualTo(xml);
 	}
 
 	@Test
 	public void archiveStoresImageAsBinaryEntry() throws Exception {
 		final ByteArrayOutputStream out = new ByteArrayOutputStream();
-		MmxArchive.write(out, mapWith(DATA_URI));
+		FpmxArchive.write(out, mapWith(DATA_URI));
 		final ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(out.toByteArray()));
 		final java.util.List<String> names = new java.util.ArrayList<>();
 		ZipEntry entry;
@@ -85,6 +93,6 @@ public class MmxArchiveTest {
 	@Test
 	public void plainXmlIsNotAnArchive() {
 		final byte[] xml = "<map/>".getBytes();
-		assertThat(MmxArchive.isArchive(xml, xml.length)).isFalse();
+		assertThat(FpmxArchive.isArchive(xml, xml.length)).isFalse();
 	}
 }

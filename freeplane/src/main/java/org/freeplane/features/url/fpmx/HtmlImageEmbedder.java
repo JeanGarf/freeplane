@@ -1,4 +1,4 @@
-package org.freeplane.features.url.mmx;
+package org.freeplane.features.url.fpmx;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

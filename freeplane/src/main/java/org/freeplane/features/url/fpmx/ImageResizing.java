@@ -1,4 +1,4 @@
-package org.freeplane.features.url.mmx;
+package org.freeplane.features.url.fpmx;
 
 public class ImageResizing {
 	public static int heightFor(int originalWidth, int originalHeight, int newWidth) {

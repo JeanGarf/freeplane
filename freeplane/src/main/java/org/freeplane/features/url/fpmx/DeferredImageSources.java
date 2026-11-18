@@ -1,4 +1,4 @@
-package org.freeplane.features.url.mmx;
+package org.freeplane.features.url.fpmx;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -6,7 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DeferredImageSources {
-	public static final String PREFIX = "mmxpending:";
+	public static final String PREFIX = "fpmxpending:";
 	static final int MINIMUM_LENGTH = 20000;
 	private static final Pattern LARGE_DATA_URI = Pattern
 	    .compile("data:image/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]{" + MINIMUM_LENGTH + ",}");

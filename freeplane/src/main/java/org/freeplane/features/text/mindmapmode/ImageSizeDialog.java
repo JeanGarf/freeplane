@@ -15,7 +15,7 @@ import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 
 import org.freeplane.core.util.TextUtils;
-import org.freeplane.features.url.mmx.ImageResizing;
+import org.freeplane.features.url.fpmx.ImageResizing;
 
 class ImageSizeDialog {
 	private static final int[] PERCENTS = { 25, 50, 75, 100 };

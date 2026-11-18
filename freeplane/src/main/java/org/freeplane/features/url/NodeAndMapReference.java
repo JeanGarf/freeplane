@@ -4,7 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NodeAndMapReference {
-	private static final Pattern FREEPLANE_MAP_WITH_NODE_ID = Pattern.compile("\\.mmx?#(ID_\\d+|at\\([^#]*\\))$", Pattern.CASE_INSENSITIVE);
+	private static final Pattern FREEPLANE_MAP_WITH_NODE_ID = Pattern.compile("\\.(?:mm|fpmx)#(ID_\\d+|at\\([^#]*\\))$", Pattern.CASE_INSENSITIVE);
 	final private String nodeReference;
 	final private String mapReference;
 	final private boolean hasFreeplaneFileExtension;

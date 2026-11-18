@@ -33,7 +33,7 @@ import org.freeplane.features.map.INodeDuplicator;
 import org.freeplane.features.map.MapModel;
 import org.freeplane.features.mode.Controller;
 import org.freeplane.features.url.UrlManager;
-import org.freeplane.features.url.mmx.MmxArchive;
+import org.freeplane.features.url.fpmx.FpmxArchive;
 import org.freeplane.features.url.mindmapmode.DoAutomaticSave;
 import org.freeplane.features.url.mindmapmode.DummyLockManager;
 import org.freeplane.features.url.mindmapmode.LockManager;
@@ -141,8 +141,8 @@ public class MMapModel extends MapModel {
 	            final String fileName = file.getName();
 	            if(fileName.endsWith(UrlManager.FREEPLANE_FILE_EXTENSION))
 	            	return fileName.substring(0, fileName.length() - UrlManager.FREEPLANE_FILE_EXTENSION.length());
-	            if(fileName.endsWith(MmxArchive.FILE_EXTENSION))
-	            	return fileName.substring(0, fileName.length() - MmxArchive.FILE_EXTENSION.length());
+	            if(fileName.endsWith(FpmxArchive.FILE_EXTENSION))
+	            	return fileName.substring(0, fileName.length() - FpmxArchive.FILE_EXTENSION.length());
 	            return fileName;
             }
             else

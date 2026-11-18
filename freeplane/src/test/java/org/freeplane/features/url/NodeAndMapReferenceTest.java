@@ -6,8 +6,8 @@ import org.junit.Test;
 
 public class NodeAndMapReferenceTest {
 	@Test
-	public void mmxFilesAreFreeplaneMaps() {
-		assertThat(UrlManager.isFreeplaneMapName("a/b/map.mmx")).isTrue();
+	public void fpmxFilesAreFreeplaneMaps() {
+		assertThat(UrlManager.isFreeplaneMapName("a/b/map.fpmx")).isTrue();
 		assertThat(UrlManager.isFreeplaneMapName("MAP.MM")).isTrue();
 		assertThat(UrlManager.isFreeplaneMapName("map.mmp")).isFalse();
 		assertThat(UrlManager.isFreeplaneMapName("map.txt")).isFalse();
@@ -15,19 +15,19 @@ public class NodeAndMapReferenceTest {
 	}
 
 	@Test
-	public void mmxReferenceIsRecognizedAsMapWithoutNode() {
-		final NodeAndMapReference reference = new NodeAndMapReference("dir/map.mmx");
+	public void fpmxReferenceIsRecognizedAsMapWithoutNode() {
+		final NodeAndMapReference reference = new NodeAndMapReference("dir/map.fpmx");
 		assertThat(reference.hasFreeplaneFileExtension()).isTrue();
 		assertThat(reference.hasNodeReference()).isFalse();
-		assertThat(reference.getMapReference()).isEqualTo("dir/map.mmx");
+		assertThat(reference.getMapReference()).isEqualTo("dir/map.fpmx");
 	}
 
 	@Test
-	public void nodeIdIsSplitFromMmxReference() {
-		final NodeAndMapReference reference = new NodeAndMapReference("dir/map.mmx#ID_123");
+	public void nodeIdIsSplitFromFpmxReference() {
+		final NodeAndMapReference reference = new NodeAndMapReference("dir/map.fpmx#ID_123");
 		assertThat(reference.hasFreeplaneFileExtension()).isTrue();
 		assertThat(reference.getNodeReference()).isEqualTo("ID_123");
-		assertThat(reference.getMapReference()).isEqualTo("dir/map.mmx");
+		assertThat(reference.getMapReference()).isEqualTo("dir/map.fpmx");
 	}
 
 	@Test

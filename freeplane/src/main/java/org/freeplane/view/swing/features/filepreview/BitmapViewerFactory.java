@@ -32,7 +32,7 @@ import javax.imageio.ImageReader;
 import javax.swing.JComponent;
 
 import org.freeplane.core.util.TextUtils;
-import org.freeplane.features.url.mmx.EmbeddedImages;
+import org.freeplane.features.url.fpmx.EmbeddedImages;
 
 /**
  * @author Dimitry Polivaev

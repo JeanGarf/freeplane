@@ -13,7 +13,7 @@ import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLDocument;
 
 import org.freeplane.core.util.LogUtils;
-import org.freeplane.features.url.mmx.DeferredImageSources;
+import org.freeplane.features.url.fpmx.DeferredImageSources;
 
 import com.lightdev.app.shtm.SHTMLDocument;
 import com.lightdev.app.shtm.SHTMLPanel;

@@ -12,7 +12,7 @@ import javax.imageio.ImageIO;
 import org.freeplane.features.link.LinkController;
 import org.freeplane.features.map.NodeModel;
 import org.freeplane.features.map.mindmapmode.MMapController;
-import org.freeplane.features.url.mmx.ImageDataUri;
+import org.freeplane.features.url.fpmx.ImageDataUri;
 
 public class ImageAdder {
     private final Image image;

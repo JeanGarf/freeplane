@@ -1,4 +1,4 @@
-package org.freeplane.features.url.mmx;
+package org.freeplane.features.url.fpmx;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

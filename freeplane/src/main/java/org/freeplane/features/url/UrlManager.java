@@ -72,7 +72,7 @@ public class UrlManager implements IExtension {
 	public static final String FILE_SCHEME = "file";
 	public static final String FREEPLANE_FILE_EXTENSION_WITHOUT_DOT = "mm";
 	public static final String FREEPLANE_FILE_EXTENSION = "." + FREEPLANE_FILE_EXTENSION_WITHOUT_DOT;
-	public static final String FREEPLANE_ARCHIVE_FILE_EXTENSION = ".mmx";
+	public static final String FREEPLANE_ARCHIVE_FILE_EXTENSION = ".fpmx";
 	public static final String FREEPLANE_ADD_ON_FILE_EXTENSION = ".addon." + FREEPLANE_FILE_EXTENSION_WITHOUT_DOT;
 	private File lastCurrentDir = null;
 	public static final String MAP_URL = "map_url";

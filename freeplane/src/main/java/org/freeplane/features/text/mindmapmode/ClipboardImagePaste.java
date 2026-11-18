@@ -14,7 +14,7 @@ import javax.swing.JEditorPane;
 import javax.swing.text.DefaultEditorKit;
 
 import org.freeplane.core.util.LogUtils;
-import org.freeplane.features.url.mmx.ImageDataUri;
+import org.freeplane.features.url.fpmx.ImageDataUri;
 
 class ClipboardImagePaste {
 	static boolean holdsOnlyAnImage(Transferable contents) {

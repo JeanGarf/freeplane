@@ -12,8 +12,8 @@ import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 
 import org.freeplane.core.util.LogUtils;
-import org.freeplane.features.url.mmx.DeferredImageSources;
-import org.freeplane.features.url.mmx.ImageDataUri;
+import org.freeplane.features.url.fpmx.DeferredImageSources;
+import org.freeplane.features.url.fpmx.ImageDataUri;
 
 class ImageFiles {
 	static boolean holdsFiles(Transferable contents) {

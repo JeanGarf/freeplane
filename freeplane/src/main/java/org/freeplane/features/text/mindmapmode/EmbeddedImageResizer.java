@@ -16,7 +16,7 @@ import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLDocument;
 
 import org.freeplane.core.util.LogUtils;
-import org.freeplane.features.url.mmx.EmbeddedImages;
+import org.freeplane.features.url.fpmx.EmbeddedImages;
 
 import com.lightdev.app.shtm.SHTMLPanel;
 import com.lightdev.app.shtm.SHTMLPanelImpl;

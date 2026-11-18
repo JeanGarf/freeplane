@@ -21,8 +21,8 @@ import org.freeplane.features.note.mindmapmode.MNoteController;
 import org.freeplane.features.text.DetailModel;
 import org.freeplane.features.text.mindmapmode.MTextController;
 import org.freeplane.features.url.UrlManager;
-import org.freeplane.features.url.mmx.HtmlImageEmbedder;
-import org.freeplane.features.url.mmx.ImageDataUri;
+import org.freeplane.features.url.fpmx.HtmlImageEmbedder;
+import org.freeplane.features.url.fpmx.ImageDataUri;
 import org.freeplane.view.swing.features.filepreview.ExternalResource;
 import org.freeplane.view.swing.features.filepreview.ViewerController;
 

@@ -1,4 +1,4 @@
-package org.freeplane.features.url.mmx;
+package org.freeplane.features.url.fpmx;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -10,11 +10,13 @@ import java.util.regex.Pattern;
 
 public class EmbeddedImages {
 	public static final String FOLDER = "images/";
-	public static final String REFERENCE_PREFIX = "mmx:" + FOLDER;
+	public static final String REFERENCE_PREFIX = "fpmx:" + FOLDER;
+	private static final String LEGACY_REFERENCE_PREFIX = "mmx:" + FOLDER;
 	private static final String[][] TYPES = { { "png", "image/png" }, { "jpg", "image/jpeg" },
 	        { "gif", "image/gif" }, { "bmp", "image/bmp" }, { "webp", "image/webp" } };
 	private static final Pattern DATA_URI = Pattern.compile("data:image/(png|jpeg|gif|bmp|webp);base64,([A-Za-z0-9+/=]+)");
-	private static final Pattern REFERENCE = Pattern.compile(Pattern.quote(REFERENCE_PREFIX) + "([0-9a-f]+\\.[a-z]+)");
+	private static final Pattern REFERENCE = Pattern.compile(
+	    "(?:" + Pattern.quote(REFERENCE_PREFIX) + "|" + Pattern.quote(LEGACY_REFERENCE_PREFIX) + ")([0-9a-f]+\\.[a-z]+)");
 
 	public static class Extraction {
 		public final String text;

@@ -7,7 +7,7 @@ import org.freeplane.features.map.MapModel;
 import org.freeplane.features.map.NodeModel;
 import org.freeplane.features.note.NoteModel;
 import org.freeplane.features.text.DetailModel;
-import org.freeplane.features.url.mmx.EmbeddedImages;
+import org.freeplane.features.url.fpmx.EmbeddedImages;
 
 class MapEmbeddedImages {
 	static boolean existIn(MapModel map) {

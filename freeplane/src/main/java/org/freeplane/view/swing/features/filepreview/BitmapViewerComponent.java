@@ -34,7 +34,7 @@ import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.io.ByteArrayInputStream;
-import org.freeplane.features.url.mmx.EmbeddedImages;
+import org.freeplane.features.url.fpmx.EmbeddedImages;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Iterator;

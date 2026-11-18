@@ -1,4 +1,4 @@
-package org.freeplane.features.url.mmx;
+package org.freeplane.features.url.fpmx;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,9 +10,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-public class MmxArchive {
+public class FpmxArchive {
 	public static final String MAP_ENTRY = "map.mm";
-	public static final String EXTENSION_WITHOUT_DOT = "mmx";
+	public static final String EXTENSION_WITHOUT_DOT = "fpmx";
 	public static final String FILE_EXTENSION = "." + EXTENSION_WITHOUT_DOT;
 	private static final byte[] ZIP_SIGNATURE = { 'P', 'K', 3, 4 };
 

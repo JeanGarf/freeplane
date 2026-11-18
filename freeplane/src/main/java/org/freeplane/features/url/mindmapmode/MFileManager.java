@@ -68,7 +68,7 @@ import org.freeplane.core.resources.components.IPropertyControl;
 import org.freeplane.core.resources.components.IPropertyControlCreator;
 import org.freeplane.core.resources.components.OptionPanelBuilder;
 import org.freeplane.core.ui.CaseSensitiveFileNameExtensionFilter;
-import org.freeplane.features.url.mmx.MmxArchive;
+import org.freeplane.features.url.fpmx.FpmxArchive;
 import org.freeplane.core.ui.FileOpener;
 import org.freeplane.core.ui.IndexedTree;
 import org.freeplane.core.ui.components.JFreeplaneCustomizableFileChooser;
@@ -132,7 +132,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 
 		MindMapDirectoryFilter(MindmapDirectory mindmapDirectory, File directory) {
             this.directory = directory;
-            this.description = TextUtils.getText(mindmapDirectory.key) + " (*.mm, *.mmx)";
+            this.description = TextUtils.getText(mindmapDirectory.key) + " (*.mm, *.fpmx)";
         }
 
         @Override
@@ -143,7 +143,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 			final String extension = FileUtils.getExtension(f.getName());
 			if (extension != null) {
 				if (extension.equals(UrlManager.FREEPLANE_FILE_EXTENSION_WITHOUT_DOT)
-				        || extension.equals(MmxArchive.EXTENSION_WITHOUT_DOT)) {
+				        || extension.equals(FpmxArchive.EXTENSION_WITHOUT_DOT)) {
 					return true;
 				}
 				else {
@@ -159,7 +159,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 		}
 	}
 
-    private final static FileFilter MINDMAP_FILE_FILTER = new CaseSensitiveFileNameExtensionFilter(new String[] { "mm", MmxArchive.EXTENSION_WITHOUT_DOT }, TextUtils.getText("mindmaps_desc"));
+    private final static FileFilter MINDMAP_FILE_FILTER = new CaseSensitiveFileNameExtensionFilter(new String[] { "mm", FpmxArchive.EXTENSION_WITHOUT_DOT }, TextUtils.getText("mindmaps_desc"));
 	private static final String BACKUP_FILE_NUMBER = "backup_file_number";
 	private static File singleBackupDirectory;
     private final MMapController mapController;
@@ -581,7 +581,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 		final byte[] buffer = new byte[versionInfoLength];
         try (final BufferedInputStream file = new BufferedInputStream(new FileInputStream(f))) {
             final int readCount = file.read(buffer);
-            if (MmxArchive.isArchive(buffer, readCount))
+            if (FpmxArchive.isArchive(buffer, readCount))
                 return loadArchiveTree(map, f);
             final String mapStart = new String(buffer, StandardCharsets.UTF_8.name());
             final ByteArrayInputStream readBytes = new ByteArrayInputStream(buffer, 0, readCount);
@@ -602,7 +602,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 	private NodeModel loadArchiveTree(final MapModel map, final File archive) throws IOException, XMLException {
 		final String mapXml;
 		try (final InputStream in = new BufferedInputStream(new FileInputStream(archive))) {
-			mapXml = MmxArchive.read(in);
+			mapXml = FpmxArchive.read(in);
 		}
 		map.addExtension(MapVersionInterpreter.getVersionInterpreter(mapXml.substring(0, Math.min(1000, mapXml.length()))));
 		return mapController.getMapReader().createNodeTreeFromXml(map, new StringReader(mapXml), Mode.FILE);
@@ -768,7 +768,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 
 	private File offeredArchiveFile(final MapModel map) {
 		final File file = map.getFile();
-		if (file == null || file.getName().endsWith(MmxArchive.FILE_EXTENSION)
+		if (file == null || file.getName().endsWith(FpmxArchive.FILE_EXTENSION)
 		        || map.getExtension(EmbeddedImagesOfferFlag.class) != null || !MapEmbeddedImages.existIn(map))
 			return null;
 		map.addExtension(new EmbeddedImagesOfferFlag());
@@ -781,7 +781,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 		final String baseName = name.endsWith(UrlManager.FREEPLANE_FILE_EXTENSION)
 		        ? name.substring(0, name.length() - UrlManager.FREEPLANE_FILE_EXTENSION.length())
 		        : name;
-		final File archive = new File(file.getParentFile(), baseName + MmxArchive.FILE_EXTENSION);
+		final File archive = new File(file.getParentFile(), baseName + FpmxArchive.FILE_EXTENSION);
 		if (archive.exists() && JOptionPane.YES_OPTION != JOptionPane.showConfirmDialog(
 		    Controller.getCurrentController().getMapViewManager().getMapViewComponent(),
 		    TextUtils.getText("map_already_exists"), "Freeplane", JOptionPane.YES_NO_OPTION))
@@ -858,7 +858,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 		File f = chooser.getSelectedFile();
 		final String ext = FileUtils.getExtension(f.getName());
 		if (!ext.equals(org.freeplane.features.url.UrlManager.FREEPLANE_FILE_EXTENSION_WITHOUT_DOT)
-		        && !ext.equals(MmxArchive.EXTENSION_WITHOUT_DOT)) {
+		        && !ext.equals(FpmxArchive.EXTENSION_WITHOUT_DOT)) {
 			f = new File(f.getParent(), f.getName()
 			        + org.freeplane.features.url.UrlManager.FREEPLANE_FILE_EXTENSION);
 		}
@@ -940,11 +940,11 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 			if (lockedByOtherApplication) {
 				throw new IOException("can not obtain file lock for " + file);
 			}
-			if (file.getName().endsWith(MmxArchive.FILE_EXTENSION)) {
+			if (file.getName().endsWith(FpmxArchive.FILE_EXTENSION)) {
 				final StringWriter mapXml = new StringWriter();
 				mapController.getMapWriter()
 				    .writeMapAsXml(map, mapXml, Mode.FILE, CopiedNodeSet.ALL_NODES, false);
-				MmxArchive.write(out, mapXml.toString());
+				FpmxArchive.write(out, mapXml.toString());
 			}
 			else {
 				final BufferedWriter fileout = new BufferedWriter(new OutputStreamWriter(out,//
@@ -994,7 +994,7 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 	@Override
 	public void afterViewDisplayed(Component oldView, Component newView) {
 		if (newView != null) {
-			final FileOpener fileOpener = new FileOpener(new String[] { UrlManager.FREEPLANE_FILE_EXTENSION_WITHOUT_DOT, MmxArchive.EXTENSION_WITHOUT_DOT }, new DroppedMindMapOpener());
+			final FileOpener fileOpener = new FileOpener(new String[] { UrlManager.FREEPLANE_FILE_EXTENSION_WITHOUT_DOT, FpmxArchive.EXTENSION_WITHOUT_DOT }, new DroppedMindMapOpener());
 			new DropTarget(newView, fileOpener);
 		}
 	}
