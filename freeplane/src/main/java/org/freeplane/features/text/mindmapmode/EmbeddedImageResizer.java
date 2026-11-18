@@ -18,32 +18,34 @@ import javax.swing.text.html.HTMLDocument;
 import org.freeplane.core.util.LogUtils;
 import org.freeplane.features.url.mmx.EmbeddedImages;
 
+import com.lightdev.app.shtm.SHTMLPanel;
+import com.lightdev.app.shtm.SHTMLPanelImpl;
+
 class EmbeddedImageResizer extends MouseAdapter {
 	private final JEditorPane editorPane;
 
-	static void install(JEditorPane editorPane) {
-		final EmbeddedImageResizer resizer = new EmbeddedImageResizer(editorPane);
+	private final SHTMLPanel panel;
+
+	static void install(JEditorPane editorPane, SHTMLPanel panel) {
+		final EmbeddedImageResizer resizer = new EmbeddedImageResizer(editorPane, panel);
 		editorPane.addMouseListener(resizer);
 		ImageResizeHandles.install(editorPane, resizer);
+		ImageContextMenu.install(editorPane, panel, resizer);
 	}
 
-	private EmbeddedImageResizer(JEditorPane editorPane) {
+	private EmbeddedImageResizer(JEditorPane editorPane, SHTMLPanel panel) {
 		this.editorPane = editorPane;
+		this.panel = panel;
 	}
 
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		if (e.getClickCount() != 2 || e.getButton() != MouseEvent.BUTTON1 || !editorPane.isEditable())
+		if (e.getClickCount() != 2 || e.getButton() != MouseEvent.BUTTON1)
 			return;
 		final Element image = imageAt(e.getPoint());
-		if (image == null)
-			return;
-		try {
-			resize(image);
-		}
-		catch (Exception ex) {
-			LogUtils.warn(ex);
-		}
+		final String link = image == null ? null : ImageLinks.linkOf(image);
+		if (link != null)
+			((SHTMLPanelImpl) panel).openHyperlink(link);
 	}
 
 	Element imageAt(Point point) {
@@ -86,7 +88,7 @@ class EmbeddedImageResizer extends MouseAdapter {
 		DeferredImages.setSize((HTMLDocument) editorPane.getDocument(), image, size.width, size.height);
 	}
 
-	private void resize(Element image) throws Exception {
+	void resize(Element image) throws Exception {
 		final AttributeSet attributes = image.getAttributes();
 		final String source = String.valueOf(attributes.getAttribute(HTML.Attribute.SRC));
 		final Dimension original = originalSize(source);

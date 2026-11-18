@@ -38,4 +38,9 @@ public class ImageHtmlTest {
 		assertThat(PasteImageTarget.parse("nonsense")).isEqualTo(PasteImageTarget.DEFAULT);
 		assertThat(PasteImageTarget.parse(null)).isEqualTo(PasteImageTarget.DEFAULT);
 	}
+
+	@Test
+	public void imagesAreFirstPastedInTheNote() {
+		assertThat(PasteImageTarget.DEFAULT).isEqualTo(PasteImageTarget.NOTE);
+	}
 }

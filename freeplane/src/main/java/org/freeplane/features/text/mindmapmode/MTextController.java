@@ -1233,7 +1233,7 @@ public class MTextController extends TextController {
 		editorPane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, false);
 		ClipboardImagePaste.install(editorPane);
 		LinkShortcut.install(editorPane, shtmlPanel);
-		EmbeddedImageResizer.install(editorPane);
+		EmbeddedImageResizer.install(editorPane, shtmlPanel);
 		ImageFileDrop.install(editorPane);
 		fireEditorPaneCreated(editorPane, purpose);
 		return shtmlPanel;

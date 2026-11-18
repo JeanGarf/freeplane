@@ -7,7 +7,7 @@ public enum PasteImageTarget {
 	EXTENSION("PasteImageAsExtensionAction");
 
 	public static final String PROPERTY_NAME = "paste_image_target";
-	public static final PasteImageTarget DEFAULT = EXTENSION;
+	public static final PasteImageTarget DEFAULT = NOTE;
 
 	public final String actionKey;
 

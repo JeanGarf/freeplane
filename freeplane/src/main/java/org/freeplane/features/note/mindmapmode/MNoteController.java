@@ -231,7 +231,7 @@ public class MNoteController extends NoteController {
         return noteContentTypes.stream().toArray(String[]::new);
     }
 
-	void showNoteAndFocusIt() {
+	public void showNoteAndFocusIt() {
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().clearGlobalFocusOwner();
 		EventQueue.invokeLater(() -> {
 			if (!isNoteEditorShowing()) {
