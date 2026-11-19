@@ -37,6 +37,8 @@
 				<Entry name="PasteImageAsNoteAction" />
 				<Entry name="PasteImageAsExtensionAction" />
 				<Entry name="PasteImageAsLinkedFileAction" />
+				<Entry builder="separator" />
+				<Entry name="ScreenCaptureAction" />
 			</Entry>
 			<Entry builder="separator" />
 			<Entry name="NewChildAction" icon="NewChildToolbar.icon" row="1" weight = "1"/>
@@ -210,6 +212,8 @@
 					<Entry name="PasteImageAsNoteAction" />
 					<Entry name="PasteImageAsExtensionAction" />
 					<Entry name="PasteImageAsLinkedFileAction" />
+					<Entry builder="separator" />
+					<Entry name="ScreenCaptureAction" accelerator="control shift I" />
 				</Entry>
 				<Entry name="PasteAttributes" />
 				<Entry name="DeleteAction" accelerator="DELETE" />

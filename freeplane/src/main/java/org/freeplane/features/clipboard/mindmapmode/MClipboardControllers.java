@@ -27,6 +27,7 @@ public class MClipboardControllers extends ClipboardControllers{
 		modeController.addAction(new PasteAction());
 		for (final PasteImageTarget target : PasteImageTarget.values())
 			modeController.addAction(new PasteImageAction(target));
+		modeController.addAction(new ScreenCaptureAction());
 	}
 
 	public boolean add(MClipboardController e) {
