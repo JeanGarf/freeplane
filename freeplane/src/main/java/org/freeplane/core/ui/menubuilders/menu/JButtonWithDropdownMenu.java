@@ -21,6 +21,10 @@ public class JButtonWithDropdownMenu extends JButton {
 		addActionListener(e -> menu.show(this, 0, this.getHeight()));
 	}
 
+	public void addMenuSeparator() {
+		menu.addSeparator();
+	}
+
 	public JMenuItem addMenuAction(Action a) {
 		if (a instanceof AFreeplaneAction && ((AFreeplaneAction) a).isSelectable())
 			return menu.add(new JAutoCheckBoxMenuItem((AFreeplaneAction) a));

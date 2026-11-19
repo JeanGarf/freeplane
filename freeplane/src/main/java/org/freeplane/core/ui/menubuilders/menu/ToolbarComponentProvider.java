@@ -77,11 +77,15 @@ public class ToolbarComponentProvider implements ComponentProvider {
 			if(textKey != null && ! textKey.isEmpty())
 				TranslatedElement.TEXT.setKey(buttonWithMenu, textKey);
 			TranslatedElementFactory.createTooltip(buttonWithMenu, tooltipKey);
-			entry.children()
-			.stream()
-			.map(entryAccessor::getAction)
-			.filter(x -> x != null)
-			.forEach(buttonWithMenu::addMenuAction);
+			for (final Entry child : entry.children()) {
+				if (child.builders().contains("separator"))
+					buttonWithMenu.addMenuSeparator();
+				else {
+					final AFreeplaneAction childAction = entryAccessor.getAction(child);
+					if (childAction != null)
+						buttonWithMenu.addMenuAction(childAction);
+				}
+			}
 			component = buttonWithMenu;
 		}
 		else
