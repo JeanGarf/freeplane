@@ -11,6 +11,7 @@ import java.security.AccessControlException;
 
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
+import javax.swing.JViewport;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.text.html.HTMLDocument;
@@ -25,19 +26,34 @@ import org.freeplane.core.util.LogUtils;
 import org.freeplane.features.map.NodeModel;
 
 class TextualTooltipRendererFactory {
-	final private JEditorPane tip;
+	private static class TipPane extends JEditorPane {
+		private static final long serialVersionUID = 1L;
+		int contentWidth = Integer.MAX_VALUE;
+
+		@Override
+		public boolean getScrollableTracksViewportWidth() {
+			return getParent() instanceof JViewport && ((JViewport) getParent()).getWidth() >= contentWidth;
+		}
+	}
+
+	final private TipPane tip;
 	private int maximumWidth;
 	private final String contentType;
 	private final JRestrictedSizeScrollPane scrollPane;
 	private final JComponent component;
 	private final URL baseUrl;
+	private static final int TEXT_MARGIN = 4;
+	private static final int TOOLTIP_FRAME_WIDTH = 8;
+	private static final int MAXIMUM_NARROWING_ATTEMPTS = 5;
+	private String lastTipText;
+	private int textWidth;
 	TextualTooltipRendererFactory(
 	        String contentType, URL baseUrl, String tipText, JComponent component,
 	        ComponentOrientation componentOrientation, Dimension tooltipSize, boolean honorDisplayProperties){
 		this.contentType = contentType;
 		this.baseUrl = baseUrl;
 		this.component = component;
-		tip  = new JEditorPane();
+		tip  = new TipPane();
 		tip.setContentType(contentType);
 		tip.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, honorDisplayProperties);
 		if(contentType.equals(FreeplaneTooltip.TEXT_HTML)) {
@@ -57,7 +73,7 @@ class TextualTooltipRendererFactory {
 		tip.addMouseListener(linkOpener);
 		tip.addMouseMotionListener(linkOpener);
 
-		scrollPane = new JRestrictedSizeScrollPane(tip);
+		scrollPane = new JRestrictedSizeScrollPane(tip, false);
 		scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		final int scrollBarWidth = scrollPane.getVerticalScrollBar().getPreferredSize().width;
@@ -84,7 +100,27 @@ class TextualTooltipRendererFactory {
 		return nodeView != null ? nodeView.getNode() : null;
 	}
 
+	void restrictWidth(int width) {
+		final int scrollBarWidth = scrollPane.getVerticalScrollBar().getPreferredSize().width;
+		maximumWidth = Math.max(1, width - scrollBarWidth - TOOLTIP_FRAME_WIDTH);
+		scrollPane.setMaximumSize(new Dimension(width, scrollPane.getMaximumSize().height));
+		final String originalTipText = lastTipText;
+		final int targetWidth = maximumWidth - TEXT_MARGIN;
+		if (textWidth > targetWidth) {
+			int styleWidth = targetWidth;
+			for (int attempt = 0; attempt < MAXIMUM_NARROWING_ATTEMPTS; attempt++) {
+				setTipText(TooltipTextWidth.narrowedTo(originalTipText, styleWidth));
+				if (textWidth <= targetWidth || styleWidth <= 1)
+					break;
+				styleWidth = Math.max(1, styleWidth * targetWidth / textWidth - 1);
+			}
+		}
+		else
+			setTipText(originalTipText);
+	}
+
     private void setTipText(String tipText) {
+		lastTipText = tipText;
 		try{
         	setTipTextUnsafe(tipText);
         }
@@ -122,6 +158,11 @@ class TextualTooltipRendererFactory {
 		}
 		tip.setSize(preferredSize);
 		preferredSize = tip.getPreferredSize();
+		textWidth = preferredSize.width;
+		final int contentRight = ViewExtent.rightEdge(tip, preferredSize);
+		if (contentRight > preferredSize.width)
+			preferredSize = new Dimension(contentRight, preferredSize.height);
+		tip.contentWidth = preferredSize.width;
 		tip.setPreferredSize(preferredSize);
 
 	}

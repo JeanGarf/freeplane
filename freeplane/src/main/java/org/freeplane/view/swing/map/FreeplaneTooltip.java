@@ -25,6 +25,7 @@ public class FreeplaneTooltip extends JToolTip {
 	private final GraphicsConfiguration graphicsConfiguration;
 	private final String contentType;
 	private URL baseUrl;
+	private TextualTooltipRendererFactory textualRenderer;
 
     private final boolean honorDisplayProperties;
 
@@ -59,7 +60,13 @@ public class FreeplaneTooltip extends JToolTip {
 		final TextualTooltipRendererFactory tooltipScrollPaneFactory = new TextualTooltipRendererFactory(
 				contentType, baseUrl, tipText, getComponent(), getComponentOrientation(),
 				tooltipSize, honorDisplayProperties);
+		textualRenderer = tooltipScrollPaneFactory;
 		add(tooltipScrollPaneFactory.getTooltipRenderer());
+	}
+
+	public void restrictWidth(int width) {
+		if (textualRenderer != null)
+			textualRenderer.restrictWidth(width);
 	}
 
 	private Dimension tooltipSize(GraphicsConfiguration graphicsConfiguration) {

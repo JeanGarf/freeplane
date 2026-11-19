@@ -30,8 +30,13 @@ public class JRestrictedSizeScrollPane extends JScrollPane {
     }
 
 	public JRestrictedSizeScrollPane(Component view) {
+	    this(view, true);
+    }
+
+	public JRestrictedSizeScrollPane(Component view, boolean forcesViewToViewportSize) {
 	    super(view);
-	    getViewport().addComponentListener(new SizeChanger());
+	    if(forcesViewToViewportSize)
+	    	getViewport().addComponentListener(new SizeChanger());
     }
 
     @Override

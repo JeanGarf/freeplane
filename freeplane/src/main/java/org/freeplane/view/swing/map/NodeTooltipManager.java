@@ -183,7 +183,15 @@ public class NodeTooltipManager implements IExtension{
 		tipPopup.add(tip);
 		mouseInsideTooltipListener = new MouseInsideListener(tipPopup);
 		final Rectangle desktopBounds = UITools.getAvailableScreenBounds(insideComponent);
-		final Dimension popupPreferredSize = tipPopup.getPreferredSize();
+		Dimension popupPreferredSize = tipPopup.getPreferredSize();
+		final Point anchorOnScreen = new Point(preferredToolTipLocation != null ? preferredToolTipLocation.x : 0, 0);
+		SwingUtilities.convertPointToScreen(anchorOnScreen, insideComponent);
+		final TooltipPlacement placement = TooltipPlacement.of(popupPreferredSize.width, anchorOnScreen.x,
+		    desktopBounds.x, desktopBounds.x + desktopBounds.width);
+		if (placement.width < popupPreferredSize.width && tip instanceof FreeplaneTooltip) {
+			((FreeplaneTooltip) tip).restrictWidth(placement.width);
+			popupPreferredSize = tipPopup.getPreferredSize();
+		}
 
 		Point desiredLocation;
 		int popupAllowedHeight;
@@ -213,10 +221,10 @@ public class NodeTooltipManager implements IExtension{
 
 		if(popupAllowedHeight > 0) {
 			Dimension popupSize = new Dimension(
-				popupPreferredSize.width,
+				Math.min(placement.width, popupPreferredSize.width),
 				Math.min(popupAllowedHeight, popupPreferredSize.height));
 			tipPopup.setPreferredSize(popupSize);
-			tipPopup.show(insideComponent, desiredLocation.x, desiredLocation.y);
+			tipPopup.show(insideComponent, desiredLocation.x + placement.shift, desiredLocation.y);
 			SwingUtilities.invokeLater(() -> {
 				focusOwner.requestFocus();
 				exitTimer.start();
