@@ -4,6 +4,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -22,6 +25,9 @@ class FreeplaneMapWriter {
 		String store(String name, BufferedImage image) throws IOException;
 	}
 
+	private static final double MAX_OLE_DATE = 2958465;
+	private static final double MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
+	private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 	private static final String ROOT_ID = "ID_ROOT";
 	private static final String ROOT_STYLE = "AutomaticLayout.level.root";
 	private static final String FLOATING_STYLE = "styles.floating";
@@ -80,7 +86,7 @@ class FreeplaneMapWriter {
 		else if (topic.hasFill())
 			xml.append(" STYLE=\"bubble\" BACKGROUND_COLOR=\"").append(color(topic.fillColor)).append('"');
 		if (!topic.hyperlink.isEmpty())
-			xml.append(" LINK=\"").append(attribute(link(topic.hyperlink))).append('"');
+			xml.append(" LINK=\"").append(attribute(link(topic.hyperlink, topic.hyperlinkArguments))).append('"');
 		String alias = alias(topic.alias);
 		if (!alias.isEmpty())
 			xml.append(" ALIAS=\"").append(alias).append('"');
@@ -92,6 +98,7 @@ class FreeplaneMapWriter {
 		writeFont(topic, appearance);
 		writeIcons(topic);
 		writeSymbols(topic);
+		writeAttributes(topic);
 		writeRelationships(topic);
 		writeNote(topic);
 		for (FreeText freeText : topic.freeTexts)
@@ -101,6 +108,40 @@ class FreeplaneMapWriter {
 			writeTopic(child, false, side);
 		branch.removeLast();
 		xml.append("</node>\n");
+	}
+
+	private void writeAttributes(Topic topic) {
+		writeAttribute("Resource", topic.resource);
+		writeAttribute("Category", topic.category);
+		if (!topic.hasTask)
+			return;
+		writeAttribute("Start date", dateTime(topic.taskStart));
+		writeAttribute("Due date", dateTime(topic.taskDue));
+		if (topic.percentComplete > 0)
+			writeAttribute("Progress", topic.percentComplete + "%");
+		if (topic.taskSeconds > 0)
+			writeAttribute("Effort", duration(topic.taskSeconds));
+	}
+
+	private void writeAttribute(String name, String value) {
+		if (!value.isEmpty())
+			xml.append("<attribute NAME=\"").append(name).append("\" VALUE=\"").append(attribute(value))
+					.append("\"/>\n");
+	}
+
+	static String dateTime(double oleDate) {
+		if (Double.isNaN(oleDate) || oleDate < 1 || oleDate > MAX_OLE_DATE)
+			return "";
+		long millis = Math.round(oleDate * MILLIS_PER_DAY);
+		LocalDateTime dateTime = LocalDateTime.of(1899, 12, 30, 0, 0).plus(millis, ChronoUnit.MILLIS);
+		return dateTime.format(DATE_TIME);
+	}
+
+	static String duration(long seconds) {
+		long minutes = seconds / 60;
+		String hours = minutes / 60 > 0 ? minutes / 60 + " h" : "";
+		String rest = minutes % 60 > 0 ? minutes % 60 + " min" : "";
+		return (hours + " " + rest).trim();
 	}
 
 	private void writeFont(Topic topic, StyleAppearance appearance) {
@@ -239,6 +280,17 @@ class FreeplaneMapWriter {
 			return "1.0";
 		double zoom = picture.displayWidth * MAP_UNIT_IN_PIXELS / image.getWidth();
 		return String.format(Locale.ROOT, "%.3f", zoom);
+	}
+
+	static String link(String hyperlink, String arguments) {
+		if (arguments.trim().isEmpty())
+			return link(hyperlink);
+		try {
+			return new URI("execute", "_" + hyperlink + arguments, null).toString();
+		}
+		catch (URISyntaxException e) {
+			return hyperlink;
+		}
 	}
 
 	static String link(String hyperlink) {

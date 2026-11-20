@@ -30,6 +30,11 @@ class Mm2002FileReader {
 	private static final int NOTE_HEADER_OFFSET = 9;
 	private static final int MAX_RECOVERED_LINK_LENGTH = 4096;
 	private static final int NULL_OBJECT = 0;
+	private static final int PERCENT_SHIFT = 16;
+	private static final int EXTRAS_PRESENT = 1;
+	private static final int TASK_START_OFFSET = 5;
+	private static final int TASK_DUE_OFFSET = 17;
+	private static final int TASK_DURATION_OFFSET = 25;
 	private static final int PRIORITY_MASK = 0xff;
 	private static final int NEW_CLASS_TAG = 0xffff;
 	private static final int CLASS_TAG = 0x8000;
@@ -41,8 +46,6 @@ class Mm2002FileReader {
 	private static final int STYLE_ITALIC = 0x02;
 	private static final int STYLE_FILLED = 0x08;
 	private static final int ICONS_PER_MASK = 32;
-	private static final byte[] TOPIC_END = { 0x00, 0x33, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x01, 0x00, 0x00,
-			0x00, 0x00, 0x03, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00 };
 	private static final int TOPIC_TRAILER_SIZE = 6;
 	private static final int MAIN_TOPIC_TRAILER_SIZE = 10;
 	private static final int MAIN_TOPIC_SIDE_OFFSET = 5;
@@ -98,11 +101,14 @@ class Mm2002FileReader {
 		String className = topicClass();
 		Topic topic = new Topic();
 		int contentStart = reader.position();
-		int contentEnd = reader.indexOf(TOPIC_END, contentStart);
+		int contentEnd = TopicEnd.find(reader, contentStart);
 		if (contentEnd < 0)
 			readForward(topic, EnumSet.noneOf(ReadStage.class));
-		else
+		else {
 			readContent(topic, contentStart, contentEnd);
+			topic.resource = TopicEnd.field(reader, contentEnd, 1);
+			topic.category = TopicEnd.field(reader, contentEnd, 2);
+		}
 		reader.expect(0xff);
 		int childCount = reader.u16();
 		branch.addLast(topic.text);
@@ -161,7 +167,7 @@ class Mm2002FileReader {
 			lost.remove(ReadStage.PROPERTIES);
 			problem(ImportProblem.Kind.PARTIAL_TOPIC, topic, failure, failedStage, lost);
 		}
-		reader.seek(contentEnd + TOPIC_END.length);
+		reader.seek(contentEnd + TopicEnd.lengthAt(reader, contentEnd));
 	}
 
 	private void readForward(Topic topic, EnumSet<ReadStage> read) throws IOException {
@@ -182,9 +188,11 @@ class Mm2002FileReader {
 		topic.imageHeight = reader.i32();
 		reader.skip(5);
 		reader.string();
-		int priority = reader.i32() & PRIORITY_MASK;
+		int priorityField = reader.i32();
+		int priority = priorityField & PRIORITY_MASK;
 		if ((flags & FLAG_PRIORITY) != 0)
 			topic.priority = priority;
+		topic.percentComplete = (priorityField >> PERCENT_SHIFT) & PRIORITY_MASK;
 		read.add(ReadStage.TEXT);
 		stage = ReadStage.ATTACHED_OBJECTS;
 		int objectCount = reader.i32();
@@ -210,9 +218,11 @@ class Mm2002FileReader {
 			topic.relationships.add(relationship());
 		read.add(ReadStage.RELATIONSHIPS);
 		stage = ReadStage.ICONS;
-		reader.skip(4);
+		boolean extras = reader.i32() == EXTRAS_PRESENT;
 		addIcons(topic, reader.i32(), 0);
 		read.add(ReadStage.ICONS);
+		if (extras)
+			readTask(topic);
 		reader.skip(29);
 		stage = ReadStage.CLOUD;
 		int boundaryTag = reader.u16();
@@ -233,9 +243,9 @@ class Mm2002FileReader {
 		topic.alias = reader.string();
 		reader.skip(1);
 		addIcons(topic, reader.i32(), ICONS_PER_MASK);
-		topic.hyperlink = link();
+		topic.hyperlink = link(topic);
 		reader.skip(4);
-		reader.expect(toInts(TOPIC_END));
+		skipTopicEnd();
 		read.add(ReadStage.HYPERLINK);
 	}
 
@@ -445,12 +455,42 @@ class Mm2002FileReader {
 			objectClass();
 	}
 
-	private String link() throws IOException {
+	private void readTask(Topic topic) {
+		int base = reader.position();
+		topic.taskStart = doubleAt(base + TASK_START_OFFSET);
+		topic.taskDue = doubleAt(base + TASK_DUE_OFFSET);
+		int offset = base + TASK_DURATION_OFFSET;
+		topic.taskSeconds = (reader.byteAt(offset) | reader.byteAt(offset + 1) << 8 | reader.byteAt(offset + 2) << 16
+				| (long) reader.byteAt(offset + 3) << 24) & 0xffffffffL;
+		topic.hasTask = !FreeplaneMapWriter.dateTime(topic.taskStart).isEmpty()
+				|| !FreeplaneMapWriter.dateTime(topic.taskDue).isEmpty();
+	}
+
+	private double doubleAt(int position) {
+		long bits = 0;
+		for (int i = 7; i >= 0; i--)
+			bits = bits << 8 | reader.byteAt(position + i);
+		return Double.longBitsToDouble(bits);
+	}
+
+	private void skipTopicEnd() throws IOException {
+		int length = TopicEnd.lengthAt(reader, reader.position());
+		if (length < 0)
+			throw new IOException("Unexpected MindManager 2002 content at offset " + reader.position());
+		reader.skip(length);
+	}
+
+	private String link(Topic topic) throws IOException {
 		reader.expect(VERSION_MARKER);
 		String link = reader.string();
-		reader.skip(4);
+		topic.hyperlinkArguments = reader.string();
+		reader.skip(3);
 		reader.expect(VERSION_MARKER, 0xff);
 		return link;
+	}
+
+	private String link() throws IOException {
+		return link(new Topic());
 	}
 
 	private byte[] blob() throws IOException {
@@ -538,10 +578,4 @@ class Mm2002FileReader {
 		}
 	}
 
-	private static int[] toInts(byte[] bytes) {
-		int[] ints = new int[bytes.length];
-		for (int i = 0; i < bytes.length; i++)
-			ints[i] = bytes[i] & 0xff;
-		return ints;
-	}
 }

@@ -116,6 +116,61 @@ public class Mm2002FileReaderTest {
 	}
 
 	@Test
+	public void readsHyperlinkWithApplicationArguments() throws Exception {
+		TopicSpec topic = new TopicSpec("Link", 1);
+		topic.hyperlink = "C:\\Windows\\explorer.exe";
+		topic.hyperlinkArguments = " \"C:\\My docs\"";
+
+		Topic read = read(topic).mainTopics.get(0);
+
+		assertThat(read.hyperlink).isEqualTo("C:\\Windows\\explorer.exe");
+		assertThat(read.hyperlinkArguments).isEqualTo(" \"C:\\My docs\"");
+	}
+
+	@Test
+	public void readsChildrenOfTopicWithResourceAndCategory() throws Exception {
+		TopicSpec parent = new TopicSpec("Parent", 1).child(new TopicSpec("Child", 2));
+		parent.resource = "TW";
+		parent.category = "Principe";
+
+		Mm2002Map map = read(parent);
+
+		assertThat(map.problems).isEmpty();
+		assertThat(map.mainTopics.get(0).children).extracting(topic -> topic.text).containsExactly("Child");
+	}
+
+	@Test
+	public void readsResourceAndCategory() throws Exception {
+		TopicSpec topic = new TopicSpec("Topic", 1);
+		topic.resource = "TW";
+		topic.category = "Principe";
+
+		Topic read = read(topic).mainTopics.get(0);
+
+		assertThat(read.resource).isEqualTo("TW");
+		assertThat(read.category).isEqualTo("Principe");
+	}
+
+	@Test
+	public void readsTaskDatesProgressAndEffort() throws Exception {
+		TopicSpec topic = new TopicSpec("Task", 1);
+		topic.priority = 2;
+		topic.priorityHighBits = 25 << 16;
+		topic.taskStart = 46346.5;
+		topic.taskDue = 46347.0;
+		topic.taskSeconds = 7200;
+
+		Topic read = read(topic).mainTopics.get(0);
+
+		assertThat(read.hasTask).isTrue();
+		assertThat(read.priority).isEqualTo(2);
+		assertThat(read.percentComplete).isEqualTo(25);
+		assertThat(read.taskStart).isEqualTo(46346.5);
+		assertThat(read.taskDue).isEqualTo(46347.0);
+		assertThat(read.taskSeconds).isEqualTo(7200);
+	}
+
+	@Test
 	public void readsHyperlink() throws Exception {
 		TopicSpec topic = new TopicSpec("Link", 1);
 		topic.hyperlink = "https://fr.wikipedia.org/wiki/Lune";

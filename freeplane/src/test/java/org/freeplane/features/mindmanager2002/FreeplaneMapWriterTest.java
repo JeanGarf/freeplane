@@ -223,6 +223,48 @@ public class FreeplaneMapWriterTest {
 	}
 
 	@Test
+	public void convertsApplicationLinksWithArguments() {
+		assertThat(FreeplaneMapWriter.link("C:\\Windows\\explorer.exe", " \"C:\\My docs\""))
+				.isEqualTo("execute:_C:%5CWindows%5Cexplorer.exe%20%22C:%5CMy%20docs%22");
+		assertThat(FreeplaneMapWriter.link("Mon fichier.mmp", "")).isEqualTo("Mon%20fichier.mmp");
+	}
+
+	@Test
+	public void formatsTaskDatesAndEffort() {
+		assertThat(FreeplaneMapWriter.dateTime(46346.5)).isEqualTo("2026-11-20 12:00");
+		assertThat(FreeplaneMapWriter.dateTime(Double.NaN)).isEmpty();
+		assertThat(FreeplaneMapWriter.dateTime(0)).isEmpty();
+		assertThat(FreeplaneMapWriter.duration(7200)).isEqualTo("2 h");
+		assertThat(FreeplaneMapWriter.duration(5400)).isEqualTo("1 h 30 min");
+		assertThat(FreeplaneMapWriter.duration(1800)).isEqualTo("30 min");
+	}
+
+	@Test
+	public void writesResourceCategoryAndTaskAsAttributes() throws Exception {
+		Topic topic = new Topic();
+		topic.text = "Task";
+		topic.resource = "TW";
+		topic.category = "Principe";
+		topic.hasTask = true;
+		topic.percentComplete = 25;
+		topic.taskStart = 46346.5;
+		topic.taskDue = 46347.0;
+		topic.taskSeconds = 7200;
+		Mm2002Map map = new Mm2002Map("Title");
+		map.mainTopics.add(topic);
+
+		String xml = new FreeplaneMapWriter((name, image) -> name, new ConversionTable(), style -> StyleAppearance.NONE)
+				.write(map);
+
+		assertThat(xml).contains("<attribute NAME=\"Resource\" VALUE=\"TW\"/>")
+				.contains("<attribute NAME=\"Category\" VALUE=\"Principe\"/>")
+				.contains("<attribute NAME=\"Start date\" VALUE=\"2026-11-20 12:00\"/>")
+				.contains("<attribute NAME=\"Due date\" VALUE=\"2026-11-21 00:00\"/>")
+				.contains("<attribute NAME=\"Progress\" VALUE=\"25%\"/>")
+				.contains("<attribute NAME=\"Effort\" VALUE=\"2 h\"/>");
+	}
+
+	@Test
 	public void writesNoteParagraphsAndImages() throws Exception {
 		Topic topic = topic("note", 1);
 		BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
