@@ -30,6 +30,11 @@ class Mm2002FileReader {
 	private static final int NOTE_HEADER_OFFSET = 9;
 	private static final int MAX_RECOVERED_LINK_LENGTH = 4096;
 	private static final int NULL_OBJECT = 0;
+	private static final int PERCENT_SHIFT = 16;
+	private static final int EXTRAS_PRESENT = 1;
+	private static final int TASK_START_OFFSET = 5;
+	private static final int TASK_DUE_OFFSET = 17;
+	private static final int TASK_DURATION_OFFSET = 25;
 	private static final int PRIORITY_MASK = 0xff;
 	private static final int NEW_CLASS_TAG = 0xffff;
 	private static final int CLASS_TAG = 0x8000;
@@ -99,8 +104,11 @@ class Mm2002FileReader {
 		int contentEnd = TopicEnd.find(reader, contentStart);
 		if (contentEnd < 0)
 			readForward(topic, EnumSet.noneOf(ReadStage.class));
-		else
+		else {
 			readContent(topic, contentStart, contentEnd);
+			topic.resource = TopicEnd.field(reader, contentEnd, 1);
+			topic.category = TopicEnd.field(reader, contentEnd, 2);
+		}
 		reader.expect(0xff);
 		int childCount = reader.u16();
 		branch.addLast(topic.text);
@@ -180,9 +188,11 @@ class Mm2002FileReader {
 		topic.imageHeight = reader.i32();
 		reader.skip(5);
 		reader.string();
-		int priority = reader.i32() & PRIORITY_MASK;
+		int priorityField = reader.i32();
+		int priority = priorityField & PRIORITY_MASK;
 		if ((flags & FLAG_PRIORITY) != 0)
 			topic.priority = priority;
+		topic.percentComplete = (priorityField >> PERCENT_SHIFT) & PRIORITY_MASK;
 		read.add(ReadStage.TEXT);
 		stage = ReadStage.ATTACHED_OBJECTS;
 		int objectCount = reader.i32();
@@ -208,9 +218,11 @@ class Mm2002FileReader {
 			topic.relationships.add(relationship());
 		read.add(ReadStage.RELATIONSHIPS);
 		stage = ReadStage.ICONS;
-		reader.skip(4);
+		boolean extras = reader.i32() == EXTRAS_PRESENT;
 		addIcons(topic, reader.i32(), 0);
 		read.add(ReadStage.ICONS);
+		if (extras)
+			readTask(topic);
 		reader.skip(29);
 		stage = ReadStage.CLOUD;
 		int boundaryTag = reader.u16();
@@ -441,6 +453,24 @@ class Mm2002FileReader {
 		int count = reader.i32();
 		if (count > 0)
 			objectClass();
+	}
+
+	private void readTask(Topic topic) {
+		int base = reader.position();
+		topic.taskStart = doubleAt(base + TASK_START_OFFSET);
+		topic.taskDue = doubleAt(base + TASK_DUE_OFFSET);
+		int offset = base + TASK_DURATION_OFFSET;
+		topic.taskSeconds = (reader.byteAt(offset) | reader.byteAt(offset + 1) << 8 | reader.byteAt(offset + 2) << 16
+				| (long) reader.byteAt(offset + 3) << 24) & 0xffffffffL;
+		topic.hasTask = !FreeplaneMapWriter.dateTime(topic.taskStart).isEmpty()
+				|| !FreeplaneMapWriter.dateTime(topic.taskDue).isEmpty();
+	}
+
+	private double doubleAt(int position) {
+		long bits = 0;
+		for (int i = 7; i >= 0; i--)
+			bits = bits << 8 | reader.byteAt(position + i);
+		return Double.longBitsToDouble(bits);
 	}
 
 	private void skipTopicEnd() throws IOException {

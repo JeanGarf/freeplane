@@ -16,6 +16,22 @@ class TopicEnd {
 		return -1;
 	}
 
+	static String field(ArchiveReader reader, int position, int wanted) {
+		int end = position + HEADER_SIZE;
+		for (int field = 1; field <= FIELD_COUNT; field++) {
+			int length = reader.byteAt(end + 1) | reader.byteAt(end + 2) << 8 | reader.byteAt(end + 3) << 16
+					| reader.byteAt(end + 4) << 24;
+			if (field == wanted) {
+				byte[] value = new byte[length];
+				for (int i = 0; i < length; i++)
+					value[i] = (byte) reader.byteAt(end + FIELD_HEADER_SIZE + i);
+				return new String(value, ArchiveReader.ANSI).replace("\0", "");
+			}
+			end += FIELD_HEADER_SIZE + length;
+		}
+		return "";
+	}
+
 	static int lengthAt(ArchiveReader reader, int position) {
 		if (reader.byteAt(position) != START || reader.byteAt(position + 1) != MARKER)
 			return -1;

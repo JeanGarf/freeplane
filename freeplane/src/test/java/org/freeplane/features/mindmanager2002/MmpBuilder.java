@@ -27,6 +27,9 @@ class MmpBuilder {
 		int secondIconMask;
 		String hyperlink = "";
 		String hyperlinkArguments = "";
+		double taskStart = Double.NaN;
+		double taskDue = Double.NaN;
+		int taskSeconds;
 		String resource = "";
 		String category = "";
 		byte[] note;
@@ -181,9 +184,18 @@ class MmpBuilder {
 		u32(topic.relationships.size());
 		for (byte[] relationship : topic.relationships)
 			out.write(relationship, 0, relationship.length);
-		u32(topic.iconMask != 0 ? 1 : 0);
+		boolean task = !Double.isNaN(topic.taskStart);
+		u32(topic.iconMask != 0 || task ? 1 : 0);
 		u32(topic.iconMask);
-		zeros(29);
+		if (task) {
+			zeros(5);
+			u64(Double.doubleToLongBits(topic.taskStart));
+			zeros(4);
+			u64(Double.doubleToLongBits(topic.taskDue));
+			u32(topic.taskSeconds);
+		}
+		else
+			zeros(29);
 		if (topic.cloudColor >= 0) {
 			classTag("BoundaryC", false, 0);
 			bytes(0x32, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x32, 0x01);
@@ -346,6 +358,11 @@ class MmpBuilder {
 	private void u16(int value) {
 		u8(value);
 		u8(value >> 8);
+	}
+
+	private void u64(long value) {
+		u32(value & 0xffffffffL);
+		u32(value >>> 32);
 	}
 
 	private void u32(long value) {

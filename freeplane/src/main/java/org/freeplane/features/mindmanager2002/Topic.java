@@ -26,6 +26,13 @@ class Topic {
 	final List<Integer> iconIndexes = new ArrayList<>();
 	String hyperlink = "";
 	String hyperlinkArguments = "";
+	String resource = "";
+	String category = "";
+	boolean hasTask;
+	int percentComplete;
+	double taskStart = Double.NaN;
+	double taskDue = Double.NaN;
+	long taskSeconds;
 	Note note = Note.EMPTY;
 	final List<Picture> pictures = new ArrayList<>();
 	final List<FreeText> freeTexts = new ArrayList<>();
