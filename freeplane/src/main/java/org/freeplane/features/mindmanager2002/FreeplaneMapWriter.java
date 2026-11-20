@@ -80,7 +80,7 @@ class FreeplaneMapWriter {
 		else if (topic.hasFill())
 			xml.append(" STYLE=\"bubble\" BACKGROUND_COLOR=\"").append(color(topic.fillColor)).append('"');
 		if (!topic.hyperlink.isEmpty())
-			xml.append(" LINK=\"").append(attribute(link(topic.hyperlink))).append('"');
+			xml.append(" LINK=\"").append(attribute(link(topic.hyperlink, topic.hyperlinkArguments))).append('"');
 		String alias = alias(topic.alias);
 		if (!alias.isEmpty())
 			xml.append(" ALIAS=\"").append(alias).append('"');
@@ -239,6 +239,17 @@ class FreeplaneMapWriter {
 			return "1.0";
 		double zoom = picture.displayWidth * MAP_UNIT_IN_PIXELS / image.getWidth();
 		return String.format(Locale.ROOT, "%.3f", zoom);
+	}
+
+	static String link(String hyperlink, String arguments) {
+		if (arguments.trim().isEmpty())
+			return link(hyperlink);
+		try {
+			return new URI("execute", "_" + hyperlink + arguments, null).toString();
+		}
+		catch (URISyntaxException e) {
+			return hyperlink;
+		}
 	}
 
 	static String link(String hyperlink) {

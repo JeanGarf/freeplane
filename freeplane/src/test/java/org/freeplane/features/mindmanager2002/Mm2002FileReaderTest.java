@@ -116,6 +116,30 @@ public class Mm2002FileReaderTest {
 	}
 
 	@Test
+	public void readsHyperlinkWithApplicationArguments() throws Exception {
+		TopicSpec topic = new TopicSpec("Link", 1);
+		topic.hyperlink = "C:\\Windows\\explorer.exe";
+		topic.hyperlinkArguments = " \"C:\\My docs\"";
+
+		Topic read = read(topic).mainTopics.get(0);
+
+		assertThat(read.hyperlink).isEqualTo("C:\\Windows\\explorer.exe");
+		assertThat(read.hyperlinkArguments).isEqualTo(" \"C:\\My docs\"");
+	}
+
+	@Test
+	public void readsChildrenOfTopicWithResourceAndCategory() throws Exception {
+		TopicSpec parent = new TopicSpec("Parent", 1).child(new TopicSpec("Child", 2));
+		parent.resource = "TW";
+		parent.category = "Principe";
+
+		Mm2002Map map = read(parent);
+
+		assertThat(map.problems).isEmpty();
+		assertThat(map.mainTopics.get(0).children).extracting(topic -> topic.text).containsExactly("Child");
+	}
+
+	@Test
 	public void readsHyperlink() throws Exception {
 		TopicSpec topic = new TopicSpec("Link", 1);
 		topic.hyperlink = "https://fr.wikipedia.org/wiki/Lune";

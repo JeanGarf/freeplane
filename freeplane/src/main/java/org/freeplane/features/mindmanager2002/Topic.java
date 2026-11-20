@@ -25,6 +25,7 @@ class Topic {
 	int priority;
 	final List<Integer> iconIndexes = new ArrayList<>();
 	String hyperlink = "";
+	String hyperlinkArguments = "";
 	Note note = Note.EMPTY;
 	final List<Picture> pictures = new ArrayList<>();
 	final List<FreeText> freeTexts = new ArrayList<>();

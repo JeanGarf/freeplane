@@ -41,8 +41,6 @@ class Mm2002FileReader {
 	private static final int STYLE_ITALIC = 0x02;
 	private static final int STYLE_FILLED = 0x08;
 	private static final int ICONS_PER_MASK = 32;
-	private static final byte[] TOPIC_END = { 0x00, 0x33, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x02, 0x01, 0x00, 0x00,
-			0x00, 0x00, 0x03, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00 };
 	private static final int TOPIC_TRAILER_SIZE = 6;
 	private static final int MAIN_TOPIC_TRAILER_SIZE = 10;
 	private static final int MAIN_TOPIC_SIDE_OFFSET = 5;
@@ -98,7 +96,7 @@ class Mm2002FileReader {
 		String className = topicClass();
 		Topic topic = new Topic();
 		int contentStart = reader.position();
-		int contentEnd = reader.indexOf(TOPIC_END, contentStart);
+		int contentEnd = TopicEnd.find(reader, contentStart);
 		if (contentEnd < 0)
 			readForward(topic, EnumSet.noneOf(ReadStage.class));
 		else
@@ -161,7 +159,7 @@ class Mm2002FileReader {
 			lost.remove(ReadStage.PROPERTIES);
 			problem(ImportProblem.Kind.PARTIAL_TOPIC, topic, failure, failedStage, lost);
 		}
-		reader.seek(contentEnd + TOPIC_END.length);
+		reader.seek(contentEnd + TopicEnd.lengthAt(reader, contentEnd));
 	}
 
 	private void readForward(Topic topic, EnumSet<ReadStage> read) throws IOException {
@@ -233,9 +231,9 @@ class Mm2002FileReader {
 		topic.alias = reader.string();
 		reader.skip(1);
 		addIcons(topic, reader.i32(), ICONS_PER_MASK);
-		topic.hyperlink = link();
+		topic.hyperlink = link(topic);
 		reader.skip(4);
-		reader.expect(toInts(TOPIC_END));
+		skipTopicEnd();
 		read.add(ReadStage.HYPERLINK);
 	}
 
@@ -445,12 +443,24 @@ class Mm2002FileReader {
 			objectClass();
 	}
 
-	private String link() throws IOException {
+	private void skipTopicEnd() throws IOException {
+		int length = TopicEnd.lengthAt(reader, reader.position());
+		if (length < 0)
+			throw new IOException("Unexpected MindManager 2002 content at offset " + reader.position());
+		reader.skip(length);
+	}
+
+	private String link(Topic topic) throws IOException {
 		reader.expect(VERSION_MARKER);
 		String link = reader.string();
-		reader.skip(4);
+		topic.hyperlinkArguments = reader.string();
+		reader.skip(3);
 		reader.expect(VERSION_MARKER, 0xff);
 		return link;
+	}
+
+	private String link() throws IOException {
+		return link(new Topic());
 	}
 
 	private byte[] blob() throws IOException {
@@ -538,10 +548,4 @@ class Mm2002FileReader {
 		}
 	}
 
-	private static int[] toInts(byte[] bytes) {
-		int[] ints = new int[bytes.length];
-		for (int i = 0; i < bytes.length; i++)
-			ints[i] = bytes[i] & 0xff;
-		return ints;
-	}
 }

@@ -223,6 +223,13 @@ public class FreeplaneMapWriterTest {
 	}
 
 	@Test
+	public void convertsApplicationLinksWithArguments() {
+		assertThat(FreeplaneMapWriter.link("C:\\Windows\\explorer.exe", " \"C:\\My docs\""))
+				.isEqualTo("execute:_C:%5CWindows%5Cexplorer.exe%20%22C:%5CMy%20docs%22");
+		assertThat(FreeplaneMapWriter.link("Mon fichier.mmp", "")).isEqualTo("Mon%20fichier.mmp");
+	}
+
+	@Test
 	public void writesNoteParagraphsAndImages() throws Exception {
 		Topic topic = topic("note", 1);
 		BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
