@@ -16,6 +16,7 @@ class Topic {
 	int y;
 	boolean bold;
 	boolean italic;
+	boolean strikedThrough;
 	boolean filled;
 	int lineColor = NO_COLOR;
 	int fillColor = NO_COLOR;

@@ -261,7 +261,23 @@ public class FreeplaneMapWriterTest {
 				.contains("<attribute NAME=\"Start date\" VALUE=\"2026-11-20 12:00\"/>")
 				.contains("<attribute NAME=\"Due date\" VALUE=\"2026-11-21 00:00\"/>")
 				.contains("<attribute NAME=\"Progress\" VALUE=\"25%\"/>")
-				.contains("<attribute NAME=\"Effort\" VALUE=\"2 h\"/>");
+				.contains("<attribute NAME=\"Effort\" VALUE=\"2 h\"/>")
+				.contains("<hook NAME=\"plugins/TimeManagementReminder.xml\">")
+				.contains("REMINDUSERAT=\"" + FreeplaneMapWriter.epochMillis(46347.0) + "\"");
+	}
+
+	@Test
+	public void writesStrikethroughFont() throws Exception {
+		Topic topic = new Topic();
+		topic.text = "Struck";
+		topic.strikedThrough = true;
+		Mm2002Map map = new Mm2002Map("Title");
+		map.mainTopics.add(topic);
+
+		String xml = new FreeplaneMapWriter((name, image) -> name, new ConversionTable(), style -> StyleAppearance.NONE)
+				.write(map);
+
+		assertThat(xml).contains("<font STRIKETHROUGH=\"true\"/>");
 	}
 
 	@Test

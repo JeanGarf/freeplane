@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayDeque;
@@ -99,6 +100,7 @@ class FreeplaneMapWriter {
 		writeIcons(topic);
 		writeSymbols(topic);
 		writeAttributes(topic);
+		writeReminder(topic);
 		writeRelationships(topic);
 		writeNote(topic);
 		for (FreeText freeText : topic.freeTexts)
@@ -123,6 +125,21 @@ class FreeplaneMapWriter {
 			writeAttribute("Effort", duration(topic.taskSeconds));
 	}
 
+	private void writeReminder(Topic topic) {
+		if (!topic.hasTask || epochMillis(topic.taskDue) < 0)
+			return;
+		xml.append("<hook NAME=\"plugins/TimeManagementReminder.xml\">\n<Parameters REMINDUSERAT=\"")
+				.append(epochMillis(topic.taskDue)).append("\" PERIOD=\"1\" UNIT=\"DAY\"/>\n</hook>\n");
+	}
+
+	static long epochMillis(double oleDate) {
+		if (dateTime(oleDate).isEmpty())
+			return -1;
+		long millis = Math.round(oleDate * MILLIS_PER_DAY);
+		return LocalDateTime.of(1899, 12, 30, 0, 0).plus(millis, ChronoUnit.MILLIS).atZone(ZoneId.systemDefault())
+				.toInstant().toEpochMilli();
+	}
+
 	private void writeAttribute(String name, String value) {
 		if (!value.isEmpty())
 			xml.append("<attribute NAME=\"").append(name).append("\" VALUE=\"").append(attribute(value))
@@ -145,11 +162,16 @@ class FreeplaneMapWriter {
 	}
 
 	private void writeFont(Topic topic, StyleAppearance appearance) {
-		writeFont(topic.fontName, topic.fontSize, topic.bold && !appearance.bold, topic.italic && !appearance.italic);
+		writeFont(topic.fontName, topic.fontSize, topic.bold && !appearance.bold, topic.italic && !appearance.italic,
+				topic.strikedThrough);
 	}
 
 	private void writeFont(String fontName, int fontSize, boolean bold, boolean italic) {
-		if (fontName == null && !bold && !italic)
+		writeFont(fontName, fontSize, bold, italic, false);
+	}
+
+	private void writeFont(String fontName, int fontSize, boolean bold, boolean italic, boolean strikedThrough) {
+		if (fontName == null && !bold && !italic && !strikedThrough)
 			return;
 		xml.append("<font");
 		if (fontName != null && !fontName.isEmpty())
@@ -160,6 +182,8 @@ class FreeplaneMapWriter {
 			xml.append(" BOLD=\"true\"");
 		if (italic)
 			xml.append(" ITALIC=\"true\"");
+		if (strikedThrough)
+			xml.append(" STRIKETHROUGH=\"true\"");
 		xml.append("/>\n");
 	}
 
