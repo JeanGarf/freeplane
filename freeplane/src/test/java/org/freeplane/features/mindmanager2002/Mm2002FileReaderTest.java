@@ -75,6 +75,17 @@ public class Mm2002FileReaderTest {
 	}
 
 	@Test
+	public void readsStrikethrough() throws Exception {
+		TopicSpec topic = new TopicSpec("Struck", 1);
+		topic.style = 0x20 | 0x08;
+
+		Topic read = read(topic).mainTopics.get(0);
+
+		assertThat(read.strikedThrough).isTrue();
+		assertThat(read.bold).isFalse();
+	}
+
+	@Test
 	public void readsStyleColorsAndInlineFont() throws Exception {
 		TopicSpec topic = new TopicSpec("Styled", 1);
 		topic.style = 0x08 | 0x01 | 0x02;

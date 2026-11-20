@@ -45,6 +45,7 @@ class Mm2002FileReader {
 	private static final int STYLE_BOLD = 0x01;
 	private static final int STYLE_ITALIC = 0x02;
 	private static final int STYLE_FILLED = 0x08;
+	private static final int STYLE_STRIKETHROUGH = 0x20;
 	private static final int ICONS_PER_MASK = 32;
 	private static final int TOPIC_TRAILER_SIZE = 6;
 	private static final int MAIN_TOPIC_TRAILER_SIZE = 10;
@@ -362,6 +363,7 @@ class Mm2002FileReader {
 		topic.bold = (style & STYLE_BOLD) != 0;
 		topic.italic = (style & STYLE_ITALIC) != 0;
 		topic.filled = (style & STYLE_FILLED) != 0;
+		topic.strikedThrough = (style & STYLE_STRIKETHROUGH) != 0;
 		topic.lineColor = reader.color();
 		topic.fillColor = reader.color();
 		int fontReference = reader.u16();
