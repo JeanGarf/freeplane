@@ -45,10 +45,8 @@ public class SharpBezierEdgeView extends SharpEdgeView {
 	@Override
 	protected void createStart() {
 		super.createStart();
-		if (getSource().isRoot()) {
-			final MainView mainView = getSource().getMainView();
-			start = shapeStart = new Point(mainView.getWidth() / 2, mainView.getHeight() / 2);
-		}
+		final MainView mainView = getSource().getMainView();
+		start = shapeStart = new Point(mainView.getWidth() / 2, mainView.getHeight() / 2);
 	}
 
 	@Override
@@ -68,9 +66,10 @@ public class SharpBezierEdgeView extends SharpEdgeView {
 		final int[] endDirection = direction(getEndConnectorLocation());
 		final float startHalfWidth = getMap().getZoomed(getWidth() + 1);
 		final float endHalfWidth = Math.max(0.5f, getTarget().getMainView().getPaintedBorderWidth() / 2f);
-		geometry = new SharpBezierGeometry(new Point2D.Float(start.x, start.y),
-		    new Point2D.Float(shapeStart.x, shapeStart.y), new Point2D.Float(end.x, end.y),
-		    endDirection[0], endDirection[1], startHalfWidth, endHalfWidth, zoom * XCTRL);
+		final MainView sourceView = getSource().getMainView();
+		geometry = new SharpBezierGeometry(new Point2D.Float(start.x, start.y), new Point2D.Float(end.x, end.y),
+		    endDirection[0], endDirection[1], startHalfWidth, endHalfWidth, zoom * XCTRL,
+		    sourceView.getWidth() / 2f, sourceView.getHeight() / 2f);
 		return geometry;
 	}
 

@@ -11,7 +11,8 @@ public class SharpBezierGeometryTest {
 	private static SharpBezierGeometry geometry(float startX, float startY, float endX, float endY, float startHalf,
 	                                            float endHalf) {
 		final Point2D.Float start = new Point2D.Float(startX, startY);
-		return new SharpBezierGeometry(start, start, new Point2D.Float(endX, endY), -1, 0, startHalf, endHalf, 12f);
+		return new SharpBezierGeometry(start, new Point2D.Float(endX, endY), -1, 0, startHalf, endHalf, 12f, 1000f,
+		    1000f);
 	}
 
 	private static int thicknessAt(GeneralPath shape, float x, float fromY, float toY) {
@@ -46,9 +47,9 @@ public class SharpBezierGeometryTest {
 	public void bordersStayNearStraightChordBeforeBendingAtTheEnd() {
 		final GeneralPath shape = geometry(0, 0, 200, 200, 20f, 0.5f).shape();
 
-		assertThat(shape.contains(60, 60)).isTrue();
-		assertThat(shape.contains(60, 100)).isFalse();
 		assertThat(shape.contains(30, 30)).isTrue();
+		assertThat(shape.contains(150, 0)).isFalse();
+		assertThat(shape.contains(0, 150)).isFalse();
 	}
 
 	@Test
@@ -65,5 +66,22 @@ public class SharpBezierGeometryTest {
 
 		assertThat(end.getX()).isEqualTo(200);
 		assertThat(end.getY()).isEqualTo(50);
+	}
+
+	@Test
+	public void baseStaysInsideSourceNode() {
+		final Point2D.Float start = new Point2D.Float(0, 0);
+		final GeneralPath shape = new SharpBezierGeometry(start, new Point2D.Float(300, 300), -1, 0, 40f, 0.5f, 12f,
+		    30f, 10f).shape();
+
+		assertThat(shape.getBounds2D().getMinX()).isGreaterThanOrEqualTo(-30.5);
+		assertThat(shape.getBounds2D().getMinY()).isGreaterThanOrEqualTo(-10.5);
+	}
+
+	@Test
+	public void baseKeepsFullWidthWhenNodeIsLargeEnough() {
+		final GeneralPath shape = geometry(0, 0, 200, 0, 20f, 0.5f).shape();
+
+		assertThat(thicknessAt(shape, 1, -30, 30)).isBetween(38, 40);
 	}
 }

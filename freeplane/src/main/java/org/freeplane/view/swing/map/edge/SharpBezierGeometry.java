@@ -5,11 +5,10 @@ import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 
 class SharpBezierGeometry {
-	private static final float STRAIGHT_PART = 0.6f;
-	private static final float END_BEND_RATIO = 0.4f;
+	private static final float STRAIGHT_PART = 0.2f;
+	private static final float END_BEND_RATIO = 0.3f;
 
 	private final Point2D.Float start;
-	private final Point2D.Float shapeStart;
 	private final Point2D.Float end;
 	private final int endDirectionX;
 	private final int endDirectionY;
@@ -21,39 +20,37 @@ class SharpBezierGeometry {
 	private final float endNormalX;
 	private final float endNormalY;
 
-	SharpBezierGeometry(Point2D.Float start, Point2D.Float shapeStart, Point2D.Float end, int endDirectionX,
-	                    int endDirectionY, float startHalfWidth, float endHalfWidth, float minimumControlDistance) {
+	SharpBezierGeometry(Point2D.Float start, Point2D.Float end, int endDirectionX, int endDirectionY,
+	                    float startHalfWidth, float endHalfWidth, float minimumControlDistance, float nodeHalfWidth,
+	                    float nodeHalfHeight) {
 		this.start = start;
-		this.shapeStart = shapeStart;
 		this.end = end;
 		this.endDirectionX = endDirectionX;
 		this.endDirectionY = endDirectionY;
-		this.startHalfWidth = startHalfWidth;
 		this.endHalfWidth = endHalfWidth;
 		this.minimumControlDistance = minimumControlDistance;
-		final float chordX = end.x - shapeStart.x;
-		final float chordY = end.y - shapeStart.y;
+		final float chordX = end.x - start.x;
+		final float chordY = end.y - start.y;
 		final float chord = (float) Math.hypot(chordX, chordY);
 		final float directionX = chord == 0 ? 1 : chordX / chord;
 		final float directionY = chord == 0 ? 0 : chordY / chord;
 		this.startNormalX = -directionY;
 		this.startNormalY = directionX;
+		this.startHalfWidth = Math.min(startHalfWidth,
+		    Math.min(limit(nodeHalfWidth, startNormalX), limit(nodeHalfHeight, startNormalY)));
 		this.endNormalX = endDirectionY;
 		this.endNormalY = -endDirectionX;
+	}
+
+	private static float limit(float room, float normalComponent) {
+		return Math.abs(normalComponent) < 1e-6f ? Float.MAX_VALUE : room / Math.abs(normalComponent);
 	}
 
 	GeneralPath shape() {
 		final Border minus = border(-1);
 		final Border plus = border(1);
 		final GeneralPath path = new GeneralPath();
-		if (start != shapeStart) {
-			path.moveTo(start.x + startNormalX * startHalfWidth,
-			    start.y + startNormalY * startHalfWidth);
-			path.lineTo(start.x - startNormalX * startHalfWidth, start.y - startNormalY * startHalfWidth);
-			path.lineTo(minus.from.x, minus.from.y);
-		}
-		else
-			path.moveTo(minus.from.x, minus.from.y);
+		path.moveTo(minus.from.x, minus.from.y);
 		path.curveTo(minus.control1.x, minus.control1.y, minus.control2.x, minus.control2.y, minus.to.x, minus.to.y);
 		path.lineTo(plus.to.x, plus.to.y);
 		path.curveTo(plus.control2.x, plus.control2.y, plus.control1.x, plus.control1.y, plus.from.x, plus.from.y);
@@ -65,16 +62,14 @@ class SharpBezierGeometry {
 		final Border center = border(0);
 		final Path2D line = new Path2D.Float();
 		line.moveTo(start.x, start.y);
-		if (start != shapeStart)
-			line.lineTo(shapeStart.x, shapeStart.y);
 		line.curveTo(center.control1.x, center.control1.y, center.control2.x, center.control2.y, center.to.x,
 		    center.to.y);
 		return line;
 	}
 
 	private Border border(int side) {
-		final Point2D.Float from = new Point2D.Float(shapeStart.x + side * startNormalX * startHalfWidth,
-		    shapeStart.y + side * startNormalY * startHalfWidth);
+		final Point2D.Float from = new Point2D.Float(start.x + side * startNormalX * startHalfWidth,
+		    start.y + side * startNormalY * startHalfWidth);
 		final Point2D.Float to = new Point2D.Float(end.x + side * endNormalX * endHalfWidth,
 		    end.y + side * endNormalY * endHalfWidth);
 		final float length = (float) Math.hypot(to.x - from.x, to.y - from.y);
