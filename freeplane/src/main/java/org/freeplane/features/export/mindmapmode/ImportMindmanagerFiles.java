@@ -28,12 +28,14 @@ import java.util.zip.ZipInputStream;
 import org.freeplane.api.swing.JFileChooser;
 
 import org.freeplane.core.ui.AFreeplaneAction;
+import org.freeplane.core.ui.menubuilders.generic.UserRole;
 import org.freeplane.core.ui.CaseSensitiveFileNameExtensionFilter;
 import org.freeplane.core.ui.components.UITools;
 import org.freeplane.core.util.LogUtils;
 import org.freeplane.core.util.TextUtils;
 import org.freeplane.features.mindmanager2002.MindmanagerFileFormat;
 import org.freeplane.features.mindmanager2002.Mindmanager2002Importer;
+import org.freeplane.features.map.MapModel;
 import org.freeplane.features.mode.Controller;
 
 /**
@@ -49,6 +51,10 @@ public class ImportMindmanagerFiles extends AFreeplaneAction {
 		super("ImportMindmanagerFiles");
 	}
 
+	@Override
+	public void afterMapChange(final UserRole userRole) {
+	}
+
 	public void actionPerformed(final ActionEvent e) {
 		final Component component = Controller.getCurrentController().getViewController().getCurrentRootComponent();
 		final JFileChooser chooser = UITools.newFileChooser();
@@ -56,7 +62,8 @@ public class ImportMindmanagerFiles extends AFreeplaneAction {
 				new String[] { "mmap", "mmp" }, TextUtils.getText("ImportMindmanagerFiles.filter"));
 		chooser.setFileFilter(filter);
 		chooser.setAcceptAllFileFilterUsed(true);
-		final File mmFile = Controller.getCurrentController().getMap().getFile();
+		final MapModel currentMap = Controller.getCurrentController().getMap();
+		final File mmFile = currentMap != null ? currentMap.getFile() : null;
 		if (mmFile != null && mmFile.getParentFile() != null) {
 			chooser.setSelectedFile(mmFile.getParentFile());
 		}
