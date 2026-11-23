@@ -56,8 +56,8 @@ public class SharpBezierEdgeView extends SharpEdgeView {
         final Point startControlPoint = getControlPoint(getStartConnectorLocation());
         final float zoom = getMap().getZoom();
         final float zoomedXCTRL = zoom * XCTRL;
-        final float xctrl = startControlPoint.x * zoomedXCTRL;
-        final float yctrl = startControlPoint.y * zoomedXCTRL;
+        final float xctrl = startControlPoint.x * ControlDistance.of(zoomedXCTRL, end.x - shapeStart.x);
+        final float yctrl = startControlPoint.y * ControlDistance.of(zoomedXCTRL, end.y - shapeStart.y);
         final Point endControlPoint = getControlPoint(getEndConnectorLocation());
         final float w = (getWidth() / 2f + 1) * zoom;
         final float w2 = w / 2;
