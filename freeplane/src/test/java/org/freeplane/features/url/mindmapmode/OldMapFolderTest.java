@@ -25,6 +25,16 @@ public class OldMapFolderTest {
 	}
 
 	@Test
+	public void fileIsMovedIntoTheNamedFolder() throws Exception {
+		final File directory = Files.createTempDirectory("oldmap").toFile();
+		final File file = newMapIn(directory, "a.mmp");
+		final File moved = OldMapFolder.moveInto(file, "OLD_mmp");
+		assertThat(moved).isEqualTo(new File(new File(directory, "OLD_mmp"), "a.mmp"));
+		assertThat(moved).exists();
+		assertThat(file).doesNotExist();
+	}
+
+	@Test
 	public void existingFileOfTheSameNameIsNeverOverwritten() throws Exception {
 		final File directory = Files.createTempDirectory("oldmap").toFile();
 		final File first = OldMapFolder.moveInto(newMapIn(directory, "a.mm"));

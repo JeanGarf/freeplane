@@ -6,11 +6,15 @@ import java.nio.file.Files;
 
 import org.freeplane.core.util.LogUtils;
 
-class OldMapFolder {
-	static final String NAME = "OLD_MM_TO_DELETE";
+public class OldMapFolder {
+	public static final String NAME = "OLD_MM_TO_DELETE";
 
 	static File moveInto(File map) {
-		final File folder = new File(map.getAbsoluteFile().getParentFile(), NAME);
+		return moveInto(map, NAME);
+	}
+
+	public static File moveInto(File map, String folderName) {
+		final File folder = new File(map.getAbsoluteFile().getParentFile(), folderName);
 		try {
 			if (!folder.isDirectory() && !folder.mkdirs())
 				throw new IOException("Cannot create " + folder);

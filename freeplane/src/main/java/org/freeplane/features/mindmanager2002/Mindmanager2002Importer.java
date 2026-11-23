@@ -21,8 +21,10 @@ import org.freeplane.core.util.TextUtils;
 import org.freeplane.features.export.mindmapmode.XmlImporter;
 import org.freeplane.features.mode.Controller;
 import org.freeplane.features.url.UrlManager;
+import org.freeplane.features.url.mindmapmode.OldMapFolder;
 
 public class Mindmanager2002Importer {
+	private static final String OLD_MMP_FOLDER = "OLD_mmp";
 	private static final int MAX_VISIBLE_PROBLEMS = 15;
 	private static final ImportProblem.Texts FREEPLANE_TEXTS = new ImportProblem.Texts() {
 		@Override
@@ -57,6 +59,7 @@ public class Mindmanager2002Importer {
 			final String xml = MindManager2002Converter.toFreeplaneXml(map, outputFile, table, styles::appearance);
 			XmlImporter.newMap(new StringReader(xml), outputFile,
 					newMap -> UserStyleCreator.addMissingStyles(newMap, missingStyles));
+			OldMapFolder.moveInto(mmpFile, OLD_MMP_FOLDER);
 			if (!map.problems.isEmpty())
 				showProblems(map.problems);
 		}
