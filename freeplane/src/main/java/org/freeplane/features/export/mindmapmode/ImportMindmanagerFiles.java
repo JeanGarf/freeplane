@@ -35,6 +35,7 @@ import org.freeplane.core.util.LogUtils;
 import org.freeplane.core.util.TextUtils;
 import org.freeplane.features.mindmanager2002.MindmanagerFileFormat;
 import org.freeplane.features.mindmanager2002.Mindmanager2002Importer;
+import org.freeplane.features.mindmanager2002.SourceFileArchiver;
 import org.freeplane.features.map.MapModel;
 import org.freeplane.features.mode.Controller;
 
@@ -96,7 +97,8 @@ public class ImportMindmanagerFiles extends AFreeplaneAction {
 				}
 				final String xsltFileName = "/xslt/mindmanager2mm.xsl";
 				final File outputFile = new File (file.getParent(), file.getName() + org.freeplane.features.url.UrlManager.FREEPLANE_FILE_EXTENSION);
-				new XmlImporter(xsltFileName).importXml(in, outputFile);
+				final MapModel map = new XmlImporter(xsltFileName).importXml(in, outputFile);
+				SourceFileArchiver.archiveAfterFirstSave(map, file, SourceFileArchiver.MMAP_FOLDER);
 				break;
 			}
 		}
