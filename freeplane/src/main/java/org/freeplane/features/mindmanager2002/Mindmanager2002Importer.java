@@ -19,6 +19,7 @@ import org.freeplane.core.ui.components.UITools;
 import org.freeplane.core.util.LogUtils;
 import org.freeplane.core.util.TextUtils;
 import org.freeplane.features.export.mindmapmode.XmlImporter;
+import org.freeplane.features.map.MapModel;
 import org.freeplane.features.mode.Controller;
 import org.freeplane.features.url.UrlManager;
 
@@ -55,8 +56,9 @@ public class Mindmanager2002Importer {
 			if (choices.addNewStylesToTemplate && !missingStyles.isEmpty())
 				addToTemplate(styles, missingStyles);
 			final String xml = MindManager2002Converter.toFreeplaneXml(map, outputFile, table, styles::appearance);
-			XmlImporter.newMap(new StringReader(xml), outputFile,
+			final MapModel importedMap = XmlImporter.newMap(new StringReader(xml), outputFile,
 					newMap -> UserStyleCreator.addMissingStyles(newMap, missingStyles));
+			SourceFileArchiver.archiveAfterFirstSave(importedMap, mmpFile, SourceFileArchiver.MMP_FOLDER);
 			if (!map.problems.isEmpty())
 				showProblems(map.problems);
 		}

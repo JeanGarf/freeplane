@@ -31,24 +31,24 @@ public class XmlImporter	{
 		this.xsltResource = xsltResource;
 	}
 
-	public void importXml(final File file) throws XMLParseException, MalformedURLException, IOException, XMLException{
+	public MapModel importXml(final File file) throws XMLParseException, MalformedURLException, IOException, XMLException{
 		final File directory = file.getParentFile();
 		final File outputFile = new File (directory, file.getName() + org.freeplane.features.url.UrlManager.FREEPLANE_FILE_EXTENSION);
-		importXml(file, outputFile);
+		return importXml(file, outputFile);
 	}
 
-	public void importXml(final File inputFile, final File outputFile) throws FileNotFoundException, IOException,
+	public MapModel importXml(final File inputFile, final File outputFile) throws FileNotFoundException, IOException,
 			XMLParseException, XMLException, MalformedURLException {
 		try(FileInputStream in = new FileInputStream(inputFile)){
-			importXml(in, outputFile);
+			return importXml(in, outputFile);
 		}
 	}
 
-	public void importXml(final InputStream in, final File outputFile) throws IOException, FileNotFoundException,
+	public MapModel importXml(final InputStream in, final File outputFile) throws IOException, FileNotFoundException,
 	XMLParseException, XMLException, MalformedURLException {
 		if(! confirmNewMap(outputFile))
-			return;
-		newMap(new XsltPipeReaderFactory(xsltResource).getReader(in), outputFile);
+			return null;
+		return newMap(new XsltPipeReaderFactory(xsltResource).getReader(in), outputFile);
 	}
 
 	public static boolean confirmNewMap(final File outputFile) throws MalformedURLException {
@@ -64,12 +64,12 @@ public class XmlImporter	{
 		return true;
 	}
 
-	public static void newMap(final Reader reader, final File outputFile)
+	public static MapModel newMap(final Reader reader, final File outputFile)
 			throws IOException, XMLException, MalformedURLException {
-		newMap(reader, outputFile, map -> {});
+		return newMap(reader, outputFile, map -> {});
 	}
 
-	public static void newMap(final Reader reader, final File outputFile, final Consumer<MapModel> beforeDisplay)
+	public static MapModel newMap(final Reader reader, final File outputFile, final Consumer<MapModel> beforeDisplay)
 			throws IOException, XMLException, MalformedURLException {
 		final ModeController modeController = Controller.getCurrentModeController();
 		final MapController mapController = modeController.getMapController();
@@ -81,6 +81,7 @@ public class XmlImporter	{
 		mapController.fireMapCreated(map);
 		beforeDisplay.accept(map);
 		mapController.createMapView(map);
+		return map;
 	}
 
 }
