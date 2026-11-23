@@ -427,7 +427,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 				}
 				final StyleRowLayout layout = new StyleRowLayout(getWidth(), getHeight(), acceleratorWidth(style));
 				paintCurrentMarker(g);
-				paintStyle(g, layout.style);
+				paintStyle(g, layout);
 				paintAccelerator(g, layout.accelerator);
 				paintMenuArrow(g, layout.menu, hovered == Target.MENU);
 			}
@@ -455,10 +455,14 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 			g.drawRect(2, 2, getWidth() - 5, getHeight() - 5);
 		}
 
-		private void paintStyle(Graphics2D g, Rectangle bounds) {
+		private void paintStyle(Graphics2D g, StyleRowLayout layout) {
+			final Rectangle bounds = layout.style;
 			final MapModel map = Controller.getCurrentController().getMap();
 			final StyleLook look = lookReader.read(map, style);
 			final Font font = look == null ? list.getFont() : StyleLookPainter.fontFor(look, list.getFont());
+			if (look != null)
+				StyleEdgePainter.paint(g, look.edge, look.shape, layout.edge.x, layout.edge.width, 0, getHeight(), bounds.y,
+				    bounds.height);
 			if (look != null)
 				StyleLookPainter.paintBackground(g, look, bounds.x, bounds.y, bounds.width, bounds.height);
 			g.setFont(font);

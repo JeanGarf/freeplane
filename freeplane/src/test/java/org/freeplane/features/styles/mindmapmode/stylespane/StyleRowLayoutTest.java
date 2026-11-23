@@ -12,7 +12,7 @@ public class StyleRowLayoutTest {
 	public void placesMenuArrowAtRightEnd() {
 		final StyleRowLayout layout = new StyleRowLayout(200, 24, 0);
 
-		assertThat(layout.menu.x + layout.menu.width).isEqualTo(200 - StyleRowLayout.PADDING);
+		assertThat(layout.menu.x + layout.menu.width).isEqualTo(200 - StyleRowLayout.ROW_INSET);
 	}
 
 	@Test
@@ -44,5 +44,13 @@ public class StyleRowLayoutTest {
 		final StyleRowLayout layout = new StyleRowLayout(20, 24, 40);
 
 		assertThat(layout.style.width).isZero();
+	}
+
+	@Test
+	public void reservesRoomForIncomingEdgeLeftOfStyle() {
+		final StyleRowLayout layout = new StyleRowLayout(200, 24, 0);
+
+		assertThat(layout.edge.x + layout.edge.width).isEqualTo(layout.style.x);
+		assertThat(layout.edge.width).isEqualTo(StyleRowLayout.EDGE_WIDTH);
 	}
 }

@@ -30,7 +30,10 @@ public class StyleLookReader {
 		NodeStyleShape shape = nodeStyles.getShape(styleNode, option);
 		if (shape == NodeStyleShape.as_parent || shape == NodeStyleShape.combined)
 			shape = NodeStyleShape.bubble;
+		final EdgeController edges = EdgeController.getController(modeController);
+		final StyleEdge edge = new StyleEdge(edges.getColor(styleNode, option), edges.getWidth(styleNode, option),
+		    edges.getDash(styleNode, option), edges.getStyle(styleNode, option));
 		return new StyleLook(nodeStyles.getBackgroundColor(styleNode, option), nodeStyles.getColor(styleNode, option),
-		    border, font.getFamily(), font.isBold(), font.isItalic(), shape);
+		    border, font.getFamily(), font.isBold(), font.isItalic(), shape, edge);
 	}
 }
