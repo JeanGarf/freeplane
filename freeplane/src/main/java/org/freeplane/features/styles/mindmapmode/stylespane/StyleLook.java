@@ -16,9 +16,15 @@ public class StyleLook implements ButtonLook {
 	public final boolean bold;
 	public final boolean italic;
 	public final NodeStyleShape shape;
+	public final StyleEdge edge;
 
 	public StyleLook(Color background, Color foreground, Color border, String fontFamily, boolean bold,
 	                 boolean italic, NodeStyleShape shape) {
+		this(background, foreground, border, fontFamily, bold, italic, shape, null);
+	}
+
+	public StyleLook(Color background, Color foreground, Color border, String fontFamily, boolean bold,
+	                 boolean italic, NodeStyleShape shape, StyleEdge edge) {
 		this.background = background;
 		this.foreground = foreground;
 		this.border = border;
@@ -26,6 +32,7 @@ public class StyleLook implements ButtonLook {
 		this.bold = bold;
 		this.italic = italic;
 		this.shape = shape;
+		this.edge = edge;
 	}
 
 	@Override

@@ -12,8 +12,10 @@ class StyleRowLayout {
 	static final int MENU_SIZE = 18;
 	static final int GAP = 6;
 	static final int ROW_INSET = 8;
+	static final int EDGE_WIDTH = 20;
 	static final int ROW_VERTICAL_PADDING = 12;
 
+	final Rectangle edge;
 	final Rectangle style;
 	final Rectangle accelerator;
 	final Rectangle menu;
@@ -23,7 +25,9 @@ class StyleRowLayout {
 		final int acceleratorGap = acceleratorWidth > 0 ? GAP : 0;
 		accelerator = new Rectangle(menu.x - GAP - acceleratorWidth, 0, acceleratorWidth, height);
 		final int styleRight = accelerator.x - acceleratorGap;
-		style = new Rectangle(ROW_INSET, ROW_VERTICAL_PADDING / 2, Math.max(0, styleRight - ROW_INSET), height - ROW_VERTICAL_PADDING);
+		edge = new Rectangle(ROW_INSET, 0, EDGE_WIDTH, height);
+		final int styleLeft = edge.x + edge.width;
+		style = new Rectangle(styleLeft, ROW_VERTICAL_PADDING / 2, Math.max(0, styleRight - styleLeft), height - ROW_VERTICAL_PADDING);
 	}
 
 	Target targetAt(Point point) {
