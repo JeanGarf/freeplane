@@ -6,77 +6,98 @@ import java.awt.geom.Point2D;
 
 class SharpBezierGeometry {
 	private static final float STRAIGHT_PART = 0.6f;
-	private static final float END_BEND_RATIO = 0.25f;
+	private static final float END_BEND_RATIO = 0.4f;
 
 	private final Point2D.Float start;
 	private final Point2D.Float shapeStart;
 	private final Point2D.Float end;
-	private final float startX;
-	private final float startY;
+	private final int endDirectionX;
+	private final int endDirectionY;
+	private final float startHalfWidth;
+	private final float endHalfWidth;
+	private final float minimumControlDistance;
 	private final float startNormalX;
 	private final float startNormalY;
 	private final float endNormalX;
 	private final float endNormalY;
-	private final float startHalfWidth;
-	private final float endHalfWidth;
-	private final Point2D.Float startControl;
-	private final Point2D.Float endControl;
 
 	SharpBezierGeometry(Point2D.Float start, Point2D.Float shapeStart, Point2D.Float end, int endDirectionX,
-	                    int endDirectionY, float startHalfWidth,
-	                    float endHalfWidth, float minimumControlDistance) {
+	                    int endDirectionY, float startHalfWidth, float endHalfWidth, float minimumControlDistance) {
 		this.start = start;
 		this.shapeStart = shapeStart;
 		this.end = end;
+		this.endDirectionX = endDirectionX;
+		this.endDirectionY = endDirectionY;
 		this.startHalfWidth = startHalfWidth;
 		this.endHalfWidth = endHalfWidth;
-		this.startX = shapeStart.x;
-		this.startY = shapeStart.y;
-		this.endNormalX = endDirectionY;
-		this.endNormalY = -endDirectionX;
+		this.minimumControlDistance = minimumControlDistance;
 		final float chordX = end.x - shapeStart.x;
 		final float chordY = end.y - shapeStart.y;
 		final float chord = (float) Math.hypot(chordX, chordY);
-		final float startDirectionX = chord == 0 ? 1 : chordX / chord;
-		final float startDirectionY = chord == 0 ? 0 : chordY / chord;
-		this.startNormalX = -startDirectionY;
-		this.startNormalY = startDirectionX;
-		final float startDistance = chord * STRAIGHT_PART;
-		final float endDistance = Math.max(minimumControlDistance,
-		    Math.abs(endDirectionX != 0 ? chordX : chordY) * END_BEND_RATIO);
-		startControl = new Point2D.Float(shapeStart.x + startDirectionX * startDistance,
-		    shapeStart.y + startDirectionY * startDistance);
-		endControl = new Point2D.Float(end.x + endDirectionX * endDistance, end.y + endDirectionY * endDistance);
+		final float directionX = chord == 0 ? 1 : chordX / chord;
+		final float directionY = chord == 0 ? 0 : chordY / chord;
+		this.startNormalX = -directionY;
+		this.startNormalY = directionX;
+		this.endNormalX = endDirectionY;
+		this.endNormalY = -endDirectionX;
 	}
 
 	GeneralPath shape() {
+		final Border minus = border(-1);
+		final Border plus = border(1);
 		final GeneralPath path = new GeneralPath();
-		final float sx = startNormalX * startHalfWidth;
-		final float sy = startNormalY * startHalfWidth;
-		final float ex = endNormalX * endHalfWidth;
-		final float ey = endNormalY * endHalfWidth;
 		if (start != shapeStart) {
-			path.moveTo(start.x + sx, start.y + sy);
-			path.lineTo(start.x - sx, start.y - sy);
-			path.lineTo(startX - sx, startY - sy);
+			path.moveTo(start.x + startNormalX * startHalfWidth,
+			    start.y + startNormalY * startHalfWidth);
+			path.lineTo(start.x - startNormalX * startHalfWidth, start.y - startNormalY * startHalfWidth);
+			path.lineTo(minus.from.x, minus.from.y);
 		}
 		else
-			path.moveTo(startX - sx, startY - sy);
-		path.curveTo(startControl.x - sx, startControl.y - sy, endControl.x - ex, endControl.y - ey, end.x - ex,
-		    end.y - ey);
-		path.lineTo(end.x + ex, end.y + ey);
-		path.curveTo(endControl.x + ex, endControl.y + ey, startControl.x + sx, startControl.y + sy, startX + sx,
-		    startY + sy);
+			path.moveTo(minus.from.x, minus.from.y);
+		path.curveTo(minus.control1.x, minus.control1.y, minus.control2.x, minus.control2.y, minus.to.x, minus.to.y);
+		path.lineTo(plus.to.x, plus.to.y);
+		path.curveTo(plus.control2.x, plus.control2.y, plus.control1.x, plus.control1.y, plus.from.x, plus.from.y);
 		path.closePath();
 		return path;
 	}
 
 	Path2D centerLine() {
+		final Border center = border(0);
 		final Path2D line = new Path2D.Float();
 		line.moveTo(start.x, start.y);
 		if (start != shapeStart)
-			line.lineTo(startX, startY);
-		line.curveTo(startControl.x, startControl.y, endControl.x, endControl.y, end.x, end.y);
+			line.lineTo(shapeStart.x, shapeStart.y);
+		line.curveTo(center.control1.x, center.control1.y, center.control2.x, center.control2.y, center.to.x,
+		    center.to.y);
 		return line;
+	}
+
+	private Border border(int side) {
+		final Point2D.Float from = new Point2D.Float(shapeStart.x + side * startNormalX * startHalfWidth,
+		    shapeStart.y + side * startNormalY * startHalfWidth);
+		final Point2D.Float to = new Point2D.Float(end.x + side * endNormalX * endHalfWidth,
+		    end.y + side * endNormalY * endHalfWidth);
+		final float length = (float) Math.hypot(to.x - from.x, to.y - from.y);
+		final float directionX = length == 0 ? 1 : (to.x - from.x) / length;
+		final float directionY = length == 0 ? 0 : (to.y - from.y) / length;
+		final float bend = Math.max(minimumControlDistance, length * END_BEND_RATIO);
+		final Point2D.Float control1 = new Point2D.Float(from.x + directionX * length * STRAIGHT_PART,
+		    from.y + directionY * length * STRAIGHT_PART);
+		final Point2D.Float control2 = new Point2D.Float(to.x + endDirectionX * bend, to.y + endDirectionY * bend);
+		return new Border(from, control1, control2, to);
+	}
+
+	private static class Border {
+		final Point2D.Float from;
+		final Point2D.Float control1;
+		final Point2D.Float control2;
+		final Point2D.Float to;
+
+		Border(Point2D.Float from, Point2D.Float control1, Point2D.Float control2, Point2D.Float to) {
+			this.from = from;
+			this.control1 = control1;
+			this.control2 = control2;
+			this.to = to;
+		}
 	}
 }

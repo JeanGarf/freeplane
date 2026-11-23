@@ -48,7 +48,7 @@ public class SharpBezierGeometryTest {
 
 		assertThat(shape.contains(60, 60)).isTrue();
 		assertThat(shape.contains(60, 100)).isFalse();
-		assertThat(shape.contains(120, 120)).isTrue();
+		assertThat(shape.contains(90, 90)).isTrue();
 	}
 
 	@Test
