@@ -65,29 +65,13 @@ public class SharpBezierEdgeView extends SharpEdgeView {
 
 	private SharpBezierGeometry update() {
 		final float zoom = getMap().getZoom();
-		final int[] startDirection = startDirection();
 		final int[] endDirection = direction(getEndConnectorLocation());
 		final float startHalfWidth = getMap().getZoomed(getWidth() + 1);
 		final float endHalfWidth = Math.max(0.5f, getTarget().getMainView().getPaintedBorderWidth() / 2f);
 		geometry = new SharpBezierGeometry(new Point2D.Float(start.x, start.y),
-		    new Point2D.Float(shapeStart.x, shapeStart.y), new Point2D.Float(end.x, end.y), startDirection[0],
-		    startDirection[1], endDirection[0], endDirection[1], startHalfWidth, endHalfWidth, zoom * XCTRL);
+		    new Point2D.Float(shapeStart.x, shapeStart.y), new Point2D.Float(end.x, end.y),
+		    endDirection[0], endDirection[1], startHalfWidth, endHalfWidth, zoom * XCTRL);
 		return geometry;
-	}
-
-	private int[] startDirection() {
-		if (getSource().isRoot()) {
-			final int dx = end.x - start.x;
-			final int dy = end.y - start.y;
-			final int halfHeight = getSource().getMainView().getHeight() / 2;
-			if (Math.abs(dy) > halfHeight)
-				return new int[] { 0, dy > 0 ? 1 : -1 };
-			return new int[] { dx >= 0 ? 1 : -1, 0 };
-		}
-		final int[] direction = direction(getStartConnectorLocation());
-		if (direction[0] == 0 && direction[1] == 0)
-			return new int[] { end.x >= shapeStart.x ? 1 : -1, 0 };
-		return direction;
 	}
 
 	private static int[] direction(ConnectorLocation location) {
