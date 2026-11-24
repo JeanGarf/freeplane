@@ -54,12 +54,17 @@ class RevertingProperty extends PropertyBean {
 		revertButton.setText(IconFont.REVERT_CHARACTER);
 		revertButton.setToolTipText(TEXT);
 		revertButton.setBorder(BORDER);
+		revertButton.putClientProperty(LocalModificationCounter.MARKER, Boolean.TRUE);
 		revertButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setValue(! getBooleanValue());
 			}
 		});
+	}
+
+	void excludeFromLocalModifications() {
+		revertButton.putClientProperty(LocalModificationCounter.MARKER, null);
 	}
 
 	@Override
@@ -92,6 +97,7 @@ class RevertingProperty extends PropertyBean {
 	}
 
 	public void setValue(final boolean booleanValue) {
+	    revertButton.putClientProperty(LocalModificationCounter.STATE, booleanValue);
 	    if(revertButton.isVisible() != booleanValue) {
 	    	if(booleanValue == false && revertButton.isFocusOwner()) {
 	    		moveFocusToPreviousFocusableComponent();

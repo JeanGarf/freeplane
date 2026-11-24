@@ -105,6 +105,9 @@ public class StyleEditorPanel extends JPanel {
 
 	private PanelEnabler panelEnabler;
 
+	private LocalModificationBadge localModificationBadge;
+	private NodeModel displayedNode;
+
 	private final StyleEditorPanelSize panelConfiguration;
 
     private final ModeController modeController;
@@ -213,6 +216,8 @@ public class StyleEditorPanel extends JPanel {
 		formBuilder.getLayout().setHonorsVisibility(false);
 		add(formBuilder.getPanel(), BorderLayout.CENTER);
 		CollapsibleSections.install(formBuilder.getPanel(), "format");
+		localModificationBadge = new LocalModificationBadge(formBuilder.getPanel(), () -> displayedNode);
+		add(localModificationBadge, BorderLayout.NORTH);
 		addListeners();
 		setFont(this, panelConfiguration.fontSize);
 	}
@@ -239,9 +244,12 @@ public class StyleEditorPanel extends JPanel {
 		}
 		internalChange = true;
 		try {
+			displayedNode = node;
 			for (int i=0; i<controlGroups.length; i++) {
 				controlGroups[i].setStyle(node, panelEnabler != null && panelEnabler.canEdit);
 			}
+			if (localModificationBadge != null)
+				localModificationBadge.refresh();
 
 		}
 		finally {
