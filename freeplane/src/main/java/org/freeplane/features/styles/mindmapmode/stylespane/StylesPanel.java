@@ -20,6 +20,7 @@ import java.awt.event.MouseEvent;
 import java.util.List;
 
 import javax.swing.DefaultListModel;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JList;
@@ -177,6 +178,8 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 			final Rectangle arrow = layout.menu;
 			showMenu(style, new Point(cell.x + arrow.x + arrow.width, cell.y + arrow.y + arrow.height), true);
 		}
+		else if (layout.targetAt(new Point(point.x - cell.x, point.y - cell.y)) == Target.EDIT)
+			editStyle(style);
 		else
 			applyStyle(style);
 	}
@@ -189,6 +192,16 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		apply.setEnabled(node != null);
 		apply.addActionListener(e -> applyStyle(style));
 		menu.add(apply);
+		final JMenuItem selectAll = new JMenuItem(TextUtils.format("styles_panel.select_all", style.toString()));
+		selectAll.setEnabled(node != null);
+		selectAll.addActionListener(e -> selectNodesUsing(style));
+		menu.add(selectAll);
+		final JMenuItem updateTemplate = new JMenuItem(
+		    TextUtils.format("styles_panel.update_template", style.toString()),
+		    ResourceController.getResourceController().getIcon("/images/stylePaneUpdate.svg"));
+		updateTemplate.addActionListener(e -> updateAssociatedTemplateWithStyle(style));
+		menu.add(updateTemplate);
+		menu.addSeparator();
 		final JMenuItem update = new JMenuItem(TextUtils.format("styles_panel.update_style", style.toString()),
 		    ResourceController.getResourceController().getIcon("/images/stylePaneUpdate.svg"));
 		update.setEnabled(node != null);
@@ -200,20 +213,10 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		updateWithTemplate.setEnabled(node != null);
 		updateWithTemplate.addActionListener(e -> updateStyleFromSelectedNode(style, true));
 		menu.add(updateWithTemplate);
-		final JMenuItem updateTemplate = new JMenuItem(
-		    TextUtils.format("styles_panel.update_template", style.toString()),
-		    ResourceController.getResourceController().getIcon("/images/stylePaneUpdate.svg"));
-		updateTemplate.addActionListener(e -> updateAssociatedTemplateWithStyle(style));
-		menu.add(updateTemplate);
 		final JMenuItem edit = new JMenuItem(TextUtils.getText("styles_panel.edit_style"),
 		    ResourceController.getResourceController().getIcon("/images/stylePaneEdit.svg"));
 		edit.addActionListener(e -> editStyle(style));
 		menu.add(edit);
-		menu.addSeparator();
-		final JMenuItem selectAll = new JMenuItem(TextUtils.format("styles_panel.select_all", style.toString()));
-		selectAll.setEnabled(node != null);
-		selectAll.addActionListener(e -> selectNodesUsing(style));
-		menu.add(selectAll);
 		final int x = alignRightEdge ? Math.max(0, location.x - menu.getPreferredSize().width) : location.x;
 		menu.show(list, x, location.y);
 	}
@@ -376,6 +379,8 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 			final StyleRowLayout rowLayout = layoutFor(cell, model.get(index).style);
 			if (rowLayout.targetAt(inCell) == Target.MENU)
 				return TextUtils.getText("styles_panel.menu");
+			if (rowLayout.targetAt(inCell) == Target.EDIT)
+				return TextUtils.getText("styles_panel.edit_style");
 			final int modifications = modificationsOf(model.get(index).style);
 			if (modifications > 0 && StyleModificationMarker.boundsIn(rowLayout.style).contains(inCell))
 				return modifications == 1 ? TextUtils.getText("format_panel.local_modifications_one")
@@ -454,6 +459,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 				paintStyle(g, layout);
 				paintModificationMarker(g, layout.style);
 				paintAccelerator(g, layout.accelerator);
+				paintEditIcon(g, layout.edit, hovered == Target.EDIT);
 				paintMenuArrow(g, layout.menu, hovered == Target.MENU);
 			}
 			finally {
@@ -524,6 +530,18 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 			g.setColor(UIManager.getColor("Label.disabledForeground"));
 			final FontMetrics metrics = g.getFontMetrics();
 			g.drawString(text, bounds.x, bounds.y + (bounds.height - metrics.getHeight()) / 2 + metrics.getAscent());
+		}
+
+		private void paintEditIcon(Graphics2D g, Rectangle bounds, boolean hover) {
+			if (hover) {
+				g.setColor(new Color(128, 128, 128, 60));
+				g.fillRoundRect(bounds.x, bounds.y, bounds.width, bounds.height, 6, 6);
+			}
+			final Icon icon = ResourceController.getResourceController().getIcon("/images/stylePaneEdit.svg");
+			if (icon == null)
+				return;
+			icon.paintIcon(this, g, bounds.x + (bounds.width - icon.getIconWidth()) / 2,
+			    bounds.y + (bounds.height - icon.getIconHeight()) / 2);
 		}
 
 		private void paintMenuArrow(Graphics2D g, Rectangle bounds, boolean hover) {
