@@ -55,8 +55,7 @@ class StyleBoxModificationLayer extends LayerUI<JComponent> {
 	protected void processMouseEvent(MouseEvent e, JLayer<? extends JComponent> layer) {
 		if (e.getID() == MouseEvent.MOUSE_PRESSED && isOnMarker(e, layer)) {
 			final Rectangle marker = markerBounds(layer.getWidth(), layer.getHeight());
-			LocalModificationMenu.show(layer, marker.x, marker.y + marker.height,
-			    LocalModificationTracker.itemsFor(nodeSupplier.get()));
+			LocalModificationMenu.show(layer, marker.x, marker.y + marker.height, nodeSupplier.get());
 			e.consume();
 		}
 	}

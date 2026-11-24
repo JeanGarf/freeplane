@@ -10,10 +10,20 @@ public class LocalModificationTracker {
 	public static class Item {
 		public final String label;
 		final Runnable reveal;
+		final Runnable revert;
 
-		public Item(String label, Runnable reveal) {
+		public Item(String label, Runnable reveal, Runnable revert) {
 			this.label = label;
 			this.reveal = reveal;
+			this.revert = revert;
+		}
+
+		public Item(String label, Runnable reveal) {
+			this(label, reveal, () -> { });
+		}
+
+		public void revert() {
+			revert.run();
 		}
 
 		public void reveal() {

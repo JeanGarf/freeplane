@@ -29,13 +29,16 @@ class LocalModificationCounter {
 	static void revertAll(Container root) {
 		final List<JComponent> buttons = new ArrayList<>();
 		collectLocallySet(root, buttons);
-		for (JComponent button : buttons) {
-			final Object action = button.getClientProperty(REVERT_ACTION);
-			if (action instanceof Runnable)
-				((Runnable) action).run();
-			else if (button instanceof AbstractButton)
-				((AbstractButton) button).doClick(0);
-		}
+		for (JComponent button : buttons)
+			revert(button);
+	}
+
+	static void revert(JComponent button) {
+		final Object action = button.getClientProperty(REVERT_ACTION);
+		if (action instanceof Runnable)
+			((Runnable) action).run();
+		else if (button instanceof AbstractButton)
+			((AbstractButton) button).doClick(0);
 	}
 
 	private static void collectLocallySet(Container container, List<JComponent> buttons) {
