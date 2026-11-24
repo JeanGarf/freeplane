@@ -89,10 +89,10 @@ public class HorizontalEdgeView extends EdgeView {
 	            else if(source.getChildNodesAlignment() == ChildNodesAlignment.BEFORE_PARENT)
 	                start = mainView.getTopPoint();
 	            else if(target.isTopOrLeft()){
-	                start = mainView.getLeftPoint();
+	                start = exitingPoint(mainView, mainView.getLeftPoint(), ConnectorLocation.LEFT, usesHorizontalLayout);
 	            }
 	            else{
-	                start = mainView.getRightPoint();
+	                start = exitingPoint(mainView, mainView.getRightPoint(), ConnectorLocation.RIGHT, usesHorizontalLayout);
 	            }
 
 	        }
