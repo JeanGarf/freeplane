@@ -44,6 +44,8 @@ public class Mindmanager2002Importer {
 			if (!XmlImporter.confirmNewMap(outputFile))
 				return;
 			final Mm2002Map map = MindManager2002Converter.read(mmpFile);
+			if (map.hasMindManagerFileLinks() && confirmLinkRetargeting())
+				map.retargetMindManagerFileLinks();
 			final File tableFile = new File(ResourceController.getResourceController().getFreeplaneUserDirectory(),
 					ConversionTable.FILE_NAME);
 			final ConversionTable table = ConversionTable.load(tableFile);
@@ -66,6 +68,12 @@ public class Mindmanager2002Importer {
 			LogUtils.warn(e);
 			UITools.errorMessage(TextUtils.format("mindmanager2002.import_error", e.getMessage()));
 		}
+	}
+
+	private boolean confirmLinkRetargeting() {
+		final Component parent = Controller.getCurrentController().getViewController().getCurrentRootComponent();
+		return JOptionPane.showConfirmDialog(parent, TextUtils.getText("mindmanager2002.retarget_links"), "Freeplane",
+				JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
 	}
 
 	private void showProblems(List<ImportProblem> problems) {

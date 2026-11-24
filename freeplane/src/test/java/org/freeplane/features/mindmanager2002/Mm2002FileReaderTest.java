@@ -242,6 +242,23 @@ public class Mm2002FileReaderTest {
 	}
 
 	@Test
+	public void embeddedFreeTextOfRelationshipDoesNotShiftObjectIndexes() throws Exception {
+		TopicSpec source = new TopicSpec("Source", 1);
+		source.relationships.add(MmpBuilder.relationshipWithEmbeddedFreeText(10, 1, 2, "label", 0xff0000));
+		TopicSpec withSymbol = new TopicSpec("Symbol", 2);
+		withSymbol.symbol = new byte[] { 1, 2, 3 };
+		TopicSpec next = new TopicSpec("Next", 3);
+		next.symbol = new byte[] { 9 };
+
+		Mm2002Map map = read(source, withSymbol, next);
+
+		assertThat(map.problems).isEmpty();
+		assertThat(map.mainTopics.get(0).relationships.get(0).label).isEqualTo("label");
+		assertThat(map.mainTopics.get(1).pictures.get(0).data).containsExactly(1, 2, 3);
+		assertThat(map.mainTopics.get(2).pictures.get(0).data).containsExactly(9);
+	}
+
+	@Test
 	public void readsLegendLabels() throws Exception {
 		String[][] legend = { { "Notions clefs", "99ccff" }, { "Exemples", "ccffcc" } };
 
