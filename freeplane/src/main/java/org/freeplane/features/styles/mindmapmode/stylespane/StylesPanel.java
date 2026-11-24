@@ -183,6 +183,10 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		final IMapSelection selection = Controller.getCurrentController().getSelection();
 		final NodeModel node = selection == null ? null : selection.getSelected();
 		final JPopupMenu menu = new JPopupMenu();
+		final JMenuItem apply = new JMenuItem(TextUtils.format("styles_panel.apply_style_named", style.toString()));
+		apply.setEnabled(node != null);
+		apply.addActionListener(e -> applyStyle(style));
+		menu.add(apply);
 		final JMenuItem update = new JMenuItem(TextUtils.format("styles_panel.update_style", style.toString()),
 		    ResourceController.getResourceController().getIcon("/images/stylePaneUpdate.svg"));
 		update.setEnabled(node != null);
