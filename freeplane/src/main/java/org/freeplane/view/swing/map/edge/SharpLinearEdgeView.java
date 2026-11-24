@@ -22,9 +22,10 @@ package org.freeplane.view.swing.map.edge;
 import java.awt.Component;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.Polygon;
 import java.awt.Stroke;
+import java.awt.geom.Point2D;
 
+import org.freeplane.view.swing.map.MainView;
 import org.freeplane.view.swing.map.NodeView;
 import org.freeplane.view.swing.map.link.CollisionDetector;
 
@@ -37,39 +38,30 @@ public class SharpLinearEdgeView extends SharpEdgeView {
     }
 
 	@Override
+	protected void createStart() {
+		super.createStart();
+		final MainView mainView = getSource().getMainView();
+		start = shapeStart = new Point(mainView.getWidth() / 2, mainView.getHeight() / 2);
+	}
+
+	@Override
 	public Stroke getStroke() {
 		return getStroke(0);
 	}
 
 	@Override
 	protected void draw(final Graphics2D g) {
-        final int deltaX = getDeltaX();
-        final int deltaY = getDeltaY();
-        if(start != shapeStart) {
-        	final int xs[] = { start.x, shapeStart.x + deltaX, end.x, shapeStart.x - deltaX};
-        	final int ys[] = { start.y, shapeStart.y + deltaY, end.y, shapeStart.y - deltaY};
-        	g.fillPolygon(xs, ys, 4);
-        } else {
-        	final int xs[] = { shapeStart.x + deltaX, end.x, shapeStart.x - deltaX};
-        	final int ys[] = { shapeStart.y + deltaY, end.y, shapeStart.y - deltaY };
-        	g.fillPolygon(xs, ys, 3);
-        }
+		g.fill(geometry().shape());
 	}
 
 	@Override
 	public boolean detectCollision(final Point p) {
-		final int w = getMap().getZoomed(getWidth() / 2 + 1);
-		final Polygon polygon;
-		if(start != shapeStart) {
-        	final int xs[] = { start.x, shapeStart.x, end.x, shapeStart.x, start.x};
-        	final int ys[] = { start.y, shapeStart.y, end.y, shapeStart.y, start.y};
-			polygon = new Polygon(xs, ys, 5);
-		}
-		else {
-			final int xs[] = { start.x, end.x, start.x };
-			final int ys[] = { start.y + w, end.y, start.y - w };
-			polygon = new Polygon(xs, ys, 3);
-		}
-		return new CollisionDetector().detectCollision(p, polygon);
+		return new CollisionDetector().detectCollision(p, geometry().shape());
+	}
+
+	private SharpLinearGeometry geometry() {
+		final MainView sourceView = getSource().getMainView();
+		return new SharpLinearGeometry(new Point2D.Float(start.x, start.y), new Point2D.Float(end.x, end.y),
+		    getMap().getZoomed(getWidth() + 1), sourceView.getWidth() / 2f, sourceView.getHeight() / 2f);
 	}
 }
