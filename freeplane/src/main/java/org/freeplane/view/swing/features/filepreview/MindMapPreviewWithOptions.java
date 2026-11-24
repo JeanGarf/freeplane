@@ -1,5 +1,8 @@
 package org.freeplane.view.swing.features.filepreview;
 
+import java.awt.Component;
+import java.io.File;
+
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
@@ -12,6 +15,8 @@ import org.freeplane.core.util.TextUtils;
 import org.freeplane.features.mode.Controller;
 import org.freeplane.features.mode.ModeController;
 import org.freeplane.features.url.mindmapmode.MFileManager;
+import org.freeplane.features.url.mindmapmode.TemplateBrowseDirectory;
+import org.freeplane.features.url.mindmapmode.TemplateManager;
 
 public class MindMapPreviewWithOptions extends Box{
     public static MindMapPreviewWithOptions createFileOpenDialogAndOptions(String title) {
@@ -78,6 +83,15 @@ public class MindMapPreviewWithOptions extends Box{
         return this;
     }
 
+
+    public int showOpenDialog(Component parent) {
+        final File proposed = TemplateBrowseDirectory.SESSION.proposed(TemplateManager.INSTANCE.defaultUserTemplateDir());
+        if (proposed != null)
+            fileChooser.setCurrentDirectory(proposed);
+        final int result = fileChooser.showOpenDialog(parent);
+        TemplateBrowseDirectory.SESSION.remember(fileChooser.getCurrentDirectory());
+        return result;
+    }
 
     public JFileChooser getFileChooser() {
         return fileChooser;

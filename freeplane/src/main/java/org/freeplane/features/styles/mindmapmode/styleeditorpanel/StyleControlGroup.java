@@ -254,7 +254,7 @@ class StyleControlGroup implements ControlGroup{
                             TextUtils.getText("select_associated_template")
                     );
                     JFileChooser fileChooser = previewWithOptions.getFileChooser();
-                    final int returnVal = fileChooser.showOpenDialog(UITools.getCurrentFrame());
+                    final int returnVal = previewWithOptions.showOpenDialog(UITools.getCurrentFrame());
                     if (returnVal != JFileChooser.APPROVE_OPTION) {
                         return;
                     }
