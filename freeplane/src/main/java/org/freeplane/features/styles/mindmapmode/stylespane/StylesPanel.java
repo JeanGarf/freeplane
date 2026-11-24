@@ -462,7 +462,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 			final Font font = look == null ? list.getFont() : StyleLookPainter.fontFor(look, list.getFont());
 			if (look != null)
 				StyleEdgePainter.paint(g, look.edge, look.shape, layout.edge.x, layout.edge.width, 0, getHeight(), bounds.y,
-				    bounds.height);
+				    bounds.height, StyleLookPainter.paintedBorderWidth(look));
 			if (look != null)
 				StyleLookPainter.paintBackground(g, look, bounds.x, bounds.y, bounds.width, bounds.height);
 			g.setFont(font);
