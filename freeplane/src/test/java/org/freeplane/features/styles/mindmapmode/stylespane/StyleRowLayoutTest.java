@@ -29,14 +29,14 @@ public class StyleRowLayoutTest {
 
 		assertThat(layout.accelerator.width).isEqualTo(30);
 		assertThat(layout.style.x + layout.style.width).isLessThan(layout.accelerator.x);
-		assertThat(layout.accelerator.x + layout.accelerator.width + StyleRowLayout.GAP).isEqualTo(layout.menu.x);
+		assertThat(layout.accelerator.x + layout.accelerator.width + StyleRowLayout.GAP).isEqualTo(layout.edit.x);
 	}
 
 	@Test
 	public void styleFillsAllRoomWhenThereIsNoAccelerator() {
 		final StyleRowLayout layout = new StyleRowLayout(200, 24, 0);
 
-		assertThat(layout.style.x + layout.style.width).isEqualTo(layout.menu.x - StyleRowLayout.GAP);
+		assertThat(layout.style.x + layout.style.width).isEqualTo(layout.edit.x - StyleRowLayout.GAP);
 	}
 
 	@Test
@@ -52,5 +52,20 @@ public class StyleRowLayoutTest {
 
 		assertThat(layout.edge.x + layout.edge.width).isEqualTo(layout.style.x);
 		assertThat(layout.edge.width).isEqualTo(StyleRowLayout.EDGE_WIDTH);
+	}
+
+	@Test
+	public void placesEditIconJustLeftOfMenuArrow() {
+		final StyleRowLayout layout = new StyleRowLayout(200, 24, 0);
+
+		assertThat(layout.edit.x + layout.edit.width + StyleRowLayout.EDIT_GAP).isEqualTo(layout.menu.x);
+		assertThat(layout.edit.y).isEqualTo(layout.menu.y);
+	}
+
+	@Test
+	public void identifiesEditIconByPosition() {
+		final StyleRowLayout layout = new StyleRowLayout(200, 24, 0);
+
+		assertThat(layout.targetAt(new Point(layout.edit.x + 2, 12))).isEqualTo(Target.EDIT);
 	}
 }
