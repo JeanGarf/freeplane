@@ -34,6 +34,7 @@ import org.freeplane.core.undo.IActor;
 import org.freeplane.core.util.ObjectRule;
 import org.freeplane.core.util.TextUtils;
 import org.freeplane.features.edge.EdgeColorConfiguration;
+import org.freeplane.features.edge.EdgeAttachment;
 import org.freeplane.features.edge.EdgeController;
 import org.freeplane.features.edge.EdgeModel;
 import org.freeplane.features.edge.EdgeStyle;
@@ -82,6 +83,9 @@ public class MEdgeController extends EdgeController {
 			final Dash dash = fromStyle.getDash();
 			if (dash != null)
 				toStyle.setDash(dash);
+			final EdgeAttachment attachment = fromStyle.getAttachment();
+			if (attachment != null)
+				toStyle.setAttachment(attachment);
 		}
 
 		@Override
@@ -123,6 +127,11 @@ public class MEdgeController extends EdgeController {
 				delta.setWidth(width);
 				deltaFound = true;
 			}
+			final EdgeAttachment attachment = fromStyle.getAttachment();
+			if(attachment != null && whichStyle.getAttachment() == null){
+				delta.setAttachment(attachment);
+				deltaFound = true;
+			}
 			if(deltaFound)
 				from.addExtension(delta);
 		}
@@ -135,6 +144,7 @@ public class MEdgeController extends EdgeController {
 			resolveColor(to);
 			resolveWidth(to);
 			resolveDash(to);
+			resolveAttachment(to);
 			resolveStyle(to);
         }
 
@@ -184,6 +194,22 @@ public class MEdgeController extends EdgeController {
 
 		private Dash getDash(NodeModel node) {
 			return modeController.getExtension(EdgeController.class).getDash(node, StyleOption.FOR_UNSELECTED_NODE, false);
+		}
+
+		private void resolveAttachment(NodeModel to) {
+	        if (null != getAttachment(to))
+				return;
+			for(NodeModel source = to.getParentNode(); source != null; source = source.getParentNode() ){
+				final EdgeAttachment attachment = getAttachment(source);
+				if(attachment != null){
+					EdgeModel.createEdgeModel(to).setAttachment(attachment);
+					return;
+				}
+			}
+        }
+
+		private EdgeAttachment getAttachment(NodeModel node) {
+			return modeController.getExtension(EdgeController.class).getAttachment(node, StyleOption.FOR_UNSELECTED_NODE, false);
 		}
 
 		private void resolveStyle(NodeModel to) {
@@ -376,6 +402,44 @@ public class MEdgeController extends EdgeController {
 				EdgeModel.createEdgeModel(node).setDash(oldDash);
 				modeController.getMapController().nodeChanged(node);
 				edgeWidthRefresh(node);
+			}
+		};
+		modeController.execute(actor, node.getMap());
+	}
+
+	public void setAttachment(final NodeModel node, final EdgeAttachment attachment) {
+		final ModeController modeController = Controller.getCurrentModeController();
+		final EdgeAttachment oldAttachment = EdgeModel.createEdgeModel(node).getAttachment();
+		if (attachment == oldAttachment) {
+			return;
+		}
+		final IActor actor = new IActor() {
+			@Override
+			public void act() {
+				EdgeModel.createEdgeModel(node).setAttachment(attachment);
+				refresh(node);
+			}
+
+			private void refresh(final NodeModel node) {
+				modeController.getMapController().nodeChanged(node);
+				for (final NodeModel child : node.getChildren()) {
+					if (child.getViewers().isEmpty())
+						continue;
+					final EdgeModel edge = EdgeModel.getModel(child);
+					if (edge == null || edge.getAttachment() == null)
+						refresh(child);
+				}
+			}
+
+			@Override
+			public String getDescription() {
+				return "setEdgeAttachment";
+			}
+
+			@Override
+			public void undo() {
+				EdgeModel.createEdgeModel(node).setAttachment(oldAttachment);
+				refresh(node);
 			}
 		};
 		modeController.execute(actor, node.getMap());

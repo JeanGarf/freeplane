@@ -32,6 +32,7 @@ import org.freeplane.core.io.ITreeWriter;
 import org.freeplane.core.io.ReadManager;
 import org.freeplane.core.io.WriteManager;
 import org.freeplane.core.util.ColorUtils;
+import org.freeplane.core.util.LogUtils;
 import org.freeplane.features.map.MapWriter;
 import org.freeplane.features.map.NodeBuilder;
 import org.freeplane.features.map.NodeModel;
@@ -104,6 +105,17 @@ class EdgeBuilder implements IElementDOMHandler, IExtensionElementWriter, IEleme
 				}
 			}
 		});
+		reader.addAttributeHandler("edge", "ATTACHMENT", new IAttributeHandler() {
+			public void setAttribute(final Object userObject, final String value) {
+				final EdgeModel edge = (EdgeModel) userObject;
+				try {
+					edge.setAttachment(EdgeAttachment.valueOf(value));
+				}
+				catch (IllegalArgumentException e) {
+					LogUtils.warn("unknown edge attachment " + value);
+				}
+			}
+		});
 		reader.addAttributeHandler("edge", "DASH", new IAttributeHandler() {
 			public void setAttribute(final Object userObject, final String value) {
 				final EdgeModel edge = (EdgeModel) userObject;
@@ -151,7 +163,8 @@ class EdgeBuilder implements IElementDOMHandler, IExtensionElementWriter, IEleme
 		final Color color = forceFormatting ? ec.getColor(node, StyleOption.FOR_UNSELECTED_NODE) : model.getColor();
 		final int width = forceFormatting ? ec.getWidth(node, StyleOption.FOR_UNSELECTED_NODE) : model.getWidth();
 		final Dash dash = forceFormatting ? ec.getDash(node, StyleOption.FOR_UNSELECTED_NODE) : model.getDash();
-		if (forceFormatting || style != null || color != null || width != EdgeModel.AUTO_WIDTH || dash != null) {
+		final EdgeAttachment attachment = forceFormatting ? ec.getAttachment(node, StyleOption.FOR_UNSELECTED_NODE) : model.getAttachment();
+		if (forceFormatting || style != null || color != null || width != EdgeModel.AUTO_WIDTH || dash != null || attachment != null) {
 			final XMLElement edge = new XMLElement();
 			edge.setName("edge");
 			boolean relevant = false;
@@ -178,6 +191,10 @@ class EdgeBuilder implements IElementDOMHandler, IExtensionElementWriter, IEleme
 			}
 			if (dash != null) {
 				edge.setAttribute("DASH", dash.name());
+				relevant = true;
+			}
+			if (attachment != null) {
+				edge.setAttribute("ATTACHMENT", attachment.name());
 				relevant = true;
 			}
 			if (relevant) {

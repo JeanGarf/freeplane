@@ -22,6 +22,7 @@ package org.freeplane.view.swing.map;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import org.freeplane.features.edge.EdgeAttachment;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Stroke;
@@ -67,6 +68,11 @@ class ForkPainter extends ShapedPainter {
 	void paintBackground(final Graphics2D graphics, final Color color) {
 		graphics.setColor(color);
 		graphics.fillRect(0, 0, mainView.getWidth(), mainView.getHeight() - mainView.getPaintedBorderWidth());
+	}
+
+	@Override
+	boolean drawsOwnEntryLine(EdgeAttachment attachment) {
+		return attachment == EdgeAttachment.bottom;
 	}
 
 	@Override

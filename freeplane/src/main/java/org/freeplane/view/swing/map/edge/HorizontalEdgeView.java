@@ -89,10 +89,10 @@ public class HorizontalEdgeView extends EdgeView {
 	            else if(source.getChildNodesAlignment() == ChildNodesAlignment.BEFORE_PARENT)
 	                start = mainView.getTopPoint();
 	            else if(target.isTopOrLeft()){
-	                start = mainView.getLeftPoint();
+	                start = exitingPoint(mainView, mainView.getLeftPoint(), ConnectorLocation.LEFT, usesHorizontalLayout);
 	            }
 	            else{
-	                start = mainView.getRightPoint();
+	                start = exitingPoint(mainView, mainView.getRightPoint(), ConnectorLocation.RIGHT, usesHorizontalLayout);
 	            }
 
 	        }
@@ -101,9 +101,11 @@ public class HorizontalEdgeView extends EdgeView {
         MainView mainView = target.getMainView();
         if(target.isTopOrLeft()){
             end = usesHorizontalLayout ? mainView.getBottomPoint() : mainView.getRightPoint();
+            end = enteringPoint(mainView, end, ConnectorLocation.RIGHT, usesHorizontalLayout);
         }
         else{
             end = usesHorizontalLayout ? mainView.getTopPoint() : mainView.getLeftPoint();
+            end = enteringPoint(mainView, end, ConnectorLocation.LEFT, usesHorizontalLayout);
         }
     }
 

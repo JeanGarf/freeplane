@@ -53,6 +53,7 @@ public class EdgeModel implements IExtension {
 	private EdgeStyle style;
 	private int width = EdgeModel.AUTO_WIDTH;
 	private Dash dash;
+	private EdgeAttachment attachment;
 
 	public Dash getDash() {
 		return dash;
@@ -60,6 +61,14 @@ public class EdgeModel implements IExtension {
 
 	public void setDash(Dash dash) {
 		this.dash = dash;
+	}
+
+	public EdgeAttachment getAttachment() {
+		return attachment;
+	}
+
+	public void setAttachment(EdgeAttachment attachment) {
+		this.attachment = attachment;
 	}
 
 	public EdgeModel() {
