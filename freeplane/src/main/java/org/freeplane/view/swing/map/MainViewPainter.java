@@ -93,7 +93,7 @@ abstract class MainViewPainter{
 		final Shape outline = getOutlineShape();
 		final int fromX = EdgeEntryGeometry.entryX(outline, true, y, mainView.getWidth(), 0);
 		final int toX = EdgeEntryGeometry.entryX(outline, false, y, mainView.getWidth(), mainView.getWidth() - 1);
-		final float width = nodeView.getEdgeWidth() * nodeView.getMap().getZoom();
+		final float width = mainView.getPaintedBorderWidth();
 		final Stroke oldStroke = g.getStroke();
 		final Color oldColor = g.getColor();
 		g.setColor(nodeView.getEdgeColor());

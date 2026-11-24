@@ -193,7 +193,7 @@ public abstract class EdgeView {
         return sourceMainView.getEntryPoint(location == ConnectorLocation.LEFT, attachment);
     }
 
-    private Point enteringPoint(MainView targetMainView, Point end, ConnectorLocation location, boolean usesHorizontalLayout) {
+    protected Point enteringPoint(MainView targetMainView, Point end, ConnectorLocation location, boolean usesHorizontalLayout) {
         if(usesHorizontalLayout || ! (location == ConnectorLocation.LEFT || location == ConnectorLocation.RIGHT))
             return end;
         final EdgeAttachment attachment = target.getEdgeAttachment();

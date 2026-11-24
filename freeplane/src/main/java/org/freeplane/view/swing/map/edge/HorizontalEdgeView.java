@@ -101,9 +101,11 @@ public class HorizontalEdgeView extends EdgeView {
         MainView mainView = target.getMainView();
         if(target.isTopOrLeft()){
             end = usesHorizontalLayout ? mainView.getBottomPoint() : mainView.getRightPoint();
+            end = enteringPoint(mainView, end, ConnectorLocation.RIGHT, usesHorizontalLayout);
         }
         else{
             end = usesHorizontalLayout ? mainView.getTopPoint() : mainView.getLeftPoint();
+            end = enteringPoint(mainView, end, ConnectorLocation.LEFT, usesHorizontalLayout);
         }
     }
 
