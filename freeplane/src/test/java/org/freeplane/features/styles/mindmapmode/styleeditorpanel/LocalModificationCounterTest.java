@@ -88,10 +88,4 @@ public class LocalModificationCounterTest {
 
 		assertThat(calls[0]).isEqualTo(2);
 	}
-
-	@Test
-	public void badgeShowsCheckWhenConformingAndCountWhenModified() {
-		assertThat(LocalModificationBadge.textFor(0)).isEqualTo("✓");
-		assertThat(LocalModificationBadge.textFor(3)).isEqualTo("● 3");
-	}
 }

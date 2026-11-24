@@ -57,6 +57,7 @@ import org.freeplane.features.styles.MapStyle;
 import org.freeplane.features.styles.MapStyleModel;
 import org.freeplane.features.styles.StyleTranslatedObject;
 import org.freeplane.features.styles.mindmapmode.AssignStyleAction;
+import org.freeplane.features.styles.mindmapmode.styleeditorpanel.LocalModificationMenu;
 import org.freeplane.features.styles.mindmapmode.styleeditorpanel.LocalModificationTracker;
 import org.freeplane.features.styles.mindmapmode.MLogicalStyleController;
 import org.freeplane.features.styles.mindmapmode.stylespane.StyleRowLayout.Target;
@@ -174,6 +175,13 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		if (e.getID() != MouseEvent.MOUSE_PRESSED || !SwingUtilities.isLeftMouseButton(e))
 			return;
 		final StyleRowLayout layout = layoutFor(cell, style);
+		final Point inCell = new Point(point.x - cell.x, point.y - cell.y);
+		if (modificationsOf(style) > 0 && StyleModificationMarker.boundsIn(layout.style).contains(inCell)) {
+			final Rectangle marker = StyleModificationMarker.boundsIn(layout.style);
+			LocalModificationMenu.show(list, cell.x + marker.x, cell.y + marker.y + marker.height,
+			    LocalModificationTracker.itemsFor(selectedNode()));
+			return;
+		}
 		if (layout.targetAt(new Point(point.x - cell.x, point.y - cell.y)) == Target.MENU) {
 			final Rectangle arrow = layout.menu;
 			showMenu(style, new Point(cell.x + arrow.x + arrow.width, cell.y + arrow.y + arrow.height), true);
@@ -313,6 +321,11 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		SwingUtilities.invokeLater(this::scrollToCurrentStyle);
 	}
 
+	private NodeModel selectedNode() {
+		final IMapSelection selection = Controller.getCurrentController().getSelection();
+		return selection == null ? null : selection.getSelected();
+	}
+
 	private int modificationsOf(IStyle style) {
 		final IMapSelection selection = Controller.getCurrentController().getSelection();
 		final NodeModel node = selection == null ? null : selection.getSelected();
@@ -383,8 +396,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 				return TextUtils.getText("styles_panel.edit_style");
 			final int modifications = modificationsOf(model.get(index).style);
 			if (modifications > 0 && StyleModificationMarker.boundsIn(rowLayout.style).contains(inCell))
-				return modifications == 1 ? TextUtils.getText("format_panel.local_modifications_one")
-				        : TextUtils.format("format_panel.local_modifications_many", modifications);
+				return LocalModificationMenu.hintedTooltipFor(modifications);
 			return TextUtils.getText("styles_panel.apply_style");
 		}
 
@@ -403,7 +415,6 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		private static final long serialVersionUID = 1L;
 		private static final int HEADER_PADDING = 5;
 		private final Color CURRENT_FRAME_COLOR = new Color(0, 0, 128);
-		private final Color MODIFIED_MARKER_COLOR = new Color(0xD9, 0x7A, 0x00);
 		private String header;
 		private boolean blank;
 		private IStyle style;
@@ -510,16 +521,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		private void paintModificationMarker(Graphics2D g, Rectangle styleBounds) {
 			if (modifications <= 0)
 				return;
-			final Rectangle marker = StyleModificationMarker.boundsIn(styleBounds);
-			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			g.setColor(MODIFIED_MARKER_COLOR);
-			g.fillOval(marker.x, marker.y, marker.width, marker.height);
-			g.setColor(Color.WHITE);
-			g.setFont(list.getFont().deriveFont(Font.BOLD, marker.height - 5f));
-			final FontMetrics metrics = g.getFontMetrics();
-			final String label = StyleModificationMarker.label(modifications);
-			g.drawString(label, marker.x + (marker.width - metrics.stringWidth(label)) / 2,
-			    marker.y + (marker.height - metrics.getHeight()) / 2 + metrics.getAscent());
+			StyleModificationMarker.paint(g, StyleModificationMarker.boundsIn(styleBounds), modifications, list.getFont());
 		}
 
 		private void paintAccelerator(Graphics2D g, Rectangle bounds) {
