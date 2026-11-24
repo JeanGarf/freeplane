@@ -184,7 +184,7 @@ public abstract class EdgeView {
         end = enteringPoint(targetMainView, end, endConnectorLocation, usesHorizontalLayout);
     }
 
-    private Point exitingPoint(MainView sourceMainView, Point start, ConnectorLocation location, boolean usesHorizontalLayout) {
+    protected Point exitingPoint(MainView sourceMainView, Point start, ConnectorLocation location, boolean usesHorizontalLayout) {
         if(usesHorizontalLayout || ! (location == ConnectorLocation.LEFT || location == ConnectorLocation.RIGHT))
             return start;
         final EdgeAttachment attachment = source.getEdgeAttachment();
