@@ -85,6 +85,7 @@ class StyleControlGroup implements ControlGroup{
 	private JComboBox mAutomaticEdgeColorComboBox;
 	private JButton mEditEdgeColorsBtn;
 	private Container mStyleBox;
+	private NodeModel currentNode;
 
 	private final MUIFactory uiFactory;
 	private final ModeController modeController;
@@ -126,6 +127,7 @@ class StyleControlGroup implements ControlGroup{
 
 	@Override
 	public void setStyle(NodeModel node, boolean canEdit) {
+		currentNode = node;
 		internalChange = true;
 		try {
 			final LogicalStyleController logicalStyleController = LogicalStyleController.getController();
@@ -370,7 +372,7 @@ class StyleControlGroup implements ControlGroup{
 		final StyleChangeListener listener = new StyleChangeListener();
 		mSetStyle.addPropertyChangeListener(listener);
 		formBuilder.append(new JLabel(TextUtils.getText("style")));
-		formBuilder.append(mStyleBox);
+		formBuilder.append(StyleBoxModificationLayer.wrap((JComponent) mStyleBox, () -> currentNode));
 		mSetStyle.appendToForm(formBuilder);
 		formBuilder.nextLine();
 	}

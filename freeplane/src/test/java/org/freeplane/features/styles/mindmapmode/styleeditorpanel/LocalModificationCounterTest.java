@@ -90,8 +90,39 @@ public class LocalModificationCounterTest {
 	}
 
 	@Test
-	public void badgeShowsCheckWhenConformingAndCountWhenModified() {
-		assertThat(LocalModificationBadge.textFor(0)).isEqualTo("✓");
-		assertThat(LocalModificationBadge.textFor(3)).isEqualTo("● 3");
+	public void revertAllClicksOnlyLocallySetButtonsEvenInHiddenSections() {
+		final JPanel panel = new JPanel();
+		final JPanel hiddenSection = new JPanel();
+		hiddenSection.setVisible(false);
+		final JButton hiddenButton = revertButton(false);
+		hiddenButton.putClientProperty(LocalModificationCounter.STATE, Boolean.TRUE);
+		final JButton unsetButton = revertButton(true);
+		unsetButton.putClientProperty(LocalModificationCounter.STATE, Boolean.FALSE);
+		final int[] clicks = { 0, 0 };
+		hiddenButton.addActionListener(e -> clicks[0]++);
+		unsetButton.addActionListener(e -> clicks[1]++);
+		hiddenSection.add(hiddenButton);
+		panel.add(hiddenSection);
+		panel.add(unsetButton);
+
+		LocalModificationCounter.revertAll(panel);
+
+		assertThat(clicks[0]).isEqualTo(1);
+		assertThat(clicks[1]).isZero();
+	}
+
+	@Test
+	public void revertAllPrefersTheRevertActionOverClicking() {
+		final JPanel panel = new JPanel();
+		final JButton button = revertButton(true);
+		final int[] calls = { 0, 0 };
+		button.addActionListener(e -> calls[0]++);
+		button.putClientProperty(LocalModificationCounter.REVERT_ACTION, (Runnable) () -> calls[1]++);
+		panel.add(button);
+
+		LocalModificationCounter.revertAll(panel);
+
+		assertThat(calls[0]).isZero();
+		assertThat(calls[1]).isEqualTo(1);
 	}
 }
