@@ -441,20 +441,11 @@ class Mm2002FileReader {
 		reader.expect(VERSION_MARKER, 0x01);
 		int size = reader.length();
 		int end = reader.position() + size;
-		registerEmbeddedObjects(size);
 		reader.seek(end);
 		reader.expect(0xff);
 		long targetId = reader.u32();
 		long sourceId = reader.u32();
 		return new Relationship(id, sourceId, targetId, label, color, arrowAtBothEnds);
-	}
-
-	private void registerEmbeddedObjects(int size) throws IOException {
-		if (size < 4)
-			return;
-		int count = reader.i32();
-		if (count > 0)
-			objectClass();
 	}
 
 	private void readTask(Topic topic) {

@@ -94,6 +94,15 @@ class MmpBuilder {
 	}
 
 	static byte[] relationship(long id, long sourceId, long targetId, String label, int color, boolean singleArrow) {
+		return relationship(id, sourceId, targetId, label, color, singleArrow, false);
+	}
+
+	static byte[] relationshipWithEmbeddedFreeText(long id, long sourceId, long targetId, String label, int color) {
+		return relationship(id, sourceId, targetId, label, color, true, true);
+	}
+
+	private static byte[] relationship(long id, long sourceId, long targetId, String label, int color,
+	                                   boolean singleArrow, boolean embeddedFreeText) {
 		MmpBuilder builder = new MmpBuilder();
 		builder.u8(0x32);
 		builder.u32(id);
@@ -108,8 +117,18 @@ class MmpBuilder {
 		builder.u8(0);
 		builder.u8(0x32);
 		builder.u8(0x01);
-		builder.u32(4);
-		builder.u32(0);
+		if (embeddedFreeText) {
+			builder.u32(4 + 2 + 2 + 2 + "FreeTextC".length());
+			builder.u32(1);
+			builder.u16(0xffff);
+			builder.u16(1);
+			builder.u16("FreeTextC".length());
+			builder.bytes("FreeTextC".getBytes(ANSI));
+		}
+		else {
+			builder.u32(4);
+			builder.u32(0);
+		}
 		builder.u8(0xff);
 		builder.u32(targetId);
 		builder.u32(sourceId);
