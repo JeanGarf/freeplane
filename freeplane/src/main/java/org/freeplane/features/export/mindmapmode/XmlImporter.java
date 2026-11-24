@@ -21,6 +21,7 @@ import org.freeplane.features.map.MapWriter.Mode;
 import org.freeplane.features.map.mindmapmode.MMapModel;
 import org.freeplane.features.mode.Controller;
 import org.freeplane.features.mode.ModeController;
+import org.freeplane.features.url.mindmapmode.DefaultTemplateAssociation;
 import org.freeplane.n3.nanoxml.XMLException;
 import org.freeplane.n3.nanoxml.XMLParseException;
 
@@ -79,6 +80,7 @@ public class XmlImporter	{
 		map.setURL(mapUrl);
 		map.setSaved(false);
 		mapController.fireMapCreated(map);
+		DefaultTemplateAssociation.associateWithDefaultTemplate(map);
 		beforeDisplay.accept(map);
 		mapController.createMapView(map);
 		return map;
