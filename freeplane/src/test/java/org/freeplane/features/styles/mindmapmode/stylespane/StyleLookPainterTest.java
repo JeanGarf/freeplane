@@ -82,4 +82,26 @@ public class StyleLookPainterTest {
 		assertThat(StyleLookPainter.textInset(NodeStyleShape.oval, 24)).isGreaterThan(StyleLookPainter.textInset(NodeStyleShape.bubble, 24));
 		assertThat(StyleLookPainter.textInset(NodeStyleShape.rectangle, 24)).isEqualTo(StyleLookPainter.textInset(NodeStyleShape.fork, 24));
 	}
+
+	@Test
+	public void forkUnderlineFollowsBorderWidth() {
+		final StyleLook thick = new StyleLook(null, Color.BLACK, Color.BLUE, "Serif", false, false, NodeStyleShape.fork,
+		    null, 5f);
+		final BufferedImage image = paint(thick);
+
+		assertThat(image.getRGB(50, 26)).isEqualTo(Color.BLUE.getRGB());
+		assertThat(image.getRGB(50, 24)).isEqualTo(Color.BLUE.getRGB());
+		assertThat(image.getRGB(50, 22) >>> 24).isZero();
+	}
+
+	@Test
+	public void limitsPaintedBorderWidth() {
+		final StyleLook huge = new StyleLook(null, Color.BLACK, Color.BLUE, "Serif", false, false, NodeStyleShape.fork,
+		    null, 50f);
+		final StyleLook thin = new StyleLook(null, Color.BLACK, Color.BLUE, "Serif", false, false, NodeStyleShape.fork,
+		    null, 0f);
+
+		assertThat(StyleLookPainter.paintedBorderWidth(huge)).isEqualTo(8f);
+		assertThat(StyleLookPainter.paintedBorderWidth(thin)).isEqualTo(1f);
+	}
 }

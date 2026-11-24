@@ -22,8 +22,8 @@ public class StyleEdgePainter {
 		return shape == NodeStyleShape.fork ? Attachment.BOTTOM : Attachment.MIDDLE;
 	}
 
-	public static int attachmentY(NodeStyleShape shape, int y, int height) {
-		return attachmentFor(shape) == Attachment.BOTTOM ? y + height - 2 : y + height / 2;
+	public static double attachmentY(NodeStyleShape shape, int y, int height, float borderWidth) {
+		return attachmentFor(shape) == Attachment.BOTTOM ? y + height - 1 - borderWidth / 2 : y + height / 2.0;
 	}
 
 	public static boolean isVisible(StyleEdge edge) {
@@ -64,7 +64,7 @@ public class StyleEdgePainter {
 	}
 
 	public static void paint(Graphics2D g, StyleEdge edge, NodeStyleShape shape, int zoneX, int zoneWidth, int rowY,
-	                         int rowHeight, int styleY, int styleHeight) {
+	                         int rowHeight, int styleY, int styleHeight, float borderWidth) {
 		if (!isVisible(edge))
 			return;
 		final Graphics2D graphics = (Graphics2D) g.create();
@@ -75,7 +75,7 @@ public class StyleEdgePainter {
 			final double x0 = zoneX;
 			final double x1 = zoneX + zoneWidth;
 			final double y0 = rowY + rowHeight / 2.0;
-			final double y1 = attachmentY(shape, styleY, styleHeight);
+			final double y1 = attachmentY(shape, styleY, styleHeight, borderWidth);
 			final Shape path = pathFor(edge.style, x0, y0, x1, y1, width);
 			if (edge.style == EdgeStyle.EDGESTYLE_SHARP_LINEAR || edge.style == EdgeStyle.EDGESTYLE_SHARP_BEZIER) {
 				graphics.fill(path);

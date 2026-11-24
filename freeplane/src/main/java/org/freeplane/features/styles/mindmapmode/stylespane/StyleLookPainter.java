@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
@@ -14,7 +15,12 @@ import java.awt.geom.RoundRectangle2D;
 import org.freeplane.features.nodestyle.NodeStyleShape;
 
 public class StyleLookPainter {
-	private static final float BORDER_WIDTH = 1.5f;
+	static final float DEFAULT_BORDER_WIDTH = 1.5f;
+	private static final float MAX_BORDER_WIDTH = 8f;
+
+	static float paintedBorderWidth(StyleLook look) {
+		return Math.max(1f, Math.min(look.borderWidth, MAX_BORDER_WIDTH));
+	}
 
 	public static Shape shapeIn(NodeStyleShape shape, double x, double y, double width, double height) {
 		switch (shape) {
@@ -54,16 +60,18 @@ public class StyleLookPainter {
 		final Graphics2D graphics = (Graphics2D) g.create();
 		try {
 			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			final double inset = BORDER_WIDTH / 2;
+			final float borderWidth = paintedBorderWidth(look);
+			final double inset = borderWidth / 2;
 			final Shape shape = shapeIn(look.shape, x + inset, y + inset, width - 2 * inset - 1, height - 2 * inset - 1);
 			if (look.background != null) {
 				graphics.setColor(look.background);
 				graphics.fill(shape);
 			}
-			graphics.setStroke(new BasicStroke(BORDER_WIDTH));
+			graphics.setStroke(new BasicStroke(borderWidth));
 			if (look.shape == NodeStyleShape.fork) {
 				graphics.setColor(underlineColor(look));
-				graphics.drawLine(x, y + height - 2, x + width - 1, y + height - 2);
+				final double lineY = StyleEdgePainter.attachmentY(NodeStyleShape.fork, y, height, borderWidth);
+				graphics.draw(new Line2D.Double(x, lineY, x + width - 1, lineY));
 			}
 			else if (look.border != null) {
 				graphics.setColor(look.border);

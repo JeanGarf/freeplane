@@ -33,7 +33,9 @@ public class StyleLookReader {
 		final EdgeController edges = EdgeController.getController(modeController);
 		final StyleEdge edge = new StyleEdge(edges.getColor(styleNode, option), edges.getWidth(styleNode, option),
 		    edges.getDash(styleNode, option), edges.getStyle(styleNode, option));
+		final float borderWidth = nodeStyles.getBorderWidthMatchesEdgeWidth(styleNode, option)
+		        ? edge.width : (float) nodeStyles.getBorderWidth(styleNode, option).toBaseUnits();
 		return new StyleLook(nodeStyles.getBackgroundColor(styleNode, option), nodeStyles.getColor(styleNode, option),
-		    border, font.getFamily(), font.isBold(), font.isItalic(), shape, edge);
+		    border, font.getFamily(), font.isBold(), font.isItalic(), shape, edge, borderWidth);
 	}
 }

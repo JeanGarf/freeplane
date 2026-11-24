@@ -17,14 +17,15 @@ public class StyleLook implements ButtonLook {
 	public final boolean italic;
 	public final NodeStyleShape shape;
 	public final StyleEdge edge;
+	public final float borderWidth;
 
 	public StyleLook(Color background, Color foreground, Color border, String fontFamily, boolean bold,
 	                 boolean italic, NodeStyleShape shape) {
-		this(background, foreground, border, fontFamily, bold, italic, shape, null);
+		this(background, foreground, border, fontFamily, bold, italic, shape, null, StyleLookPainter.DEFAULT_BORDER_WIDTH);
 	}
 
 	public StyleLook(Color background, Color foreground, Color border, String fontFamily, boolean bold,
-	                 boolean italic, NodeStyleShape shape, StyleEdge edge) {
+	                 boolean italic, NodeStyleShape shape, StyleEdge edge, float borderWidth) {
 		this.background = background;
 		this.foreground = foreground;
 		this.border = border;
@@ -33,6 +34,7 @@ public class StyleLook implements ButtonLook {
 		this.italic = italic;
 		this.shape = shape;
 		this.edge = edge;
+		this.borderWidth = borderWidth;
 	}
 
 	@Override

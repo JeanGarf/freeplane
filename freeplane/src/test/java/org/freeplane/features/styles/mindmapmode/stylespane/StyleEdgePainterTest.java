@@ -20,7 +20,7 @@ public class StyleEdgePainterTest {
 	private static BufferedImage paint(StyleEdge edge, NodeStyleShape shape) {
 		final BufferedImage image = new BufferedImage(40, 30, BufferedImage.TYPE_INT_ARGB);
 		final Graphics2D g = image.createGraphics();
-		StyleEdgePainter.paint(g, edge, shape, 0, 20, 0, 30, 3, 24);
+		StyleEdgePainter.paint(g, edge, shape, 0, 20, 0, 30, 3, 24, 1.5f);
 		g.dispose();
 		return image;
 	}
@@ -45,8 +45,9 @@ public class StyleEdgePainterTest {
 
 	@Test
 	public void computesArrivalHeightFromAttachment() {
-		assertThat(StyleEdgePainter.attachmentY(NodeStyleShape.bubble, 3, 24)).isEqualTo(15);
-		assertThat(StyleEdgePainter.attachmentY(NodeStyleShape.fork, 3, 24)).isEqualTo(25);
+		assertThat(StyleEdgePainter.attachmentY(NodeStyleShape.bubble, 3, 24, 1.5f)).isEqualTo(15);
+		assertThat(StyleEdgePainter.attachmentY(NodeStyleShape.fork, 3, 24, 1.5f)).isEqualTo(25.25);
+		assertThat(StyleEdgePainter.attachmentY(NodeStyleShape.fork, 3, 24, 5f)).isEqualTo(23.5);
 	}
 
 	@Test
@@ -56,12 +57,12 @@ public class StyleEdgePainterTest {
 
 	@Test
 	public void linearEdgeEndsAtBottomOfFork() {
-		assertThat(paintedAround(paint(edge(EdgeStyle.EDGESTYLE_LINEAR), NodeStyleShape.fork), 19, 25)).isTrue();
+		assertThat(paintedAround(paint(edge(EdgeStyle.EDGESTYLE_LINEAR), NodeStyleShape.fork), 19, 24)).isTrue();
 	}
 
 	@Test
 	public void bezierEdgeEndsAtBottomOfFork() {
-		assertThat(paintedAround(paint(edge(EdgeStyle.EDGESTYLE_BEZIER), NodeStyleShape.fork), 19, 25)).isTrue();
+		assertThat(paintedAround(paint(edge(EdgeStyle.EDGESTYLE_BEZIER), NodeStyleShape.fork), 19, 24)).isTrue();
 	}
 
 	@Test
