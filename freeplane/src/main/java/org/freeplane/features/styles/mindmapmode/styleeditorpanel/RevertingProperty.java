@@ -97,6 +97,7 @@ class RevertingProperty extends PropertyBean {
 	}
 
 	public void setValue(final boolean booleanValue) {
+	    revertButton.putClientProperty(LocalModificationCounter.STATE, booleanValue);
 	    if(revertButton.isVisible() != booleanValue) {
 	    	if(booleanValue == false && revertButton.isFocusOwner()) {
 	    		moveFocusToPreviousFocusableComponent();

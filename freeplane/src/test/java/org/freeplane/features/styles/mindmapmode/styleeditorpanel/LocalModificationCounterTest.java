@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 
 import org.junit.Test;
 
@@ -57,16 +56,35 @@ public class LocalModificationCounterTest {
 	}
 
 	@Test
-	public void notifiesWhenRevertButtonVisibilityChanges() throws Exception {
+	public void countsLogicalStateEvenWhenButtonIsHiddenByCollapsedSection() {
 		final JPanel panel = new JPanel();
 		final JButton button = revertButton(false);
+		button.putClientProperty(LocalModificationCounter.STATE, Boolean.TRUE);
+		panel.add(button);
+
+		assertThat(LocalModificationCounter.count(panel)).isEqualTo(1);
+	}
+
+	@Test
+	public void ignoresButtonsWhoseStateIsNotSet() {
+		final JPanel panel = new JPanel();
+		final JButton button = revertButton(true);
+		button.putClientProperty(LocalModificationCounter.STATE, Boolean.FALSE);
+		panel.add(button);
+
+		assertThat(LocalModificationCounter.count(panel)).isZero();
+	}
+
+	@Test
+	public void notifiesWhenStateChanges() {
+		final JPanel panel = new JPanel();
+		final JButton button = revertButton(true);
 		panel.add(button);
 		final int[] calls = { 0 };
 
 		LocalModificationCounter.watch(panel, () -> calls[0]++);
-		button.setVisible(true);
-		button.setVisible(false);
-		SwingUtilities.invokeAndWait(() -> { });
+		button.putClientProperty(LocalModificationCounter.STATE, Boolean.TRUE);
+		button.putClientProperty(LocalModificationCounter.STATE, Boolean.FALSE);
 
 		assertThat(calls[0]).isEqualTo(2);
 	}
