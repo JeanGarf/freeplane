@@ -178,8 +178,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		final Point inCell = new Point(point.x - cell.x, point.y - cell.y);
 		if (modificationsOf(style) > 0 && StyleModificationMarker.boundsIn(layout.style).contains(inCell)) {
 			final Rectangle marker = StyleModificationMarker.boundsIn(layout.style);
-			LocalModificationMenu.show(list, cell.x + marker.x, cell.y + marker.y + marker.height,
-			    LocalModificationTracker.itemsFor(selectedNode()));
+			LocalModificationMenu.show(list, cell.x + marker.x, cell.y + marker.y + marker.height, selectedNode());
 			return;
 		}
 		if (layout.targetAt(new Point(point.x - cell.x, point.y - cell.y)) == Target.MENU) {

@@ -16,10 +16,12 @@ class LocalModificationLister {
 	static class Entry {
 		final String label;
 		final JLabel labelComponent;
+		final Runnable revert;
 
-		Entry(String label, JLabel labelComponent) {
+		Entry(String label, JLabel labelComponent, Runnable revert) {
 			this.label = label;
 			this.labelComponent = labelComponent;
+			this.revert = revert;
 		}
 	}
 
@@ -34,7 +36,7 @@ class LocalModificationLister {
 			if (isLocallySetRevertButton(component)) {
 				final JLabel label = labelFor(component);
 				if (label != null)
-					entries.add(new Entry(cleanedText(label), label));
+					entries.add(new Entry(cleanedText(label), label, () -> LocalModificationCounter.revert((JComponent) component)));
 			}
 			if (component instanceof Container)
 				collect((Container) component, entries);

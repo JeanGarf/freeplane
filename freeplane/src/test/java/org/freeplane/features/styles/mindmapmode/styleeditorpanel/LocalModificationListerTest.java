@@ -71,4 +71,25 @@ public class LocalModificationListerTest {
 
 		assertThat(entry.labelComponent.getParent()).isSameAs(panel);
 	}
+
+	@Test
+	public void entryRevertTriggersOnlyItsOwnButton() {
+		final DefaultFormBuilder builder = newBuilder();
+		final int[] clicks = { 0, 0 };
+		builder.append(new JLabel("Bold"));
+		builder.append(new JLabel("value"));
+		final JButton first = revertButton(true);
+		first.addActionListener(e -> clicks[0]++);
+		builder.append(first);
+		builder.append(new JLabel("Italic"));
+		builder.append(new JLabel("value"));
+		final JButton second = revertButton(true);
+		second.addActionListener(e -> clicks[1]++);
+		builder.append(second);
+
+		LocalModificationLister.list(builder.getPanel()).get(1).revert.run();
+
+		assertThat(clicks[0]).isZero();
+		assertThat(clicks[1]).isEqualTo(1);
+	}
 }
