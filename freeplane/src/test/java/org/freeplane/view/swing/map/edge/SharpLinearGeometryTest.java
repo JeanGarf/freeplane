@@ -9,8 +9,13 @@ import org.junit.Test;
 
 public class SharpLinearGeometryTest {
 	private static Path2D shape(float endX, float endY, float halfWidth, float nodeHalfWidth, float nodeHalfHeight) {
-		return new SharpLinearGeometry(new Point2D.Float(0, 0), new Point2D.Float(endX, endY), halfWidth,
-		    nodeHalfWidth, nodeHalfHeight).shape();
+		return shape(endX, endY, halfWidth, 0f, nodeHalfWidth, nodeHalfHeight);
+	}
+
+	private static Path2D shape(float endX, float endY, float halfWidth, float endHalfWidth, float nodeHalfWidth,
+	                            float nodeHalfHeight) {
+		return new SharpLinearGeometry(new Point2D.Float(0, 0), new Point2D.Float(endX, endY), -1, 0, halfWidth,
+		    endHalfWidth, nodeHalfWidth, nodeHalfHeight).shape();
 	}
 
 	@Test
@@ -38,5 +43,22 @@ public class SharpLinearGeometryTest {
 		assertThat(shape.getBounds2D().getMaxY()).isGreaterThanOrEqualTo(299);
 		assertThat(shape.getBounds2D().getMaxX()).isGreaterThanOrEqualTo(299);
 		assertThat(shape.getBounds2D().getMinY()).isGreaterThanOrEqualTo(-10.5);
+	}
+
+	@Test
+	public void endsWithGivenThicknessAcrossTheUnderline() {
+		final Path2D shape = shape(200, 0, 20f, 2f, 1000f, 1000f);
+
+		assertThat(shape.contains(199.5, 1.5)).isTrue();
+		assertThat(shape.contains(199.5, -1.5)).isTrue();
+		assertThat(shape.contains(199.5, 3)).isFalse();
+	}
+
+	@Test
+	public void endCapIsVerticalForSidewaysEntry() {
+		final Path2D shape = shape(200, 100, 20f, 2f, 1000f, 1000f);
+
+		assertThat(shape.contains(199.5, 101.5)).isTrue();
+		assertThat(shape.contains(199.5, 98.5)).isTrue();
 	}
 }

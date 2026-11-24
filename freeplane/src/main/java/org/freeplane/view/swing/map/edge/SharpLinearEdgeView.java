@@ -61,7 +61,12 @@ public class SharpLinearEdgeView extends SharpEdgeView {
 
 	private SharpLinearGeometry geometry() {
 		final MainView sourceView = getSource().getMainView();
-		return new SharpLinearGeometry(new Point2D.Float(start.x, start.y), new Point2D.Float(end.x, end.y),
-		    getMap().getZoomed(getWidth() + 1), sourceView.getWidth() / 2f, sourceView.getHeight() / 2f);
+		final int[] endDirection = SharpEdgeBase.direction(getEndConnectorLocation());
+		final Point2D.Float overlappedEnd = new Point2D.Float(end.x - endDirection[0] * SharpEdgeBase.END_OVERLAP,
+		    end.y - endDirection[1] * SharpEdgeBase.END_OVERLAP);
+		final float endHalfWidth = SharpEdgeBase.endHalfWidth(getTarget().getMainView().getPaintedBorderWidth());
+		return new SharpLinearGeometry(new Point2D.Float(start.x, start.y), overlappedEnd, endDirection[0],
+		    endDirection[1], getMap().getZoomed(getWidth() + 1), endHalfWidth, sourceView.getWidth() / 2f,
+		    sourceView.getHeight() / 2f);
 	}
 }

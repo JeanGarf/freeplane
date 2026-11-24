@@ -27,7 +27,6 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Point2D;
 
 import org.freeplane.view.swing.map.MainView;
-import org.freeplane.view.swing.map.MainView.ConnectorLocation;
 import org.freeplane.view.swing.map.NodeView;
 import org.freeplane.view.swing.map.link.CollisionDetector;
 
@@ -63,31 +62,16 @@ public class SharpBezierEdgeView extends SharpEdgeView {
 
 	private SharpBezierGeometry update() {
 		final float zoom = getMap().getZoom();
-		final int[] endDirection = direction(getEndConnectorLocation());
+		final int[] endDirection = SharpEdgeBase.direction(getEndConnectorLocation());
 		final float startHalfWidth = getMap().getZoomed(getWidth() + 1);
-		final float endHalfWidth = Math.max(0.5f, getTarget().getMainView().getPaintedBorderWidth() / 2f);
+		final float endHalfWidth = SharpEdgeBase.endHalfWidth(getTarget().getMainView().getPaintedBorderWidth());
 		final MainView sourceView = getSource().getMainView();
-		geometry = new SharpBezierGeometry(new Point2D.Float(start.x, start.y), new Point2D.Float(end.x, end.y),
+		final Point2D.Float overlappedEnd = new Point2D.Float(end.x - endDirection[0] * SharpEdgeBase.END_OVERLAP,
+		    end.y - endDirection[1] * SharpEdgeBase.END_OVERLAP);
+		geometry = new SharpBezierGeometry(new Point2D.Float(start.x, start.y), overlappedEnd,
 		    endDirection[0], endDirection[1], startHalfWidth, endHalfWidth, zoom * XCTRL,
 		    sourceView.getWidth() / 2f, sourceView.getHeight() / 2f);
 		return geometry;
-	}
-
-	private static int[] direction(ConnectorLocation location) {
-		if (location == null)
-			return new int[] { 0, 0 };
-		switch (location) {
-		case LEFT:
-			return new int[] { -1, 0 };
-		case RIGHT:
-			return new int[] { 1, 0 };
-		case TOP:
-			return new int[] { 0, -1 };
-		case BOTTOM:
-			return new int[] { 0, 1 };
-		default:
-			return new int[] { 0, 0 };
-		}
 	}
 
 	@Override
