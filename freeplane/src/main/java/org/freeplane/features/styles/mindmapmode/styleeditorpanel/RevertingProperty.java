@@ -55,12 +55,19 @@ class RevertingProperty extends PropertyBean {
 		revertButton.setToolTipText(TEXT);
 		revertButton.setBorder(BORDER);
 		revertButton.putClientProperty(LocalModificationCounter.MARKER, Boolean.TRUE);
+		revertButton.putClientProperty(LocalModificationCounter.REVERT_ACTION, (Runnable) this::revertLocally);
 		revertButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setValue(! getBooleanValue());
 			}
 		});
+	}
+
+	private void revertLocally() {
+		if (!revertButton.isVisible())
+			revertButton.setVisible(true);
+		setValue(false);
 	}
 
 	void excludeFromLocalModifications() {

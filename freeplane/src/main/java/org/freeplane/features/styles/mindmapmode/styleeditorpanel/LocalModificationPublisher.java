@@ -23,6 +23,7 @@ class LocalModificationPublisher {
 		for (LocalModificationLister.Entry entry : LocalModificationLister.list(root))
 			items.add(new LocalModificationTracker.Item(entry.label, () -> entry.labelComponent
 			    .scrollRectToVisible(new Rectangle(0, 0, entry.labelComponent.getWidth(), entry.labelComponent.getHeight()))));
-		LocalModificationTracker.publish(nodeSupplier.get(), LocalModificationCounter.count(root), items);
+		LocalModificationTracker.publish(nodeSupplier.get(), LocalModificationCounter.count(root), items,
+		    () -> LocalModificationCounter.revertAll(root));
 	}
 }

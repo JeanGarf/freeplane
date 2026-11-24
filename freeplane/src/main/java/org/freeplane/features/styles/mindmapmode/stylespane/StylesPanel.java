@@ -200,6 +200,11 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		apply.setEnabled(node != null);
 		apply.addActionListener(e -> applyStyle(style));
 		menu.add(apply);
+		final JMenuItem applyAndReset = new JMenuItem(
+		    TextUtils.format("styles_panel.apply_style_and_reset", style.toString()));
+		applyAndReset.setEnabled(node != null);
+		applyAndReset.addActionListener(e -> applyStyleAndRemoveLocalModifications(style));
+		menu.add(applyAndReset);
 		final JMenuItem selectAll = new JMenuItem(TextUtils.format("styles_panel.select_all", style.toString()));
 		selectAll.setEnabled(node != null);
 		selectAll.addActionListener(e -> selectNodesUsing(style));
@@ -266,6 +271,11 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		    .getExtension(LogicalStyleController.class);
 		controller.setStyle(style);
 		Controller.getCurrentController().getMapViewManager().obtainFocusForSelected();
+	}
+
+	private void applyStyleAndRemoveLocalModifications(IStyle style) {
+		applyStyle(style);
+		LocalModificationTracker.revertAll(selectedNode());
 	}
 
 	private void editStyle(IStyle style) {

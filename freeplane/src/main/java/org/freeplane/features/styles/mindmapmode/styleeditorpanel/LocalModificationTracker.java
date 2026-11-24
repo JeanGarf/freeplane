@@ -25,12 +25,15 @@ public class LocalModificationTracker {
 	private static NodeModel node;
 	private static int count;
 	private static List<Item> items = Collections.emptyList();
+	private static Runnable revertAll = () -> { };
 
-	public static synchronized void publish(NodeModel publishedNode, int publishedCount, List<Item> publishedItems) {
+	public static synchronized void publish(NodeModel publishedNode, int publishedCount, List<Item> publishedItems,
+	                                        Runnable publishedRevertAll) {
 		final boolean changed = node != publishedNode || count != publishedCount || !sameLabels(items, publishedItems);
 		node = publishedNode;
 		count = publishedCount;
 		items = publishedItems;
+		revertAll = publishedRevertAll;
 		if (changed)
 			for (Runnable listener : LISTENERS)
 				listener.run();
@@ -42,6 +45,11 @@ public class LocalModificationTracker {
 
 	public static synchronized List<Item> itemsFor(NodeModel queriedNode) {
 		return queriedNode != null && queriedNode == node ? items : Collections.<Item>emptyList();
+	}
+
+	public static synchronized void revertAll(NodeModel targetNode) {
+		if (targetNode != null && targetNode == node)
+			revertAll.run();
 	}
 
 	public static void addListener(Runnable listener) {
