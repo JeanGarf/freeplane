@@ -56,6 +56,7 @@ import org.freeplane.features.styles.MapStyle;
 import org.freeplane.features.styles.MapStyleModel;
 import org.freeplane.features.styles.StyleTranslatedObject;
 import org.freeplane.features.styles.mindmapmode.AssignStyleAction;
+import org.freeplane.features.styles.mindmapmode.styleeditorpanel.LocalModificationTracker;
 import org.freeplane.features.styles.mindmapmode.MLogicalStyleController;
 import org.freeplane.features.styles.mindmapmode.stylespane.StyleRowLayout.Target;
 import org.freeplane.core.ui.ActionAcceleratorManager;
@@ -79,6 +80,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		super(new BorderLayout());
 		this.modeController = modeController;
 		list.setModel(model);
+		LocalModificationTracker.addListener(() -> SwingUtilities.invokeLater(list::repaint));
 		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		list.setCellRenderer(new StyleRow());
 		list.setFixedCellHeight(-1);
@@ -308,6 +310,14 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		SwingUtilities.invokeLater(this::scrollToCurrentStyle);
 	}
 
+	private int modificationsOf(IStyle style) {
+		final IMapSelection selection = Controller.getCurrentController().getSelection();
+		final NodeModel node = selection == null ? null : selection.getSelected();
+		if (node == null || !style.equals(LogicalStyleController.getController().getFirstStyle(node)))
+			return 0;
+		return LocalModificationTracker.countFor(node);
+	}
+
 	private void refreshLooks() {
 		list.repaint();
 		SwingUtilities.invokeLater(this::scrollToCurrentStyle);
@@ -363,8 +373,13 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 			if (cell == null || !cell.contains(event.getPoint()) || !model.get(index).isStyle())
 				return null;
 			final Point inCell = new Point(event.getX() - cell.x, event.getY() - cell.y);
-			if (layoutFor(cell, model.get(index).style).targetAt(inCell) == Target.MENU)
+			final StyleRowLayout rowLayout = layoutFor(cell, model.get(index).style);
+			if (rowLayout.targetAt(inCell) == Target.MENU)
 				return TextUtils.getText("styles_panel.menu");
+			final int modifications = modificationsOf(model.get(index).style);
+			if (modifications > 0 && StyleModificationMarker.boundsIn(rowLayout.style).contains(inCell))
+				return modifications == 1 ? TextUtils.getText("format_panel.local_modifications_one")
+				        : TextUtils.format("format_panel.local_modifications_many", modifications);
 			return TextUtils.getText("styles_panel.apply_style");
 		}
 
@@ -383,10 +398,12 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 		private static final long serialVersionUID = 1L;
 		private static final int HEADER_PADDING = 5;
 		private final Color CURRENT_FRAME_COLOR = new Color(0, 0, 128);
+		private final Color MODIFIED_MARKER_COLOR = new Color(0xD9, 0x7A, 0x00);
 		private String header;
 		private boolean blank;
 		private IStyle style;
 		private boolean current;
+		private int modifications;
 		private Target hovered;
 
 		@Override
@@ -396,11 +413,14 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 			blank = value.isBlank();
 			style = value.style;
 			current = false;
+			modifications = 0;
 			hovered = null;
 			if (style != null) {
 				final IMapSelection selection = Controller.getCurrentController().getSelection();
 				final NodeModel node = selection == null ? null : selection.getSelected();
 				current = node != null && style.equals(LogicalStyleController.getController().getFirstStyle(node));
+				if (current)
+					modifications = LocalModificationTracker.countFor(node);
 				hovered = index == hoveredIndex ? hoveredTarget : null;
 			}
 			return this;
@@ -432,6 +452,7 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 				final StyleRowLayout layout = new StyleRowLayout(getWidth(), getHeight(), acceleratorWidth(style));
 				paintCurrentMarker(g);
 				paintStyle(g, layout);
+				paintModificationMarker(g, layout.style);
 				paintAccelerator(g, layout.accelerator);
 				paintMenuArrow(g, layout.menu, hovered == Target.MENU);
 			}
@@ -478,6 +499,21 @@ public class StylesPanel extends JPanel implements INodeSelectionListener, INode
 			g.clipRect(bounds.x, bounds.y, bounds.width, bounds.height);
 			g.drawString(style.toString(), textX, textY);
 			g.setClip(clip);
+		}
+
+		private void paintModificationMarker(Graphics2D g, Rectangle styleBounds) {
+			if (modifications <= 0)
+				return;
+			final Rectangle marker = StyleModificationMarker.boundsIn(styleBounds);
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g.setColor(MODIFIED_MARKER_COLOR);
+			g.fillOval(marker.x, marker.y, marker.width, marker.height);
+			g.setColor(Color.WHITE);
+			g.setFont(list.getFont().deriveFont(Font.BOLD, marker.height - 5f));
+			final FontMetrics metrics = g.getFontMetrics();
+			final String label = StyleModificationMarker.label(modifications);
+			g.drawString(label, marker.x + (marker.width - metrics.stringWidth(label)) / 2,
+			    marker.y + (marker.height - metrics.getHeight()) / 2 + metrics.getAscent());
 		}
 
 		private void paintAccelerator(Graphics2D g, Rectangle bounds) {
