@@ -8,24 +8,31 @@ class SharpLinearGeometry {
 	private final Point2D.Float end;
 	private final float normalX;
 	private final float normalY;
+	private final float endNormalX;
+	private final float endNormalY;
 	private final float halfWidth;
+	private final float endHalfWidth;
 
-	SharpLinearGeometry(Point2D.Float start, Point2D.Float end, float startHalfWidth, float nodeHalfWidth,
-	                    float nodeHalfHeight) {
+	SharpLinearGeometry(Point2D.Float start, Point2D.Float end, int endDirectionX, int endDirectionY,
+	                    float startHalfWidth, float endHalfWidth, float nodeHalfWidth, float nodeHalfHeight) {
 		this.start = start;
 		this.end = end;
+		this.endHalfWidth = endHalfWidth;
 		final float chordX = end.x - start.x;
 		final float chordY = end.y - start.y;
 		final float chord = (float) Math.hypot(chordX, chordY);
 		normalX = chord == 0 ? 0 : -chordY / chord;
 		normalY = chord == 0 ? 1 : chordX / chord;
+		endNormalX = endDirectionY;
+		endNormalY = -endDirectionX;
 		halfWidth = SharpEdgeBase.clampedHalfWidth(startHalfWidth, normalX, normalY, nodeHalfWidth, nodeHalfHeight);
 	}
 
 	Path2D shape() {
 		final Path2D.Float path = new Path2D.Float();
 		path.moveTo(start.x - normalX * halfWidth, start.y - normalY * halfWidth);
-		path.lineTo(end.x, end.y);
+		path.lineTo(end.x - endNormalX * endHalfWidth, end.y - endNormalY * endHalfWidth);
+		path.lineTo(end.x + endNormalX * endHalfWidth, end.y + endNormalY * endHalfWidth);
 		path.lineTo(start.x + normalX * halfWidth, start.y + normalY * halfWidth);
 		path.closePath();
 		return path;
