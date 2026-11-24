@@ -2,11 +2,13 @@ package org.freeplane.features.styles.mindmapmode.styleeditorpanel;
 
 import java.awt.Color;
 import java.awt.Container;
+import java.util.function.Supplier;
 
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
 import org.freeplane.core.util.TextUtils;
+import org.freeplane.features.map.NodeModel;
 
 class LocalModificationBadge extends JLabel {
 	private static final long serialVersionUID = 1L;
@@ -16,9 +18,11 @@ class LocalModificationBadge extends JLabel {
 	private static final String MODIFIED_SYMBOL = "●";
 
 	private final Container root;
+	private final Supplier<NodeModel> nodeSupplier;
 
-	LocalModificationBadge(Container root) {
+	LocalModificationBadge(Container root, Supplier<NodeModel> nodeSupplier) {
 		this.root = root;
+		this.nodeSupplier = nodeSupplier;
 		setHorizontalAlignment(SwingConstants.RIGHT);
 		refresh();
 		LocalModificationCounter.watch(root, this::refresh);
@@ -29,6 +33,7 @@ class LocalModificationBadge extends JLabel {
 		setText(textFor(count));
 		setForeground(count == 0 ? CONFORMING_COLOR : MODIFIED_COLOR);
 		setToolTipText(tooltipFor(count));
+		LocalModificationTracker.publish(nodeSupplier.get(), count);
 	}
 
 	static String textFor(int count) {
