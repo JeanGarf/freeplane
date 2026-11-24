@@ -36,14 +36,10 @@ class SharpBezierGeometry {
 		final float directionY = chord == 0 ? 0 : chordY / chord;
 		this.startNormalX = -directionY;
 		this.startNormalY = directionX;
-		this.startHalfWidth = Math.min(startHalfWidth,
-		    Math.min(limit(nodeHalfWidth, startNormalX), limit(nodeHalfHeight, startNormalY)));
+		this.startHalfWidth = SharpEdgeBase.clampedHalfWidth(startHalfWidth, startNormalX, startNormalY, nodeHalfWidth,
+		    nodeHalfHeight);
 		this.endNormalX = endDirectionY;
 		this.endNormalY = -endDirectionX;
-	}
-
-	private static float limit(float room, float normalComponent) {
-		return Math.abs(normalComponent) < 1e-6f ? Float.MAX_VALUE : room / Math.abs(normalComponent);
 	}
 
 	GeneralPath shape() {
