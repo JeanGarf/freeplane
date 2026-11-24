@@ -38,24 +38,37 @@ public class LocalModificationMenu {
 		if (items.isEmpty())
 			return;
 		final JPopupMenu menu = new JPopupMenu();
-		menu.add(titleRow(menu, items.size(), node));
+		final JLabel title = new JLabel(tooltipFor(items.size()));
+		title.setForeground(UIManager.getColor("MenuItem.foreground"));
+		menu.add(row(title, revertButton(TextUtils.getText("format_panel.local_modifications_revert_all"), () -> {
+			menu.setVisible(false);
+			LocalModificationTracker.revertAll(node);
+		})));
 		menu.addSeparator();
+		final int[] remaining = { items.size() };
 		for (LocalModificationTracker.Item item : items)
-			menu.add(itemRow(menu, item));
+			menu.add(itemRow(menu, item, title, remaining));
 		menu.show(invoker, x, y);
 	}
 
-	private static JPanel titleRow(JPopupMenu menu, int count, NodeModel node) {
-		final JLabel label = new JLabel(tooltipFor(count));
-		label.setForeground(UIManager.getColor("MenuItem.foreground"));
-		final JPanel row = row(label, revertButton(menu, TextUtils.getText("format_panel.local_modifications_revert_all"),
-		    () -> LocalModificationTracker.revertAll(node)));
-		return row;
-	}
-
-	private static JPanel itemRow(JPopupMenu menu, LocalModificationTracker.Item item) {
+	private static JPanel itemRow(JPopupMenu menu, LocalModificationTracker.Item item, JLabel title, int[] remaining) {
 		final JLabel label = new JLabel(item.label);
-		final JPanel row = row(label, revertButton(menu, TextUtils.getText("reset_property_text"), item::revert));
+		final JPanel[] rowHolder = new JPanel[1];
+		final JButton revert = revertButton(TextUtils.getText("reset_property_text"), () -> {
+			item.revert();
+			remaining[0]--;
+			menu.remove(rowHolder[0]);
+			if (remaining[0] <= 0) {
+				menu.setVisible(false);
+				return;
+			}
+			title.setText(tooltipFor(remaining[0]));
+			menu.pack();
+			menu.revalidate();
+			menu.repaint();
+		});
+		final JPanel row = row(label, revert);
+		rowHolder[0] = row;
 		final Color background = row.getBackground();
 		row.addMouseListener(new MouseAdapter() {
 			@Override
@@ -89,17 +102,14 @@ public class LocalModificationMenu {
 		return row;
 	}
 
-	private static JButton revertButton(JPopupMenu menu, String tooltip, Runnable action) {
+	private static JButton revertButton(String tooltip, Runnable action) {
 		final JButton button = IconFont.createIconButton();
 		button.setText(IconFont.REVERT_CHARACTER);
 		button.setToolTipText(tooltip);
 		button.setFocusable(false);
 		button.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
 		button.setContentAreaFilled(false);
-		button.addActionListener(e -> {
-			menu.setVisible(false);
-			action.run();
-		});
+		button.addActionListener(e -> action.run());
 		return button;
 	}
 }
