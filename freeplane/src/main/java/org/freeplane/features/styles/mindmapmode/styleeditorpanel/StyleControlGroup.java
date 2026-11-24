@@ -332,6 +332,7 @@ class StyleControlGroup implements ControlGroup{
 	private void addStyleBox(final DefaultFormBuilder formBuilder) {
 	    mStyleBox = uiFactory.createStyleBox();
 	    mSetStyle = new RevertingProperty();
+		mSetStyle.excludeFromLocalModifications();
 		final StyleChangeListener listener = new StyleChangeListener();
 		mSetStyle.addPropertyChangeListener(listener);
 		formBuilder.append(new JLabel(TextUtils.getText("style")));

@@ -104,6 +104,8 @@ public class StyleEditorPanel extends JPanel {
 
 	private PanelEnabler panelEnabler;
 
+	private LocalModificationBadge localModificationBadge;
+
 	private final StyleEditorPanelSize panelConfiguration;
 
     private final ModeController modeController;
@@ -211,6 +213,8 @@ public class StyleEditorPanel extends JPanel {
 		}
 		formBuilder.getLayout().setHonorsVisibility(false);
 		add(formBuilder.getPanel(), BorderLayout.CENTER);
+		localModificationBadge = new LocalModificationBadge(formBuilder.getPanel());
+		add(localModificationBadge, BorderLayout.NORTH);
 		addListeners();
 		setFont(this, panelConfiguration.fontSize);
 	}
@@ -240,6 +244,8 @@ public class StyleEditorPanel extends JPanel {
 			for (int i=0; i<controlGroups.length; i++) {
 				controlGroups[i].setStyle(node, panelEnabler != null && panelEnabler.canEdit);
 			}
+			if (localModificationBadge != null)
+				localModificationBadge.refresh();
 
 		}
 		finally {
