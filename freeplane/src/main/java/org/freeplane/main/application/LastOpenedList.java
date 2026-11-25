@@ -282,6 +282,10 @@ public class LastOpenedList implements IMapViewChangeListener, IMapChangeListene
 
 	@Override
 	public void mapChanged(final MapChangeEvent event) {
+		if (IMapViewManager.MapChangeEventProperty.MAP_VIEW_TITLE.equals(event.getProperty())) {
+			registerSavedMap(event.getMap());
+			return;
+		}
 		if (!event.getProperty().equals(UrlManager.MAP_URL)) {
 			return;
 		}
@@ -293,6 +297,19 @@ public class LastOpenedList implements IMapViewChangeListener, IMapChangeListene
 				updateList(event.getMap(), restorable);
 			}
 		}
+	}
+
+	private void registerSavedMap(final MapModel map) {
+		if (map == null || !map.isSaved())
+			return;
+		final String restorable = getRestoreable(map);
+		if (restorable == null)
+			return;
+		final List<String> restorables = new ArrayList<String>();
+		for (RecentFile recentFile : lastOpenedList)
+			restorables.add(recentFile.restorable);
+		if (!RecentFilesHead.isAlreadyFirst(restorables, restorable))
+			updateList(map, restorable);
 	}
 
     public void open(final RecentFile recentFile) throws FileNotFoundException, MalformedURLException, IOException,
