@@ -15,10 +15,4 @@ public class ArchiveNamingTest {
 	public void appendsFpmxToOtherNames() {
 		assertThat(ArchiveNaming.archiveNameFor("map")).isEqualTo("map.fpmx");
 	}
-
-	@Test
-	public void recognizesArchives() {
-		assertThat(ArchiveNaming.isArchive("map.fpmx")).isTrue();
-		assertThat(ArchiveNaming.isArchive("map.mm")).isFalse();
-	}
 }

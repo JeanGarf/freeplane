@@ -789,21 +789,6 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 		return archive;
 	}
 
-	public boolean saveAsArchive(final MapModel map) {
-		final File original = map.getFile();
-		if (original == null || ArchiveNaming.isArchive(original.getName()))
-			return false;
-		final File archive = confirmedArchiveFile(original);
-		if (archive == null)
-			return false;
-		if (map.getExtension(EmbeddedImagesOfferFlag.class) == null)
-			map.addExtension(new EmbeddedImagesOfferFlag());
-		final boolean saved = save(map, archive);
-		if (saved && original.exists())
-			OldMapFolder.moveInto(original);
-		return saved;
-	}
-
 	public boolean save(final MapModel map, final File file) {
 		if (file == null) {
 			return saveAs(map);

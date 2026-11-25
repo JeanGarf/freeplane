@@ -56,17 +56,8 @@ class EmbedImagesAction extends AFreeplaneAction {
 			UITools.informationMessage(TextUtils.getText("EmbedImagesAction.none"));
 			return;
 		}
+		UITools.informationMessage(TextUtils.format("EmbedImagesAction.done", embedded));
 		final File unusedFolder = unusedFilesFolder(map);
-		final File mapFile = map.getFile();
-		if (mapFile != null && !ArchiveNaming.isArchive(mapFile.getName())) {
-			final int answer = JOptionPane.showConfirmDialog(UITools.getCurrentFrame(),
-			    TextUtils.format("EmbedImagesAction.done_offer_archive", embedded), "Freeplane",
-			    JOptionPane.YES_NO_OPTION);
-			if (answer == JOptionPane.YES_OPTION)
-				MFileManager.getController(Controller.getCurrentModeController()).saveAsArchive(map);
-		}
-		else
-			UITools.informationMessage(TextUtils.format("EmbedImagesAction.done", embedded));
 		if (unusedFolder != null)
 			offerToArchive(map, unusedFolder);
 	}
