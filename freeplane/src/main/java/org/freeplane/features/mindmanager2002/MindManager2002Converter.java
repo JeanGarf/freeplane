@@ -1,34 +1,31 @@
 package org.freeplane.features.mindmanager2002;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Base64;
 import java.util.function.Function;
 
 import javax.imageio.ImageIO;
 
 class MindManager2002Converter {
-	private static final String IMAGE_DIRECTORY_SUFFIX = "_files";
+	private static final String PNG_DATA_URI_PREFIX = "data:image/png;base64,";
 
 	static Mm2002Map read(File mmpFile) throws IOException {
 		return Mm2002FileReader.read(Files.readAllBytes(mmpFile.toPath()));
 	}
 
-	static String toFreeplaneXml(Mm2002Map map, File outputMapFile, ConversionTable table,
+	static String toFreeplaneXml(Mm2002Map map, ConversionTable table,
 			Function<String, StyleAppearance> styleAppearance) throws IOException {
-		String directoryName = imageDirectoryName(outputMapFile);
-		File imageDirectory = new File(outputMapFile.getParentFile(), directoryName);
-		return new FreeplaneMapWriter((name, image) -> {
-			if (!imageDirectory.isDirectory() && !imageDirectory.mkdirs())
-				throw new IOException("Cannot create " + imageDirectory);
-			ImageIO.write(image, "png", new File(imageDirectory, name));
-			return FreeplaneMapWriter.uri(null, directoryName + "/" + name);
-		}, table, styleAppearance).write(map);
+		return new FreeplaneMapWriter((name, image) -> pngDataUri(image), table, styleAppearance).write(map);
 	}
 
-	static String imageDirectoryName(File outputMapFile) {
-		String name = outputMapFile.getName();
-		int extension = name.lastIndexOf('.');
-		return (extension > 0 ? name.substring(0, extension) : name) + IMAGE_DIRECTORY_SUFFIX;
+	static String pngDataUri(BufferedImage image) throws IOException {
+		ByteArrayOutputStream png = new ByteArrayOutputStream();
+		if (!ImageIO.write(image, "png", png))
+			throw new IOException("Cannot encode image as PNG");
+		return PNG_DATA_URI_PREFIX + Base64.getEncoder().encodeToString(png.toByteArray());
 	}
 }

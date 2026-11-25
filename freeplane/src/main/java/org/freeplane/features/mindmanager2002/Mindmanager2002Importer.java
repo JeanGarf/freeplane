@@ -57,7 +57,7 @@ public class Mindmanager2002Importer {
 			final Map<String, Integer> missingStyles = NewStyles.missing(map.fillColors(), table, styles::contains);
 			if (choices.addNewStylesToTemplate && !missingStyles.isEmpty())
 				addToTemplate(styles, missingStyles);
-			final String xml = MindManager2002Converter.toFreeplaneXml(map, outputFile, table, styles::appearance);
+			final String xml = MindManager2002Converter.toFreeplaneXml(map, table, styles::appearance);
 			final MapModel importedMap = XmlImporter.newMap(new StringReader(xml), outputFile,
 					newMap -> UserStyleCreator.addMissingStyles(newMap, missingStyles));
 			SourceFileArchiver.archiveAfterFirstSave(importedMap, mmpFile, SourceFileArchiver.MMP_FOLDER);
