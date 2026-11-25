@@ -12,6 +12,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.swing.AbstractAction;
+import javax.swing.JCheckBox;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import org.freeplane.api.swing.JFileChooser;
@@ -37,6 +38,10 @@ public class ManageAssociatedMindMapsDialog{
     private URI followedMapLocation;
     private URI associatedMapLocation;
     
+    private final TemplateFollowing templateFollowing;
+    private final JCheckBox followTemplateCheckBox;
+    private final JTextField followedMapField;
+    private final JButton changeFollowedMapButton;
     private final JButton[] followedMapButtons;
     private final JButton[] associatedMapButtons;
     
@@ -49,37 +54,59 @@ public class ManageAssociatedMindMapsDialog{
         Frame owner = UITools.getCurrentFrame();
         dialog = new JDialog(owner);
         FormBuilder formBuilder = FormBuilder.create().columns("p, 3dlu, fill:3dlu:grow, 3dlu, p")
-                .rows("p, 3dlu, p, 24dlu, p, 3dlu, p, 3dlu, p");
+                .rows("p, 3dlu, p, 3dlu, p, 24dlu, p, 3dlu, p, 3dlu, p");
+        templateFollowing = new TemplateFollowing(new TemplateFollowing.Properties() {
+            @Override
+            public String get(String key) {
+                return MapStyle.getController().getProperty(map, key);
+            }
+
+            @Override
+            public void set(String key, String value) {
+                MapStyle.getController().setProperty(map, key, value);
+            }
+        });
         formBuilder.add(TextUtils.getText("followed_map")).xy(1,  1);
-        JTextField followedMapField = createReadOnlyField();
-        formBuilder.add(followedMapField).xy(3, 1);
-        JButton changeFollowedMapButton = createChangeMapButton(MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY, "select_followed_map", followedMapField);
-        formBuilder.add(changeFollowedMapButton).xy(5, 1);
+        followTemplateCheckBox = new JCheckBox(TextUtils.getText("follow_associated_template"));
+        formBuilder.add(followTemplateCheckBox).xyw(3, 1, 3);
+        followedMapField = createReadOnlyField();
+        formBuilder.add(followedMapField).xy(3, 3);
+        changeFollowedMapButton = createChangeMapButton(MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY, "select_followed_map", followedMapField);
+        formBuilder.add(changeFollowedMapButton).xy(5, 3);
         JButton openFollowedMapButton = createOpenButton(() -> followedMapLocation);
         JButton copyStylesFromFollowedMapButton = createCopyStylesButton(() -> followedMapLocation);
         JButton replaceStylesFromFollowedMapButton = createReplaceStylesButton(() -> followedMapLocation);
         JButton unfolowButton = createUnfollowButton(followedMapField);
         followedMapButtons = new JButton[] {openFollowedMapButton, copyStylesFromFollowedMapButton, replaceStylesFromFollowedMapButton, unfolowButton};
         formBuilder.addBar(openFollowedMapButton, copyStylesFromFollowedMapButton, 
-                replaceStylesFromFollowedMapButton, unfolowButton).xyw(1, 3, 5);
+                replaceStylesFromFollowedMapButton, unfolowButton).xyw(1, 5, 5);
         
-        formBuilder.add(TextUtils.getText("associated_template")).xy(1,  5);
+        formBuilder.add(TextUtils.getText("associated_template")).xy(1,  7);
         JTextField associatedMapField = createReadOnlyField();
-        formBuilder.add(associatedMapField).xy(3, 5);
+        formBuilder.add(associatedMapField).xy(3, 7);
         JButton changeAssosiatedMapButton = createChangeMapButton(MapStyleModel.ASSOCIATED_TEMPLATE_LOCATION_PROPERTY, "select_associated_template", associatedMapField);
-        formBuilder.add(changeAssosiatedMapButton).xy(5, 5);
+        formBuilder.add(changeAssosiatedMapButton).xy(5, 7);
         JButton openAssociatedMapButton = createOpenButton(() -> associatedMapLocation);
         JButton copyStylesFromAssociatedMapButton = createCopyStylesButton(() -> associatedMapLocation);
         JButton replaceStylesFromAssociatedMapButton = createReplaceStylesButton(() -> associatedMapLocation);
         associatedMapButtons = new JButton[] {openAssociatedMapButton, copyStylesFromAssociatedMapButton, replaceStylesFromAssociatedMapButton};
         formBuilder.addBar(openAssociatedMapButton, copyStylesFromAssociatedMapButton, 
-                replaceStylesFromAssociatedMapButton).xyw(1, 7, 5);
+                replaceStylesFromAssociatedMapButton).xyw(1, 9, 5);
         
         JButton closeButton = createCloseMapButton();
-        formBuilder.add(closeButton).xyw(1, 9, 5, "r,c");
+        formBuilder.add(closeButton).xyw(1, 11, 5, "r,c");
 
         updateAssociatedMap(MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY, followedMapField, TextUtils.getText("no_map_followed"));      
         updateAssociatedMap(MapStyleModel.ASSOCIATED_TEMPLATE_LOCATION_PROPERTY, associatedMapField, TextUtils.getText("no_template_associated"));      
+        followTemplateCheckBox.addActionListener(e -> {
+            if (followTemplateCheckBox.isSelected()) {
+                templateFollowing.followTemplate();
+            } else {
+                templateFollowing.stopFollowingTemplate();
+            }
+            updateAssociatedMap(MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY, followedMapField, TextUtils.getText("no_map_followed"));
+        });
+        refreshFollowingState();
 
         dialog.addWindowListener(new WindowAdapter() {
             @Override
@@ -124,7 +151,7 @@ public class ManageAssociatedMindMapsDialog{
             MapStyle.getController().setProperty(map, MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY, null);
             MapStyle.getController().setProperty(map, MapStyleModel.FOLLOWED_MAP_LAST_TIME, null);
             showText(followedMapField, TextUtils.getText("no_map_followed"));
-            enableButtons(followedMapButtons, false);
+            refreshFollowingState();
         });
         return unfolowButton;
     }
@@ -185,9 +212,16 @@ public class ManageAssociatedMindMapsDialog{
             if(! file.exists()){
                 return;
             }
-            MapStyle.getController().setProperty(map, mapProperty,
-                    TemplateManager.INSTANCE.normalizeTemplateLocation(file.toURI()).toString());
+            String location = TemplateManager.INSTANCE.normalizeTemplateLocation(file.toURI()).toString();
+            if (MapStyleModel.ASSOCIATED_TEMPLATE_LOCATION_PROPERTY.equals(mapProperty)) {
+                templateFollowing.changeTemplate(location);
+            } else {
+                MapStyle.getController().setProperty(map, mapProperty, location);
+            }
             updateAssociatedMap(mapProperty, field, TextUtils.getText("no_map_followed"));
+            if (MapStyleModel.ASSOCIATED_TEMPLATE_LOCATION_PROPERTY.equals(mapProperty)) {
+                updateAssociatedMap(MapStyleModel.FOLLOWED_TEMPLATE_LOCATION_PROPERTY, followedMapField, TextUtils.getText("no_map_followed"));
+            }
         });
         return assignMapButton;
     }
@@ -217,6 +251,15 @@ public class ManageAssociatedMindMapsDialog{
             associatedMapLocation = uri;
             enableButtons(associatedMapButtons, uri != null);
         }
+        refreshFollowingState();
+    }
+
+    private void refreshFollowingState() {
+        boolean following = templateFollowing.isFollowingTemplate();
+        followTemplateCheckBox.setSelected(following);
+        followTemplateCheckBox.setEnabled(templateFollowing.canFollowTemplate());
+        changeFollowedMapButton.setEnabled(!following);
+        enableButtons(followedMapButtons, !following && followedMapLocation != null);
     }
     
     
