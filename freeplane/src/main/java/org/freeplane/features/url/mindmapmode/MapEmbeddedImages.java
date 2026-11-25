@@ -8,6 +8,7 @@ import org.freeplane.features.map.NodeModel;
 import org.freeplane.features.note.NoteModel;
 import org.freeplane.features.text.DetailModel;
 import org.freeplane.features.url.fpmx.EmbeddedImages;
+import org.freeplane.view.swing.features.filepreview.ExternalResource;
 
 class MapEmbeddedImages {
 	static boolean existIn(MapModel map) {
@@ -16,11 +17,16 @@ class MapEmbeddedImages {
 		while (!pending.isEmpty()) {
 			final NodeModel node = pending.pop();
 			if (containsImages(node.getText()) || containsImages(NoteModel.getNoteText(node))
-			        || containsImages(DetailModel.getDetailText(node)))
+			        || containsImages(DetailModel.getDetailText(node)) || hasEmbeddedResource(node))
 				return true;
 			pending.addAll(node.getChildren());
 		}
 		return false;
+	}
+
+	private static boolean hasEmbeddedResource(NodeModel node) {
+		final ExternalResource resource = node.getExtension(ExternalResource.class);
+		return resource != null && containsImages(resource.getUri().toString());
 	}
 
 	private static boolean containsImages(String text) {

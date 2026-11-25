@@ -10,8 +10,4 @@ class ArchiveNaming {
 		        : mapFileName;
 		return baseName + FpmxArchive.FILE_EXTENSION;
 	}
-
-	static boolean isArchive(String fileName) {
-		return fileName.endsWith(FpmxArchive.FILE_EXTENSION);
-	}
 }
