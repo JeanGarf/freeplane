@@ -371,28 +371,32 @@ public class LastOpenedList implements IMapViewChangeListener, IMapChangeListene
     }
 
 	public void safeOpen(final RecentFile recentFile) {
-		try {
-			open(recentFile);
+		final boolean remove = RecentFileOpening.shouldRemoveFromList(() -> open(recentFile),
+		    exception -> askWhatToDoWithUnopenedFile(recentFile, exception));
+		if (remove) {
+			lastOpenedList.remove(recentFile);
+			updateMenus();
 		}
-		catch (final Exception ex) {
-			LogUtils.warn(ex);
-			final String message = TextUtils.format("remove_file_from_list_on_error", recentFile.restorable);
-			UITools.showFrame();
-			final Component frame = UITools.getMenuComponent();
-			JTextArea messageArea = new JTextArea(message);
-			messageArea.setLineWrap(true);
-			messageArea.setWrapStyleWord(true);
-			messageArea.setColumns(Math.min(80, message.length() + 5));
-			messageArea.setEditable(false);
-			messageArea.setSize(messageArea.getPreferredSize());
-			final int remove = JOptionPane.showConfirmDialog(frame,
-					messageArea,
-					"Freeplane", JOptionPane.YES_NO_OPTION);
-			if (remove == JOptionPane.YES_OPTION) {
-				lastOpenedList.remove(recentFile);
-				updateMenus();
-			}
-		}
+	}
+
+	private RecentFileOpening.Choice askWhatToDoWithUnopenedFile(final RecentFile recentFile, final Exception exception) {
+		LogUtils.warn(exception);
+		final String message = TextUtils.format("recent_file_open_failed", recentFile.restorable);
+		UITools.showFrame();
+		final Component frame = UITools.getMenuComponent();
+		JTextArea messageArea = new JTextArea(message);
+		messageArea.setLineWrap(true);
+		messageArea.setWrapStyleWord(true);
+		messageArea.setColumns(Math.min(80, message.length() + 5));
+		messageArea.setEditable(false);
+		messageArea.setSize(messageArea.getPreferredSize());
+		final Object[] options = {
+		        TextUtils.getText("recent_file_open_failed.retry"),
+		        TextUtils.getText("recent_file_open_failed.remove"),
+		        TextUtils.getText("recent_file_open_failed.keep")};
+		final int selected = JOptionPane.showOptionDialog(frame, messageArea, "Freeplane",
+		    JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+		return RecentFileOpening.Choice.ofOptionIndex(selected);
 	}
 
 	public void saveProperties() {
