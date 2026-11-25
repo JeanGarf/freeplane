@@ -8,7 +8,10 @@ class MapFilesFolder {
 	static final String SUFFIX = "_files";
 
 	static File of(File mapFile) {
-		return new File(mapFile.getAbsoluteFile().getParentFile(), mapFile.getName() + SUFFIX);
+		final String name = mapFile.getName();
+		final int extension = name.lastIndexOf('.');
+		final String baseName = extension > 0 ? name.substring(0, extension) : name;
+		return new File(mapFile.getAbsoluteFile().getParentFile(), baseName + SUFFIX);
 	}
 
 	static boolean isReferenced(File folder, Collection<File> referencedFiles) {
