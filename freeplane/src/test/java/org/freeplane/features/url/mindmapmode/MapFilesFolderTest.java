@@ -16,15 +16,28 @@ public class MapFilesFolderTest {
 	public TemporaryFolder temporary = new TemporaryFolder();
 
 	@Test
-	public void folderIsNextToMapNamedAfterMapFile() {
+	public void folderIsNextToMapNamedAfterMapFileWithoutLastExtension() {
 		final File map = new File(temporary.getRoot(), "test.mmp.mm");
 
-		assertThat(MapFilesFolder.of(map)).isEqualTo(new File(temporary.getRoot(), "test.mmp.mm_files"));
+		assertThat(MapFilesFolder.of(map)).isEqualTo(new File(temporary.getRoot(), "test.mmp_files"));
+	}
+
+	@Test
+	public void folderNameIsTheSameForMmAndFpmxFiles() {
+		final File mm = new File(temporary.getRoot(), "map.mm");
+		final File fpmx = new File(temporary.getRoot(), "map.fpmx");
+
+		assertThat(MapFilesFolder.of(fpmx)).isEqualTo(MapFilesFolder.of(mm));
+	}
+
+	@Test
+	public void folderKeepsFullNameWhenThereIsNoExtension() {
+		assertThat(MapFilesFolder.of(new File(temporary.getRoot(), "map"))).isEqualTo(new File(temporary.getRoot(), "map_files"));
 	}
 
 	@Test
 	public void folderIsReferencedWhenAFileInsideIsStillUsed() throws IOException {
-		final File folder = temporary.newFolder("map.mm_files");
+		final File folder = temporary.newFolder("map_files");
 		final File inside = new File(folder, "image.png");
 
 		assertThat(MapFilesFolder.isReferenced(folder, Arrays.asList(inside))).isTrue();
@@ -32,8 +45,8 @@ public class MapFilesFolderTest {
 
 	@Test
 	public void folderIsNotReferencedWhenOnlyOtherFilesAreUsed() throws IOException {
-		final File folder = temporary.newFolder("map.mm_files");
-		final File sibling = new File(temporary.getRoot(), "map.mm_files2/image.png");
+		final File folder = temporary.newFolder("map_files");
+		final File sibling = new File(temporary.getRoot(), "map_files2/image.png");
 		final File outside = new File(temporary.getRoot(), "other.png");
 
 		assertThat(MapFilesFolder.isReferenced(folder, Arrays.asList(sibling, outside))).isFalse();
