@@ -5,12 +5,18 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
+
+import javax.swing.JOptionPane;
 
 import org.freeplane.core.ui.AFreeplaneAction;
 import org.freeplane.core.ui.components.UITools;
 import org.freeplane.core.util.LogUtils;
 import org.freeplane.core.util.TextUtils;
+import org.freeplane.core.util.Hyperlink;
+import org.freeplane.features.link.NodeLinks;
 import org.freeplane.features.map.MapModel;
 import org.freeplane.features.map.NodeModel;
 import org.freeplane.features.mode.Controller;
@@ -48,6 +54,53 @@ class EmbedImagesAction extends AFreeplaneAction {
 		}
 		UITools.informationMessage(embedded == 0 ? TextUtils.getText("EmbedImagesAction.none")
 		        : TextUtils.format("EmbedImagesAction.done", embedded));
+		if (embedded > 0)
+			offerToArchiveUnusedFilesFolder(map);
+	}
+
+	private void offerToArchiveUnusedFilesFolder(final MapModel map) {
+		final File mapFile = map.getFile();
+		if (mapFile == null)
+			return;
+		final File folder = MapFilesFolder.of(mapFile);
+		if (!folder.isDirectory() || MapFilesFolder.isReferenced(folder, referencedFiles(map)))
+			return;
+		final int answer = JOptionPane.showConfirmDialog(UITools.getCurrentFrame(),
+		    TextUtils.format("EmbedImagesAction.move_folder", folder.getName()), "Freeplane",
+		    JOptionPane.YES_NO_OPTION);
+		if (answer == JOptionPane.YES_OPTION)
+			FolderArchiverAfterSave.archiveAfterNextSave(map, folder);
+	}
+
+	private List<File> referencedFiles(final MapModel map) {
+		final List<File> files = new ArrayList<>();
+		final Deque<NodeModel> pending = new ArrayDeque<>();
+		pending.add(map.getRootNode());
+		while (!pending.isEmpty()) {
+			final NodeModel node = pending.pop();
+			final ExternalResource resource = node.getExtension(ExternalResource.class);
+			if (resource != null)
+				addFile(files, map, resource.getUri().toString());
+			final Hyperlink link = NodeLinks.getLink(node);
+			if (link != null)
+				addFile(files, map, link.getUri().toString());
+			for (String html : new String[] { node.getText(), DetailModel.getDetailText(node), NoteModel.getNoteText(node) })
+				for (String source : HtmlImageEmbedder.sources(html))
+					addFile(files, map, source);
+			pending.addAll(node.getChildren());
+		}
+		return files;
+	}
+
+	private void addFile(final List<File> files, final MapModel map, final String source) {
+		try {
+			final File file = fileOf(map, source);
+			if (file != null)
+				files.add(file);
+		}
+		catch (Exception e) {
+			LogUtils.warn(e);
+		}
 	}
 
 	private int embedInExtension(final MapModel map, final NodeModel node) {

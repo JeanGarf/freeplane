@@ -48,4 +48,18 @@ public class HtmlImageEmbedderTest {
 		assertThat(result.html).isNull();
 		assertThat(result.embeddedCount).isZero();
 	}
+
+	@Test
+	public void listsImageSources() {
+		final java.util.List<String> sources = HtmlImageEmbedder
+		    .sources("<p><img src=\"a.png\"> text <img alt=\"x\" src='dir/b.png'></p>");
+
+		org.assertj.core.api.Assertions.assertThat(sources).containsExactly("a.png", "dir/b.png");
+	}
+
+	@Test
+	public void listsNoSourceForNullOrTextWithoutImages() {
+		org.assertj.core.api.Assertions.assertThat(HtmlImageEmbedder.sources(null)).isEmpty();
+		org.assertj.core.api.Assertions.assertThat(HtmlImageEmbedder.sources("plain")).isEmpty();
+	}
 }

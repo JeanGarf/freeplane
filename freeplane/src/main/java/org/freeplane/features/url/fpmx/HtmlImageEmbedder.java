@@ -1,5 +1,7 @@
 package org.freeplane.features.url.fpmx;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,6 +22,16 @@ public class HtmlImageEmbedder {
 
 	private static final Pattern IMAGE_SOURCE = Pattern.compile("(<img\\b[^>]*?\\bsrc\\s*=\\s*)([\"'])(.*?)\\2",
 	    Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+	public static List<String> sources(String html) {
+		final List<String> sources = new ArrayList<>();
+		if (html == null)
+			return sources;
+		final Matcher matcher = IMAGE_SOURCE.matcher(html);
+		while (matcher.find())
+			sources.add(matcher.group(3));
+		return sources;
+	}
 
 	public static Result embed(String html, SourceResolver resolver) {
 		if (html == null)
