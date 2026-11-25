@@ -52,19 +52,34 @@ class EmbedImagesAction extends AFreeplaneAction {
 			embedded += embedInExtension(map, node) + embedInTexts(map, node);
 			pending.addAll(node.getChildren());
 		}
-		UITools.informationMessage(embedded == 0 ? TextUtils.getText("EmbedImagesAction.none")
-		        : TextUtils.format("EmbedImagesAction.done", embedded));
-		if (embedded > 0)
-			offerToArchiveUnusedFilesFolder(map);
+		if (embedded == 0) {
+			UITools.informationMessage(TextUtils.getText("EmbedImagesAction.none"));
+			return;
+		}
+		final File unusedFolder = unusedFilesFolder(map);
+		final File mapFile = map.getFile();
+		if (mapFile != null && !ArchiveNaming.isArchive(mapFile.getName())) {
+			final int answer = JOptionPane.showConfirmDialog(UITools.getCurrentFrame(),
+			    TextUtils.format("EmbedImagesAction.done_offer_archive", embedded), "Freeplane",
+			    JOptionPane.YES_NO_OPTION);
+			if (answer == JOptionPane.YES_OPTION)
+				MFileManager.getController(Controller.getCurrentModeController()).saveAsArchive(map);
+		}
+		else
+			UITools.informationMessage(TextUtils.format("EmbedImagesAction.done", embedded));
+		if (unusedFolder != null)
+			offerToArchive(map, unusedFolder);
 	}
 
-	private void offerToArchiveUnusedFilesFolder(final MapModel map) {
+	private File unusedFilesFolder(final MapModel map) {
 		final File mapFile = map.getFile();
 		if (mapFile == null)
-			return;
+			return null;
 		final File folder = MapFilesFolder.of(mapFile);
-		if (!folder.isDirectory() || MapFilesFolder.isReferenced(folder, referencedFiles(map)))
-			return;
+		return folder.isDirectory() && !MapFilesFolder.isReferenced(folder, referencedFiles(map)) ? folder : null;
+	}
+
+	private void offerToArchive(final MapModel map, final File folder) {
 		final int answer = JOptionPane.showConfirmDialog(UITools.getCurrentFrame(),
 		    TextUtils.format("EmbedImagesAction.move_folder", folder.getName()), "Freeplane",
 		    JOptionPane.YES_NO_OPTION);

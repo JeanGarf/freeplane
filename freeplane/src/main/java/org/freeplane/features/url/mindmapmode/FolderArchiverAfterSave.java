@@ -12,7 +12,16 @@ class FolderArchiverAfterSave implements IMapChangeListener {
 	private final File folder;
 
 	static void archiveAfterNextSave(MapModel map, File folder) {
-		map.addMapChangeListener(new FolderArchiverAfterSave(map, folder));
+		final FolderArchiverAfterSave archiver = new FolderArchiverAfterSave(map, folder);
+		if (archiver.isMapSaved())
+			archiver.archive();
+		else
+			map.addMapChangeListener(archiver);
+	}
+
+	boolean isMapSaved() {
+		final File mapFile = map.getFile();
+		return map.isSaved() && mapFile != null && mapFile.exists();
 	}
 
 	FolderArchiverAfterSave(MapModel map, File folder) {
@@ -24,8 +33,7 @@ class FolderArchiverAfterSave implements IMapChangeListener {
 	public void mapChanged(MapChangeEvent event) {
 		if (event.getMap() != map || !MapChangeEventProperty.MAP_VIEW_TITLE.equals(event.getProperty()))
 			return;
-		final File mapFile = map.getFile();
-		if (!map.isSaved() || mapFile == null || !mapFile.exists())
+		if (!isMapSaved())
 			return;
 		map.removeMapChangeListener(this);
 		archive();

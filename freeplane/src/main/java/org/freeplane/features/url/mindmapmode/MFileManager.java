@@ -777,16 +777,31 @@ public class MFileManager extends UrlManager implements IMapViewChangeListener {
 		    TextUtils.getText("embedded_images_offer_archive"), "Freeplane", JOptionPane.YES_NO_OPTION);
 		if (answer != JOptionPane.YES_OPTION)
 			return null;
-		final String name = file.getName();
-		final String baseName = name.endsWith(UrlManager.FREEPLANE_FILE_EXTENSION)
-		        ? name.substring(0, name.length() - UrlManager.FREEPLANE_FILE_EXTENSION.length())
-		        : name;
-		final File archive = new File(file.getParentFile(), baseName + FpmxArchive.FILE_EXTENSION);
+		return confirmedArchiveFile(file);
+	}
+
+	private File confirmedArchiveFile(final File file) {
+		final File archive = new File(file.getParentFile(), ArchiveNaming.archiveNameFor(file.getName()));
 		if (archive.exists() && JOptionPane.YES_OPTION != JOptionPane.showConfirmDialog(
 		    Controller.getCurrentController().getMapViewManager().getMapViewComponent(),
 		    TextUtils.getText("map_already_exists"), "Freeplane", JOptionPane.YES_NO_OPTION))
 			return null;
 		return archive;
+	}
+
+	public boolean saveAsArchive(final MapModel map) {
+		final File original = map.getFile();
+		if (original == null || ArchiveNaming.isArchive(original.getName()))
+			return false;
+		final File archive = confirmedArchiveFile(original);
+		if (archive == null)
+			return false;
+		if (map.getExtension(EmbeddedImagesOfferFlag.class) == null)
+			map.addExtension(new EmbeddedImagesOfferFlag());
+		final boolean saved = save(map, archive);
+		if (saved && original.exists())
+			OldMapFolder.moveInto(original);
+		return saved;
 	}
 
 	public boolean save(final MapModel map, final File file) {
