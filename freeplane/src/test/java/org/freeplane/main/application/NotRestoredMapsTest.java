@@ -11,6 +11,7 @@ import org.junit.Test;
 
 public class NotRestoredMapsTest {
 	private static final List<File> NONE = Collections.emptyList();
+	private static final List<String> NONE_STRINGS = Collections.emptyList();
 
 	private List<File> toReopen(List<File> recent, List<File> notRestored, File selected) {
 		return NotRestoredMaps.toReopen(recent, file -> file, notRestored, selected);
@@ -42,5 +43,27 @@ public class NotRestoredMapsTest {
 	public void nothingToReopenWhenAllRestored() {
 		File a = new File("/a.mm");
 		assertEquals(NONE, toReopen(Arrays.asList(a), NONE, null));
+	}
+
+	@Test
+	public void sameFileListedTwiceIsReopenedOnce() {
+		File a = new File("/a.mm");
+		File b = new File("/b.mm");
+		List<String> recent = Arrays.asList("a1", "b", "a2");
+		java.util.Map<String, File> files = new java.util.HashMap<>();
+		files.put("a1", a);
+		files.put("a2", a);
+		files.put("b", b);
+		assertEquals(Arrays.asList("a1", "b"), NotRestoredMaps.toReopen(recent, files::get, Arrays.asList(a, b), null));
+	}
+
+	@Test
+	public void duplicateOfTheSelectedMapIsExcluded() {
+		File a = new File("/a.mm");
+		List<String> recent = Arrays.asList("a1", "a2");
+		java.util.Map<String, File> files = new java.util.HashMap<>();
+		files.put("a1", a);
+		files.put("a2", a);
+		assertEquals(NONE_STRINGS, NotRestoredMaps.toReopen(recent, files::get, Arrays.asList(a), "a1"));
 	}
 }
