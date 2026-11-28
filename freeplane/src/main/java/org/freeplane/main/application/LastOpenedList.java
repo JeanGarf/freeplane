@@ -289,9 +289,23 @@ public class LastOpenedList implements IMapViewChangeListener, IMapChangeListene
 		if (after != null) {
 			final String fileAfter = after.getFile();
 			if (fileAfter != null) {
-				final String restorable = getRestorable(new File(fileAfter));
-				updateList(event.getMap(), restorable);
+				final File archive = new File(fileAfter);
+				updateList(event.getMap(), getRestorable(archive));
+				removeConvertedMap((URL) event.getOldValue(), archive);
 			}
+		}
+	}
+
+	private void removeConvertedMap(final URL before, final File archive) {
+		if (before == null || before.getFile() == null)
+			return;
+		final File original = new File(before.getFile());
+		if (!ArchiveConversion.isConversion(original, archive))
+			return;
+		final RecentFile converted = findRecentFileByRestorable(getRestorable(original));
+		if (converted != null) {
+			lastOpenedList.remove(converted);
+			updateMenus();
 		}
 	}
 
