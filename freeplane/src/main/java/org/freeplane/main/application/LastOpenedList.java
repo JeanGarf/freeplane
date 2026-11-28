@@ -293,8 +293,9 @@ public class LastOpenedList implements IMapViewChangeListener, IMapChangeListene
 		if (after != null) {
 			final String fileAfter = after.getFile();
 			if (fileAfter != null) {
-				final String restorable = getRestorable(new File(fileAfter));
-				updateList(event.getMap(), restorable);
+				final File archive = new File(fileAfter);
+				updateList(event.getMap(), getRestorable(archive));
+				removeConvertedMap((URL) event.getOldValue(), archive);
 			}
 		}
 	}
@@ -310,6 +311,19 @@ public class LastOpenedList implements IMapViewChangeListener, IMapChangeListene
 			restorables.add(recentFile.restorable);
 		if (!RecentFilesHead.isAlreadyFirst(restorables, restorable))
 			updateList(map, restorable);
+	}
+
+	private void removeConvertedMap(final URL before, final File archive) {
+		if (before == null || before.getFile() == null)
+			return;
+		final File original = new File(before.getFile());
+		if (!ArchiveConversion.isConversion(original, archive))
+			return;
+		final RecentFile converted = findRecentFileByRestorable(getRestorable(original));
+		if (converted != null) {
+			lastOpenedList.remove(converted);
+			updateMenus();
+		}
 	}
 
     public void open(final RecentFile recentFile) throws FileNotFoundException, MalformedURLException, IOException,
