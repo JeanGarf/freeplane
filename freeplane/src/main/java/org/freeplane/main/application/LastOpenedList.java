@@ -375,6 +375,11 @@ public class LastOpenedList implements IMapViewChangeListener, IMapChangeListene
 		    mapSelectedOnStart);
 	}
 
+	private String displayedPath(final RecentFile recentFile) {
+		final File file = fileOf(recentFile);
+		return file != null ? file.getPath() : recentFile.restorable;
+	}
+
 	private File fileOf(final RecentFile recentFile) {
 		final StringTokenizer tokens = new StringTokenizer(recentFile.restorable, ":");
 		if (!tokens.hasMoreTokens())
@@ -419,7 +424,7 @@ public class LastOpenedList implements IMapViewChangeListener, IMapChangeListene
 
 	private RecentFileOpening.Choice askWhatToDoWithUnopenedFile(final RecentFile recentFile, final Exception exception) {
 		LogUtils.warn(exception);
-		final String message = TextUtils.format("recent_file_open_failed", recentFile.restorable);
+		final String message = TextUtils.format("recent_file_open_failed", displayedPath(recentFile));
 		UITools.showFrame();
 		final Component frame = UITools.getMenuComponent();
 		JTextArea messageArea = new JTextArea(message);
