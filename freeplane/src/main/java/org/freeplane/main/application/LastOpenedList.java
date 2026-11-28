@@ -321,25 +321,27 @@ public class LastOpenedList implements IMapViewChangeListener, IMapChangeListene
 	}
 
 	void openLastMapOnStart(final List<URL> notRestoredMapUrls, final Consumer<File> afterReopened) {
-		reopenNotRestoredMaps(notRestoredMapUrls, afterReopened);
-		if (mapSelectedOnStart != null) {
-			safeOpen(mapSelectedOnStart);
-			afterReopened.accept(fileOf(mapSelectedOnStart));
-		}
+		final List<RecentFile> toReopen = notRestoredMaps(notRestoredMapUrls);
+		if (mapSelectedOnStart != null)
+			toReopen.add(mapSelectedOnStart);
+		RecentFileOpening.reopenAll(toReopen, this::open,
+		    this::askWhatToDoWithUnopenedFile,
+		    recentFile -> afterReopened.accept(fileOf(recentFile)),
+		    recentFile -> {
+		        lastOpenedList.remove(recentFile);
+		        updateMenus();
+		    });
 		String lastMode = ResourceController.getResourceController().getProperty(LAST_MODE);
 		if(lastMode != null && ! lastMode.equals( Controller.getCurrentModeController().getModeName()))
 		    Controller.getCurrentController().selectMode(lastMode);
 	}
 
-	private void reopenNotRestoredMaps(final List<URL> notRestoredMapUrls, final Consumer<File> afterReopened) {
+	private List<RecentFile> notRestoredMaps(final List<URL> notRestoredMapUrls) {
 		final List<File> notRestoredFiles = new ArrayList<File>();
 		for (URL url : notRestoredMapUrls)
 			notRestoredFiles.add(new File(url.getFile()));
-		for (RecentFile recentFile : NotRestoredMaps.toReopen(new ArrayList<RecentFile>(lastOpenedList),
-		    this::fileOf, notRestoredFiles, mapSelectedOnStart)) {
-			safeOpen(recentFile);
-			afterReopened.accept(fileOf(recentFile));
-		}
+		return NotRestoredMaps.toReopen(new ArrayList<RecentFile>(lastOpenedList), this::fileOf, notRestoredFiles,
+		    mapSelectedOnStart);
 	}
 
 	private File fileOf(final RecentFile recentFile) {
