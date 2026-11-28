@@ -34,6 +34,7 @@ import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -367,8 +368,18 @@ class ApplicationViewController extends FrameController {
 	}
 
 
-	public void openMapsOnStart() {
+	public void showMapAtItsPreviousTab(File file) {
+	    if (file != null)
+	        mapViewWindows.showAtPlaceholder(file);
+	}
+
+	public void closeNotRestoredMapPlaceholders() {
+	    mapViewWindows.closePlaceholders();
+	}
+
+	public List<URL> openMapsOnStart() {
 	    mapViewWindows.loadLayout();
+	    return mapViewWindows.takeNotRestoredMapUrls();
     }
 
 	public void focusTo(MapView currentMapView, Runnable onFocus) {

@@ -41,6 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -737,6 +738,33 @@ class MapViewDockingWindows implements IMapViewChangeListener, PropertyChangeLis
                 ((MapView) mapView).refreshTitle();
 		}
 	}
+
+    void showAtPlaceholder(File file) {
+        final View placeholder = viewSerializer.takePlaceholder(file);
+        if (placeholder == null)
+            return;
+        final DockingWindow parent = placeholder.getWindowParent();
+        final View view = viewShowingMapFile(file);
+        if (view != null && parent instanceof TabWindow)
+            ((TabWindow) parent).addTab(view, parent.getChildWindowIndex(placeholder));
+        placeholder.close();
+    }
+
+    void closePlaceholders() {
+        viewSerializer.closePlaceholders();
+    }
+
+    private View viewShowingMapFile(File file) {
+        for (Component mapView : mapViews) {
+            if (file.equals(((MapView) mapView).getMap().getFile()))
+                return getContainingDockedWindow(mapView);
+        }
+        return null;
+    }
+
+    List<URL> takeNotRestoredMapUrls() {
+        return viewSerializer.takeNotRestoredMapUrls();
+    }
 
     private void restoreMapViews(List<View> restoredViews) {
         try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(emptyConfigurations))) {

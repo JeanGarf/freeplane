@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.function.Consumer;
 
 import javax.swing.Action;
 import javax.swing.JOptionPane;
@@ -350,13 +351,34 @@ public class LastOpenedList implements IMapViewChangeListener, IMapChangeListene
 		return file;
 	}
 
-	void openLastMapOnStart() {
+	void openLastMapOnStart(final List<URL> notRestoredMapUrls, final Consumer<File> afterReopened) {
+		reopenNotRestoredMaps(notRestoredMapUrls, afterReopened);
 		if (mapSelectedOnStart != null) {
 			safeOpen(mapSelectedOnStart);
+			afterReopened.accept(fileOf(mapSelectedOnStart));
 		}
 		String lastMode = ResourceController.getResourceController().getProperty(LAST_MODE);
 		if(lastMode != null && ! lastMode.equals( Controller.getCurrentModeController().getModeName()))
 		    Controller.getCurrentController().selectMode(lastMode);
+	}
+
+	private void reopenNotRestoredMaps(final List<URL> notRestoredMapUrls, final Consumer<File> afterReopened) {
+		final List<File> notRestoredFiles = new ArrayList<File>();
+		for (URL url : notRestoredMapUrls)
+			notRestoredFiles.add(new File(url.getFile()));
+		for (RecentFile recentFile : NotRestoredMaps.toReopen(new ArrayList<RecentFile>(lastOpenedList),
+		    this::fileOf, notRestoredFiles, mapSelectedOnStart)) {
+			safeOpen(recentFile);
+			afterReopened.accept(fileOf(recentFile));
+		}
+	}
+
+	private File fileOf(final RecentFile recentFile) {
+		final StringTokenizer tokens = new StringTokenizer(recentFile.restorable, ":");
+		if (!tokens.hasMoreTokens())
+			return null;
+		tokens.nextToken();
+		return createFileFromRestorable(tokens);
 	}
 
 	private void restore() {
