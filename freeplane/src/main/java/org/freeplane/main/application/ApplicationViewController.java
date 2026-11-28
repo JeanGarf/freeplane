@@ -367,8 +367,9 @@ class ApplicationViewController extends FrameController {
 	}
 
 
-	public void openMapsOnStart() {
+	public List<URL> openMapsOnStart() {
 	    mapViewWindows.loadLayout();
+	    return mapViewWindows.takeNotRestoredMapUrls();
     }
 
 	public void focusTo(MapView currentMapView, Runnable onFocus) {

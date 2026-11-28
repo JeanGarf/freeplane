@@ -27,7 +27,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.lang.reflect.Field;
+import java.net.URL;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -404,10 +407,9 @@ public class FreeplaneGUIStarter implements FreeplaneStarter {
 	private void loadLastMaps() {
 	    final boolean loadLastMap = ResourceController.getResourceController().getBooleanProperty(LOAD_LAST_MAP);
 	    final boolean loadLastMaps = ResourceController.getResourceController().getBooleanProperty(LOAD_LAST_MAPS);
-	    if(loadLastMaps)
-	    	viewController.openMapsOnStart();
+	    final List<URL> notRestoredMapUrls = loadLastMaps ? viewController.openMapsOnStart() : Collections.<URL>emptyList();
 	    if(userPropertiesStatus == UserPropertiesStatus.CURRENT_VERSION_FOUND && (loadLastMaps || loadLastMap))
-	    	applicationResourceController.getLastOpenedList().openLastMapOnStart();
+	    	applicationResourceController.getLastOpenedList().openLastMapOnStart(notRestoredMapUrls);
     }
 
 	@Override

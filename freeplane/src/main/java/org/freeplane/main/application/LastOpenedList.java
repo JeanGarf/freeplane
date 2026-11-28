@@ -319,13 +319,31 @@ public class LastOpenedList implements IMapViewChangeListener, IMapChangeListene
 		return file;
 	}
 
-	void openLastMapOnStart() {
+	void openLastMapOnStart(final List<URL> notRestoredMapUrls) {
+		reopenNotRestoredMaps(notRestoredMapUrls);
 		if (mapSelectedOnStart != null) {
 			safeOpen(mapSelectedOnStart);
 		}
 		String lastMode = ResourceController.getResourceController().getProperty(LAST_MODE);
 		if(lastMode != null && ! lastMode.equals( Controller.getCurrentModeController().getModeName()))
 		    Controller.getCurrentController().selectMode(lastMode);
+	}
+
+	private void reopenNotRestoredMaps(final List<URL> notRestoredMapUrls) {
+		final List<File> notRestoredFiles = new ArrayList<File>();
+		for (URL url : notRestoredMapUrls)
+			notRestoredFiles.add(new File(url.getFile()));
+		for (RecentFile recentFile : NotRestoredMaps.toReopen(new ArrayList<RecentFile>(lastOpenedList),
+		    this::fileOf, notRestoredFiles, mapSelectedOnStart))
+			safeOpen(recentFile);
+	}
+
+	private File fileOf(final RecentFile recentFile) {
+		final StringTokenizer tokens = new StringTokenizer(recentFile.restorable, ":");
+		if (!tokens.hasMoreTokens())
+			return null;
+		tokens.nextToken();
+		return createFileFromRestorable(tokens);
 	}
 
 	private void restore() {

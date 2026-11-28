@@ -51,6 +51,7 @@ import net.infonode.docking.ViewSerializer;
 class MapViewSerializer implements ViewSerializer {
     private Collection<View> viewsToBeRemoved = new ArrayList<View>();
     private List<View> restoredViews = new ArrayList<>();
+    private List<URL> notRestoredMapUrls = new ArrayList<>();
 
 	public void writeView(View view, ObjectOutputStream out) throws IOException {
     	if(view.isDisplayable()) {
@@ -111,9 +112,17 @@ class MapViewSerializer implements ViewSerializer {
         return views;
     }
 
+    List<URL> takeNotRestoredMapUrls() {
+        List<URL> urls = notRestoredMapUrls;
+        notRestoredMapUrls = new ArrayList<>();
+        return urls;
+    }
+
     private View newViewToBeRemoved(URL mapUrl, Exception cause) {
-        if (mapUrl != null)
+        if (mapUrl != null) {
+            notRestoredMapUrls.add(mapUrl);
             LogUtils.warn("Could not restore the map view for " + mapUrl, cause);
+        }
         return newViewToBeRemoved();
     }
 
