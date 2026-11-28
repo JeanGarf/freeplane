@@ -409,7 +409,8 @@ public class FreeplaneGUIStarter implements FreeplaneStarter {
 	    final boolean loadLastMaps = ResourceController.getResourceController().getBooleanProperty(LOAD_LAST_MAPS);
 	    final List<URL> notRestoredMapUrls = loadLastMaps ? viewController.openMapsOnStart() : Collections.<URL>emptyList();
 	    if(userPropertiesStatus == UserPropertiesStatus.CURRENT_VERSION_FOUND && (loadLastMaps || loadLastMap))
-	    	applicationResourceController.getLastOpenedList().openLastMapOnStart(notRestoredMapUrls);
+	    	applicationResourceController.getLastOpenedList().openLastMapOnStart(notRestoredMapUrls, viewController::showMapAtItsPreviousTab);
+	    viewController.closeNotRestoredMapPlaceholders();
     }
 
 	@Override

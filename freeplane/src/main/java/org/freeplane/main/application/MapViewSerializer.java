@@ -20,13 +20,16 @@
 package org.freeplane.main.application;
 
 import java.awt.Component;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JPanel;
 
@@ -52,6 +55,7 @@ class MapViewSerializer implements ViewSerializer {
     private Collection<View> viewsToBeRemoved = new ArrayList<View>();
     private List<View> restoredViews = new ArrayList<>();
     private List<URL> notRestoredMapUrls = new ArrayList<>();
+    private final Map<File, View> placeholders = new HashMap<>();
 
 	public void writeView(View view, ObjectOutputStream out) throws IOException {
     	if(view.isDisplayable()) {
@@ -119,11 +123,24 @@ class MapViewSerializer implements ViewSerializer {
     }
 
     private View newViewToBeRemoved(URL mapUrl, Exception cause) {
-        if (mapUrl != null) {
-            notRestoredMapUrls.add(mapUrl);
-            LogUtils.warn("Could not restore the map view for " + mapUrl, cause);
-        }
-        return newViewToBeRemoved();
+        if (mapUrl == null)
+            return newViewToBeRemoved();
+        notRestoredMapUrls.add(mapUrl);
+        LogUtils.warn("Could not restore the map view for " + mapUrl, cause);
+        final File file = new File(mapUrl.getFile());
+        final View placeholder = new View(file.getName(), null, new JPanel());
+        placeholders.put(file, placeholder);
+        return placeholder;
+    }
+
+    View takePlaceholder(File file) {
+        return placeholders.remove(file);
+    }
+
+    void closePlaceholders() {
+        for (View placeholder : placeholders.values())
+            placeholder.close();
+        placeholders.clear();
     }
 
 	private View newViewToBeRemoved() {
