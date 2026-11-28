@@ -1,5 +1,11 @@
 package org.freeplane.main.application;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 class RecentFileOpening {
@@ -27,6 +33,45 @@ class RecentFileOpening {
                 if (choice != Choice.RETRY) {
                     return choice == Choice.REMOVE;
                 }
+            }
+        }
+    }
+
+    interface FileOpener<T> {
+        void open(T file) throws Exception;
+    }
+
+    static <T> void reopenAll(List<T> files, FileOpener<T> opener, BiFunction<T, Exception, Choice> failureHandler,
+                              Consumer<T> onOpened, Consumer<T> onRemoved) {
+        final Map<T, Exception> failures = new LinkedHashMap<>();
+        List<T> pending = new ArrayList<>(files);
+        boolean attempt = true;
+        while (true) {
+            if (attempt) {
+                failures.clear();
+                for (T file : pending) {
+                    try {
+                        opener.open(file);
+                        onOpened.accept(file);
+                    }
+                    catch (Exception e) {
+                        failures.put(file, e);
+                    }
+                }
+                pending = new ArrayList<>(failures.keySet());
+            }
+            if (pending.isEmpty())
+                return;
+            final T first = pending.remove(0);
+            final Choice choice = failureHandler.apply(first, failures.get(first));
+            if (choice == Choice.RETRY) {
+                pending.add(0, first);
+                attempt = true;
+            }
+            else {
+                if (choice == Choice.REMOVE)
+                    onRemoved.accept(first);
+                attempt = false;
             }
         }
     }
